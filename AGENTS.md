@@ -16,6 +16,7 @@ Reglas de desarrollo (obligatorias, léelas antes de escribir código):
 
 - [Arquitectura por capas](.claude/rules/architecture.md) — UI (`app`, `features`, `components`) → `services` → API; `types` compartidos. Reglas de dinero y compra.
 - [React y Next.js](.claude/rules/react-nextjs.md) — Server Components por defecto, Server Actions, caché explícita, APIs de Next 16.
+- [API app-soat-taxi](docs/api.md) — endpoints, autenticación (Bearer) y notas de negocio.
 - [UI/UX](.claude/rules/ui-ux.md) — design system con tokens, estados obligatorios, flujo de compra, accesibilidad.
 
 Resumen rápido:
