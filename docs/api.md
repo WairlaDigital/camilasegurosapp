@@ -60,13 +60,53 @@ Notas de negocio:
 - `quote_token` identifica la cotización del plan dinámico.
 
 ### `POST /generar-poliza`
-Body: `{ policy_id, certificate_id }`. Emite la póliza.
+Body: `{ policy_id, certificate_id }` (ids internos de La Positiva). Devuelve el PDF de la póliza en base64 (`data.Pdf_Data`). Sin validación de request; solo lo usa el panel de administración.
 
 ## Endpoints públicos (sin token)
 
-Existen, pero aún no se revisaron para este front: `GET /data` (tipos de vehículo con usos y grupos de planes), `POST /data`, `POST /charge` (cobro), `GET /file/{policy}/dl` (PDF de la póliza), `POST /culqi-service` (webhook de Culqi).
+El front actual (`soat-para-taxi`) igual envía el Bearer en todas las llamadas; `apiRequest()` hace lo mismo.
 
-## Pendiente de confirmar
+### `GET /data` — catálogo
+Tipos de vehículo con sus usos permitidos (cacheado para siempre en el backend). `groups` ya no se usa: los planes salen de `/query-info`.
 
-- Cómo se obtienen `policy_id` y `certificate_id` para `/generar-poliza`, y si el cobro pasa por `/charge` (Culqi).
-- De dónde sale el catálogo de `type_id`, `use_id` y `ubigeo_id` (¿`GET /data`?).
+```jsonc
+{ "types": [{ "id", "order", "name", "uses": [{ "id", "name" }] }], "groups": [ ... ] }
+```
+
+`ubigeo_id` no tiene catálogo: el front actual usa Lima `150101` y Callao `070101`.
+
+### `POST /data` — crear orden
+Crea (o reutiliza, si llega `order_id`) la póliza pendiente, el conductor y una orden de Culqi que vence en 24 h.
+
+```jsonc
+{
+  "reseller": null,
+  "order_id": null,            // id de la póliza en reintentos
+  "driver": { "id", "document_type", "document_number", "first_name", "last_name", "company_name",
+              "address", "phone", "email", "state", "district", "country_code": "PE" },
+  "vehicle": { "plate", "type_id", "use_id", "color", "seats", "year_built", "serial", "vin",
+               "ubigeo_id", "brand", "model", "version" },
+  "plan": { "id", "title", "price", "token" },   // token = quote_token
+  "delivery": { "date": "YYYY-MM-DD" },
+  "is_renewable": false,
+  "accept_terms": true
+}
+```
+
+Respuesta: `{ "order_id", "culqi": { "amount" /* céntimos */, "title", "currency", "order" /* id de orden Culqi */ } }`.
+
+- Con `plan.token`, **el precio sale de la cotización guardada**; el precio enviado se ignora.
+- Validación (`ValidateResponseRequest`): nombres y apellidos solo letras y espacios (mín. 2, obligatorios incluso con RUC), `phone` empieza con 9, `email` con verificación DNS, `serial` alfanumérico mín. 8, `year_built` 1980–2030.
+- Cotización inválida o expirada → **500** con mensaje genérico (no 422).
+
+### `POST /charge` — cobrar con token de Culqi
+Body: `{ "token": <objeto Culqi.token completo>, "order": <order_id> }`.
+Respuesta **siempre HTTP 200**: `{ "status": "success" }` o `{ "status": "error", "data": { "user_message" } }`.
+
+⚠ Un rechazo del SDK de Culqi se captura y termina como `success` (ver [flujo.md](flujo.md#brechas-spec-vs-backend-decidir-antes-de-implementar)).
+
+Tras el pago, Culqi llama al webhook `POST /culqi-service`, que dispara la emisión en La Positiva (`IssuePolicyJob`) y el envío por correo. Los pagos diferidos (banca móvil, agentes, billeteras) también se confirman por ese webhook.
+
+### Otros
+- `GET /file/{policy}/dl`: descarga firmada del PDF. Hoy no se genera ninguna URL firmada: sin uso.
+- `POST /generar-poliza` (protegido): lo usa solo el panel de administración; `policy_id`/`certificate_id` no están disponibles para el front.
