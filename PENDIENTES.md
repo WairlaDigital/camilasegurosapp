@@ -48,8 +48,20 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 ## Front (este repo)
 
 - [x] Design system desde Figma: tokens en `app/globals.css`, primitivas en `components/ui/`, header y footer en `components/layout/`.
-- [ ] Pantalla de inicio: detección de categoría por placa, filtro de usos por tipo de vehículo, validación de documento.
+- [ ] Pantalla de inicio: hero, formulario con detección de categoría por placa, filtro de usos por tipo de vehículo, validación de documento; coberturas y FAQ.
+- [ ] Pantalla "Datos incompletos" (transición hacia el formulario del vehículo).
+- [ ] Pantalla "Completa los datos del titular" (depende de la decisión sobre datos personales y orden de pasos).
+- [ ] Pantalla "Ingresa los datos de su vehículo": campos prellenados y editables, marca/modelo/versión remotos.
+- [ ] Pantalla de cotización: saludo, resumen del vehículo con "Editar", tarjeta de plan, fecha de inicio, celular.
+- [ ] Pantalla "Antes de pagar" (informativa).
+- [ ] Checkout (bloqueado por la decisión del proveedor de pago).
+- [ ] Pantalla de confirmación de compra (y de orden generada para pagos diferidos).
 - [ ] Service del catálogo (`GET /data`) con esquema Zod.
 - [ ] Service de cotización (`POST /query-info`) con esquema Zod y mapeo de precio a céntimos.
 - [ ] Persistir `quote_token` y `order_id` en servidor (cookie httpOnly firmada) para sobrevivir a recargas.
+
+### Diseño
+
+- [ ] Verificar contra Figma el estado marcado del checkbox de consentimiento (no aparece en las capturas).
+- [ ] Confirmar si la etiqueta azul (`info`) del campo de fecha es intencional; hoy se unificó en `brand-500` (ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones)).
 - [x] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.
