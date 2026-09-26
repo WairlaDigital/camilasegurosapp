@@ -1,0 +1,23 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1420" height="440" viewBox="0 0 1420 440" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Mask group">
+<mask id="mask0_0_28" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="1420" height="440">
+<rect id="Rectangle 42" width="1420" height="440" rx="30" fill="#33317E"/>
+</mask>
+<g mask="url(#mask0_0_28)">
+<g id="Ellipse 9" filter="url(#filter0_f_0_28)">
+<ellipse cx="710.5" cy="-523.5" rx="1050.5" ry="617.5" fill="#686CEC" fill-opacity="0.4"/>
+</g>
+<g id="Group" opacity="0.2">
+<path id="Vector" d="M1420.75 594.081H1275.12C1139.13 594.081 1026.32 485.472 1025.01 349.481C1023.67 212.15 1134.96 100 1271.96 100H1420.75V177.386H1274.55C1181.47 177.386 1103.81 251.32 1102.38 344.391C1100.95 437.463 1177.58 516.695 1271.96 516.695H1343.38C1386.11 516.695 1420.75 551.34 1420.75 594.081Z" fill="#4740DE"/>
+<path id="Vector_2" d="M1554 594.288H1476.63C1476.63 518.688 1415.12 457.166 1339.54 457.166H1274.28C1213.58 457.166 1164.18 407.758 1164.18 347.039C1164.18 286.321 1213.58 236.913 1274.28 236.913H1420.75V314.299H1274.28C1256.22 314.299 1241.55 328.973 1241.55 347.039C1241.55 365.106 1256.22 379.78 1274.28 379.78H1339.54C1457.79 379.78 1554 476.006 1554 594.288Z" fill="#4740DE"/>
+</g>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_28" x="-500" y="-1301" width="2421" height="1555" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="80" result="effect1_foregroundBlur_0_28"/>
+</filter>
+</defs>
+</svg>

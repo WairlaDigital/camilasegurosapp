@@ -1,26 +1,121 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens — Camila Seguros.
+ * Source: Figma "Camila Seguros" (W6qepstKDMOGnvOxh51wRq). The file has no
+ * variables, so values were read from the layers. See DESIGN.md.
+ * Use only these tokens in components: no hex values or arbitrary sizes.
+ */
+@theme {
+  /* Brand (violet) */
+  --color-brand-50: #eff3fe; /* soft surfaces, open accordion, page top */
+  --color-brand-100: #e1e8fe; /* secondary button, icons on dark */
+  --color-brand-200: #c9d4fc; /* secondary button end, text on brand */
+  --color-brand-400: #686cec; /* decorative */
+  --color-brand-500: #4740de; /* primary: CTAs, links, brand cards */
+  --color-brand-700: #39349f; /* primary gradient end */
+  --color-brand-900: #33317e; /* footer, eyebrow pills, tags on brand */
+
+  /* Neutrals */
+  --color-ink: #2f2f2f; /* body text, labels */
+  --color-ink-strong: #000000; /* section titles, values on white */
+  --color-ink-soft: #404040; /* navigation */
+  --color-ink-muted: #535353; /* secondary text, field values */
+  --color-placeholder: #b4b4b4;
+  --color-line: #cacaca; /* control borders */
+  --color-line-soft: #d7d7d7; /* card borders */
+  --color-field-disabled: #e9e9e9; /* prefilled, read-only fields (titular form) */
+  --color-sand: #f4f1ea; /* page base under the gradient */
+  --color-on-brand: #f1f1f1; /* text on brand-900 */
+
+  /* Semantic */
+  --color-success: #46cc15;
+  --color-info: #0052a1; /* "Colores Complementarios/Azul" (date field label only) */
+  --color-danger: #d92d20; /* not in Figma: needed for form errors (AA on white) */
+
+  /* Typography — Red Hat Display, loaded with next/font in app/layout.tsx */
+  --font-sans: var(--font-red-hat-display), ui-sans-serif, system-ui, sans-serif;
+
+  --text-display: 2.625rem; /* 42px hero */
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: 2rem; /* 32px section titles, prices */
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.02em;
+  --text-subtitle: 1.25rem; /* 20px card titles */
+  --text-subtitle--line-height: 1.2;
+  --text-body: 1rem; /* 16px */
+  --text-body--line-height: 1.5;
+  --text-label: 1rem; /* 16px bold field labels */
+  --text-label--line-height: 1.2;
+  --text-small: 0.875rem; /* 14px */
+  --text-small--line-height: 1.2;
+  --text-caption: 0.75rem; /* 12px pills */
+  --text-caption--line-height: 1;
+  --text-nav: 0.8125rem; /* 13px header links */
+  --text-nav--line-height: 1;
+  --text-nav--letter-spacing: 0.02em;
+
+  /* Radius */
+  --radius-check: 5px;
+  --radius-control: 10px; /* inputs, selects, option tiles */
+  --radius-tile: 12px; /* icon tiles */
+  --radius-card: 20px; /* cards, form panel, accordion items */
+  --radius-panel: 30px; /* hero, sections, footer, coverage cards */
+
+  /* Layout widths (Figma frame 1640: content 1120, wide blocks 1420) */
+  --container-content: 70rem;
+  --container-wide: 88.75rem;
+
+  /* Elevation */
+  --shadow-cta: 0 8px 10px rgb(54 52 97 / 0.3);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Gradients from Figma, exposed as utilities (bg-gradient-*) */
+@utility bg-gradient-primary {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-brand-500) 11.667%,
+    var(--color-brand-700) 175%
+  );
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@utility bg-gradient-secondary {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-brand-100) 11.667%,
+    var(--color-brand-200) 175%
+  );
+}
+
+@utility bg-gradient-page {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-brand-50) 0,
+    var(--color-brand-50) 57.4%,
+    var(--color-sand) 100%
+  );
+}
+
+@layer base {
+  html {
+    color-scheme: light;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-sand font-sans text-body text-ink antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }

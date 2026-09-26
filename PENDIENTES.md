@@ -6,8 +6,10 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 ## Insumos por recibir
 
 - [ ] **Token de la API** (Sanctum). Colocarlo en `.env.local` → `LAPOSITIVA_API_TOKEN`. No compartirlo por chat.
-- [ ] **Figma**, si existe además de las capturas del documento de funcionalidad (hoy son la única referencia visual).
-- [ ] **Logo e isotipo de Camila Seguros** en SVG, tipografía y colores exactos de marca.
+- [x] **Figma**. Recibido 2026-09-26. Lineamientos en [DESIGN.md](DESIGN.md); capturas en [docs/figma/](docs/figma).
+- [ ] **Recursos gráficos pendientes de exportar** (se alcanzó el límite de la API de Figma, plan Starter): íconos de categoría auto/moto, íconos de coberturas y beneficios, ícono de menú mobile, fotos del hero. Exportarlos como SVG/WebP o ampliar el plan de Figma.
+- [x] **Logo, tipografía y colores**. Tomados de Figma (Red Hat Display, violeta `#4740de`).
+- [ ] **URLs del sitio**: menú (Seguros, Beneficios, Testimonios, Blog), Contáctanos, Términos y Condiciones, Facebook. Hoy son `#` en `lib/site.ts`.
 - [ ] **Textos legales**: URL de la Política de Privacidad y del Consentimiento de datos para usos adicionales.
 
 ## Pendiente con La Positiva (Fidel)
@@ -18,7 +20,10 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 ## Decisiones de producto
 
-- [ ] **Datos personales para la orden.** El backend exige nombres, apellidos, dirección, departamento y distrito, incluso con RUC. La spec no tiene formulario para ellos. ¿Qué se muestra si RENIEC/SUNAT no devuelven datos?
+- [ ] **Datos personales para la orden.** Figma agrega la pantalla "Completa los datos del titular" (tipo de persona, documento, apellidos, nombres, domicilio, referencia, departamento/provincia/distrito, correo, celular, comprobante a nombre del contratante), que la spec no tiene. Falta definir en qué paso va y qué campos llegan prellenados de RENIEC/SUNAT. El backend no recibe provincia, referencia ni la opción de comprobante.
+- [ ] **Orden de pasos.** Figma usa "PASO x/3" (titular → vehículo → cotización); la spec usa "PASO 1" en vehículo y "PASO 2/2" en "Antes de pagar".
+- [ ] **Entrega por WhatsApp.** El hero y la FAQ de Figma dicen que el SOAT llega por WhatsApp; el backend solo envía correo.
+- [ ] **"Desde S/33 al año"** en el hero: confirmar el precio mínimo real.
 - [ ] **Zona de circulación (`ubigeo_id`).** El backend la exige; la spec no tiene el campo. ¿Se pregunta (Lima/Callao) o se asume?
 - [ ] **Placa `LN-NNNN` (ej. A1-1234).** Sin guion es ambigua con la placa de auto `A11-234`. ¿Se exige escribir el guion?
 - [ ] **Pasaporte.** El backend lo acepta, la spec solo pide DNI, CE y RUC. Por defecto: no se ofrece.
@@ -42,9 +47,9 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 ## Front (este repo)
 
-- [ ] Design system a partir de las capturas: tokens en `app/globals.css`, primitivas en `components/ui/`.
+- [x] Design system desde Figma: tokens en `app/globals.css`, primitivas en `components/ui/`, header y footer en `components/layout/`.
 - [ ] Pantalla de inicio: detección de categoría por placa, filtro de usos por tipo de vehículo, validación de documento.
 - [ ] Service del catálogo (`GET /data`) con esquema Zod.
 - [ ] Service de cotización (`POST /query-info`) con esquema Zod y mapeo de precio a céntimos.
 - [ ] Persistir `quote_token` y `order_id` en servidor (cookie httpOnly firmada) para sobrevivir a recargas.
-- [ ] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.
+- [x] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.

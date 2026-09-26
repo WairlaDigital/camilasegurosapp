@@ -19,7 +19,7 @@ Reglas de desarrollo (obligatorias, léelas antes de escribir código):
 - [PENDIENTES](PENDIENTES.md) — decisiones, insumos y bugs abiertos. Actualízalo al cerrar o descubrir un pendiente.
 - [Flujo del cotizador](docs/flujo.md) — pantallas, reglas de negocio (placa, tipo/uso, token único) y brechas con el backend.
 - [API app-soat-taxi](docs/api.md) — endpoints, autenticación (Bearer) y notas de negocio.
-- [UI/UX](.claude/rules/ui-ux.md) — design system con tokens, estados obligatorios, flujo de compra, accesibilidad.
+- [DESIGN.md](DESIGN.md) — lineamientos de diseño: principios, tokens, componentes, patrones de pantalla, estados y accesibilidad. Vista previa en `/design-system` (solo dev).
 
 Resumen rápido:
 
@@ -27,5 +27,5 @@ Resumen rápido:
 2. Solo `services/` habla con la API; valida la respuesta con Zod y la convierte a los tipos de `types/`.
 3. Montos en céntimos enteros; el precio se revalida en servidor al comprar; compras con idempotencia.
 4. `'use client'` solo en hojas interactivas. Sin `any`.
-5. Toda vista de datos tiene estados de carga, vacío, error y éxito. Mobile-first y WCAG AA.
+5. UI según [DESIGN.md](DESIGN.md): solo tokens y componentes de `components/ui/`; estados de carga, vacío, error y éxito; mobile-first y WCAG AA.
 6. Antes de terminar: `npm run lint` y `npx tsc --noEmit` sin errores.
