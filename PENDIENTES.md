@@ -10,8 +10,6 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 **Hecho (en `main`):**
 - Reglas del proyecto, sistema de diseño desde Figma ([DESIGN.md](DESIGN.md)) y pruebas (Vitest + Playwright con servidor falso de la API).
 - Flujo: inicio → `POST /query-info` → "Datos incompletos" → "Datos del vehículo" → nueva cotización con datos manuales. El estado viaja en una cookie cifrada.
-
-**Hecho (en la rama `claude/pendientes-desarrollo-a07c2f`, falta fusionar):**
 - Pantalla de cotización (`/cotizar/cotizacion`): saludo, resumen del vehículo con "Editar", tarjeta del plan sin AFOCAT, fecha de inicio, celular e "Ir a pagar". El inicio (vehículo completo) y "Datos del vehículo" ya redirigen a ella.
 - "Ir a pagar" guarda el plan y el celular en la sesión. Si la fecha cambió, vuelve a cotizar una sola vez; si el precio cambió, lo muestra y pide confirmar de nuevo.
 - Hoy termina con un mensaje provisional ("Listo, guardamos tu elección…") porque "Antes de pagar" no existe (buscar `TODO(before-pay screen)`).
