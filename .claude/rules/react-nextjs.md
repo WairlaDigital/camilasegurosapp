@@ -54,5 +54,26 @@
 
 - `strict` activado; prohibido `any` y `as` para silenciar errores (usar Zod o type guards).
 - Imports absolutos con `@/`.
-- Antes de dar por terminado un cambio: `npm run lint` y `npx tsc --noEmit` sin errores.
-- Tests: los esquemas/mapeos de `services/schemas/` se prueban con respuestas reales de ejemplo de la API; los componentes con lógica, con Testing Library.
+- Antes de dar por terminado un cambio: `npm run lint`, `npx tsc --noEmit` y `npm test` sin errores.
+
+## Pruebas
+
+- **Unitarias (Vitest)**: `npm test`. Archivos `*.test.ts` junto al código. Para reglas puras (placa, usos, documento, esquemas, mappers de `services/schemas/` con respuestas reales de la API). Sin red.
+- **E2E (Playwright)**: `npm run test:e2e`. Carpeta `e2e/`, proyectos `desktop` y `mobile`. Corren contra un build de producción en el puerto 3211 (Next 16 permite un solo `next dev` por proyecto). Localmente usan el Chrome instalado; en CI, `npx playwright install chromium`.
+- Toda pantalla o flujo nuevo agrega su escenario e2e. Selectores por rol y label (`getByRole`, `getByLabel`), nunca por clases.
+
+### Cuándo correr cada verificación
+
+| Verificación | Comando | Cuándo |
+|---|---|---|
+| Unitarias | `npm run test:watch` | Siempre abierto mientras se editan reglas, esquemas o mappers. |
+| Unitarias | `npm test` | Antes de **cada commit**. |
+| Tipos y lint | `npx tsc --noEmit` · `npm run lint` | Antes de **cada commit**. |
+| E2E | `npm run test:e2e` | Antes de cada commit que toque pantallas, componentes, formularios, Server Actions o el layout. |
+| Todo | `npm run test:all` | Antes de **fusionar a `main`** y antes de cada despliegue. |
+| Revisión visual | Navegador, ver [DESIGN.md](../../DESIGN.md#revisión-visual) | Al crear o cambiar una pantalla o un componente, antes del commit. |
+| CI (cuando haya remoto) | `npm test` + `npm run test:e2e` | En cada push y en cada PR; el PR no se fusiona en rojo. |
+
+Si una prueba falla, se corrige el código o se actualiza la prueba con una razón explícita; nunca se salta ni se borra para que pase.
+- La API no se llama desde el navegador, así que Playwright no puede simularla: cuando el flujo use la API, las e2e apuntarán a un servidor falso (ver PENDIENTES.md).
+- No se comparan capturas contra las exportaciones de Figma (no coinciden píxel a píxel).

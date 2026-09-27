@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
 type ContainerProps = ComponentProps<"div"> & {
-  /** `content` (1120px) for text and forms, `wide` (1420px) for hero, sections and footer. */
+  /** `content` (1120px) for text and forms, `wide` (1420px + gutters) for hero, sections and footer. */
   width?: "content" | "wide";
 };
 

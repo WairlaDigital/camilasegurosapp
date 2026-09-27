@@ -7,7 +7,8 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 - [ ] **Token de la API** (Sanctum). Colocarlo en `.env.local` → `LAPOSITIVA_API_TOKEN`. No compartirlo por chat.
 - [x] **Figma**. Recibido 2026-09-26. Lineamientos en [DESIGN.md](DESIGN.md); capturas en [docs/figma/](docs/figma).
-- [ ] **Recursos gráficos pendientes de exportar** (se alcanzó el límite de la API de Figma, plan Starter): íconos de categoría auto/moto, íconos de coberturas y beneficios, ícono de menú mobile, fotos del hero. Exportarlos como SVG/WebP o ampliar el plan de Figma.
+- [ ] **Recursos gráficos pendientes de exportar** (se alcanzó el límite de la API de Figma, plan Starter): ícono de categoría **auto** (el de moto ya está), íconos de coberturas y de beneficios del hero, ícono de menú mobile, foto del hero. Exportarlos como SVG/WebP o ampliar el plan de Figma. Sus espacios ya están reservados en el home.
+- [ ] **Respuestas de la FAQ.** Figma solo trae la primera; las otras 5 son textos provisionales en `features/home/content.ts`. Validarlas.
 - [x] **Logo, tipografía y colores**. Tomados de Figma (Red Hat Display, violeta `#4740de`).
 - [ ] **URLs del sitio**: menú (Seguros, Beneficios, Testimonios, Blog), Contáctanos, Términos y Condiciones, Facebook. Hoy son `#` en `lib/site.ts`.
 - [ ] **Textos legales**: URL de la Política de Privacidad y del Consentimiento de datos para usos adicionales.
@@ -48,7 +49,8 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 ## Front (este repo)
 
 - [x] Design system desde Figma: tokens en `app/globals.css`, primitivas en `components/ui/`, header y footer en `components/layout/`.
-- [ ] Pantalla de inicio: hero, formulario con detección de categoría por placa, filtro de usos por tipo de vehículo, validación de documento; coberturas y FAQ.
+- [x] Pantalla de inicio: hero, formulario con detección de categoría por placa, filtro de usos por categoría, validación de documento (cliente y servidor); coberturas y FAQ. Verificada contra Figma en 430, 1100 y 1640 px.
+- [ ] Conectar el envío del formulario de inicio: hoy solo valida (`features/quote/actions.ts`). Falta consultar la placa/cotizar, guardar el estado y pasar al siguiente paso (depende del orden de pasos y del token).
 - [ ] Pantalla "Datos incompletos" (transición hacia el formulario del vehículo).
 - [ ] Pantalla "Completa los datos del titular" (depende de la decisión sobre datos personales y orden de pasos).
 - [ ] Pantalla "Ingresa los datos de su vehículo": campos prellenados y editables, marca/modelo/versión remotos.
@@ -59,9 +61,14 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 - [ ] Service del catálogo (`GET /data`) con esquema Zod.
 - [ ] Service de cotización (`POST /query-info`) con esquema Zod y mapeo de precio a céntimos.
 - [ ] Persistir `quote_token` y `order_id` en servidor (cookie httpOnly firmada) para sobrevivir a recargas.
+- [x] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.
+- [x] Pruebas: Vitest (reglas de placa, usos y documento) y Playwright (home en desktop y mobile).
+- [ ] Servidor falso de la API para las e2e cuando el flujo consulte placa/cotización (las llamadas salen del servidor de Next, Playwright no puede interceptarlas).
+- [ ] Correr `npm test` y `npm run test:e2e` en CI cuando haya remoto.
 
 ### Diseño
 
 - [ ] Verificar contra Figma el estado marcado del checkbox de consentimiento (no aparece en las capturas).
 - [ ] Confirmar si la etiqueta azul (`info`) del campo de fecha es intencional; hoy se unificó en `brand-500` (ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones)).
-- [x] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.
+- [ ] Footer mobile: Figma oculta el mapa de sitio, seguros y redes sociales (incluido "Términos y Condiciones"). Confirmar que es intencional.
+- [ ] Selector de uso del home: antes de ingresar la placa queda deshabilitado ("Primero ingresa tu placa"); Figma no define ese estado.

@@ -8,7 +8,7 @@ type FooterLink = { label: string; href: string };
 
 function FooterColumn({ title, links }: { title: string; links: readonly FooterLink[] }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="hidden flex-col gap-2 lg:flex">
       <h2 className="text-body font-bold uppercase">{title}</h2>
       <ul className="list-disc ps-6 font-medium leading-relaxed">
         {links.map((link) => (
@@ -33,10 +33,13 @@ export function SiteFooter() {
           fill
           className="-z-10 object-cover object-right"
         />
-        <div className="mx-auto max-w-content px-5 pt-15 pb-8 md:px-10 xl:px-0">
-          <Logo tone="light" />
+        <div className="mx-auto max-w-content px-5 pt-12.5 pb-7.5 md:px-10 lg:pt-15 xl:px-0">
+          {/* Mobile (Figma "Group 86"): centered logo, company data and copyright only. */}
+          <div className="flex justify-center lg:justify-start">
+            <Logo tone="light" className="w-46 lg:w-40" />
+          </div>
 
-          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-20 grid gap-8 lg:mt-10 lg:grid-cols-4">
             <div className="flex flex-col gap-4">
               <p className="font-bold">
                 {site.legalName}
@@ -54,7 +57,7 @@ export function SiteFooter() {
             </div>
             <FooterColumn title="Mapa de sitio" links={footerNav.sitemap} />
             <FooterColumn title="Seguros" links={footerNav.insurance} />
-            <div className="flex flex-col gap-2">
+            <div className="hidden flex-col gap-2 lg:flex">
               <h2 className="text-body font-bold uppercase">Redes sociales</h2>
               <a href={site.facebook} aria-label="Facebook de Camila Seguros" className="w-fit">
                 <Image src="/icons/facebook.svg" alt="" width={42} height={44} />
@@ -62,7 +65,7 @@ export function SiteFooter() {
             </div>
           </div>
 
-          <p className="mt-12 border-t border-on-brand/30 pt-6 text-center">
+          <p className="mt-7.5 border-t border-on-brand/30 pt-6 text-center lg:mt-12">
             Copyright © {new Date().getFullYear()} {site.name}. Todos los derechos reservados.
           </p>
         </div>

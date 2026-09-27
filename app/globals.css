@@ -63,9 +63,10 @@
   --radius-card: 20px; /* cards, form panel, accordion items */
   --radius-panel: 30px; /* hero, sections, footer, coverage cards */
 
-  /* Layout widths (Figma frame 1640: content 1120, wide blocks 1420) */
+  /* Layout widths (Figma frame 1640: content 1120, wide blocks 1420).
+     `wide` includes the 20px side gutters: 1420 + 2×20 = 1460. */
   --container-content: 70rem;
-  --container-wide: 88.75rem;
+  --container-wide: 91.25rem;
 
   /* Elevation */
   --shadow-cta: 0 8px 10px rgb(54 52 97 / 0.3);

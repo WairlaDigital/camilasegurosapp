@@ -28,4 +28,4 @@ Resumen rápido:
 3. Montos en céntimos enteros; el precio se revalida en servidor al comprar; compras con idempotencia.
 4. `'use client'` solo en hojas interactivas. Sin `any`.
 5. UI según [DESIGN.md](DESIGN.md): solo tokens y componentes de `components/ui/`; estados de carga, vacío, error y éxito; mobile-first y WCAG AA.
-6. Antes de terminar: `npm run lint` y `npx tsc --noEmit` sin errores.
+6. Antes de cada commit: `npm run lint`, `npx tsc --noEmit` y `npm test`; si tocaste pantallas o flujos, también `npm run test:e2e` y la revisión visual. Antes de fusionar a `main`: `npm run test:all`. Detalle en [react-nextjs.md](.claude/rules/react-nextjs.md#cuándo-correr-cada-verificación).

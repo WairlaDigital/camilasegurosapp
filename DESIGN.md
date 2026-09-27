@@ -76,7 +76,7 @@ Una sola familia: **Red Hat Display** (`next/font/google`).
 - Radios: `rounded-check` 5 · `rounded-control` 10 (inputs) · `rounded-tile` 12 (ícono de vehículo) · `rounded-card` 20 (cards, FAQ, panel del formulario) · `rounded-panel` 30 (hero, secciones, footer, coberturas) · `rounded-full` (botones, pills).
 - Sombra: solo `shadow-cta` (botones primarios y menú mobile).
 - Espaciado: escala de Tailwind (múltiplos de 4), espacio en blanco generoso.
-- Anchos: `max-w-content` 1120px (texto y formularios) · `max-w-wide` 1420px (hero, secciones, footer). Usar `<Container width="content" | "wide">`.
+- Anchos: `max-w-content` 1120px (texto y formularios) · `max-w-wide` 1420px + márgenes de 20px (hero, secciones, footer). Usar `<Container width="content" | "wide">`. Un `Container` de contenido dentro de uno ancho lleva `px-0` (el ancho ya aporta el margen).
 - Márgenes laterales: 20px en mobile.
 - Alturas: campos `h-14` (55–56px), botón principal `h-15` (60px), botón mediano `h-13` (52px), header 72px mobile / 110px desktop.
 
@@ -93,10 +93,13 @@ Toda pieza visual reutilizable vive en `components/ui/`. **Antes de crear algo, 
 | `Pill` | `brand`: eyebrow de sección · `light`: breadcrumb sobre imagen · `step`: indicador de paso | "Coberturas", "SEGUROS \ SOAT", "PASO 1/3" |
 | `Card` | `surface`: panel del formulario · `outlined`: resumen del vehículo · `brand`: plan · `brand-panel`: cobertura | Cotización, home |
 | `Accordion`, `AccordionItem` | Preguntas frecuentes y letra chica. Mismo `name` = solo uno abierto | "¿Quieres saber más?" |
+| `SectionHeading` | Encabezado de sección: pill + título con `<strong>` en la palabra clave | "Coberturas", "Preguntas frecuentes" |
 | `Logo` | `dark` en fondos claros, `light` sobre `brand-900` | Header, footer |
 | `SiteHeader`, `SiteFooter`, `Container` | Ya están en el layout raíz; no repetirlos en páginas | Todas |
 
 Nunca usar `<input>`, `<select>` o `<button>` sueltos con estilos propios en pantallas.
+
+**Ojo con `cn()`:** `tailwind-merge` elimina un `leading-*` que venga *antes* de un `text-*` (los toma como conflicto). Escribe el `leading-*` después del tamaño de texto.
 
 ## 4. Patrones de pantalla
 
@@ -104,7 +107,8 @@ Nunca usar `<input>`, `<select>` o `<button>` sueltos con estilos propios en pan
 - **Formulario de paso:** grilla de campos `inset` (3 columnas en titular, 2 en vehículo; 1 en mobile), separación 32px horizontal y 20px vertical. Campos anchos (domicilio, VIN) ocupan 2 columnas. El CTA primario va debajo, alineado al borde derecho del formulario en desktop y a ancho completo en mobile.
 - **Ayuda lateral:** en desktop, texto a la derecha del formulario ("Información adicional de tu vehículo"); en mobile, debajo del título.
 - **Sección de contenido:** `Pill` (eyebrow) → título con palabra clave en bold → contenido.
-- **Hero:** panel `rounded-panel` con foto y velo violeta, breadcrumb `Pill tone="light"`, título `display`, beneficios con ícono, y el panel del formulario blanco superpuesto a la derecha (debajo en mobile).
+- **Hero:** panel `rounded-panel` con foto y velo violeta, breadcrumb `Pill tone="light"`, título `display`, beneficios con ícono, y el panel del formulario blanco superpuesto a la derecha (debajo en mobile). Desktop: grilla de 12 columnas sobre 1120px; formulario en 5 columnas (448px). Mobile: texto del hero con margen de 40px, formulario y coberturas de borde a borde con 20px.
+- **Footer:** desktop con 4 columnas; mobile solo logo centrado, datos de la empresa, teléfono y copyright (Figma "Group 86").
 - **Tarjeta de plan:** `Card tone="brand"`, marca de agua "SOAT", aseguradora en `subtitle`, precio en `title`, tag "Pago Anual" (`bg-brand-900 text-brand-200`), botón `secondary` a ancho completo y lista de coberturas con check `success`.
 - **Resumen del vehículo:** `Card tone="outlined"` con tile `brand-500` e ícono de auto, título en `brand-500` bold, datos "Etiqueta: valor" (etiqueta `brand-500`, valor `ink-strong`) separados por líneas verticales, y link "Editar".
 - **Coberturas:** grilla de `Card tone="brand-panel"` con ícono lineal blanco, título bold y monto.
@@ -128,6 +132,15 @@ Todo lo que muestra datos remotos contempla:
 - Íconos decorativos con `alt=""`; íconos solos con `aria-label`.
 - Movimiento: 150–250 ms, solo con propósito; se respeta `prefers-reduced-motion`.
 - Rendimiento: contenido principal renderizado en servidor; reservar espacio de imágenes y skeletons para evitar saltos (CLS).
+
+## Revisión visual
+
+Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco mal ubicado, un espaciado roto). Al crear o cambiar una pantalla o un componente, antes del commit:
+
+1. Compararla con su captura de `docs/figma/` en **430 px** (mobile), **1100 px** (intermedio) y **1640 px** (el ancho de los frames de Figma). Medir posiciones clave; diferencias de más de ~8 px se corrigen o se anotan en la sección 7.
+2. Revisar **todos los estados**, no solo el inicial: vacío, foco (con teclado), error, deshabilitado, seleccionado, cargando (`pending`) y éxito.
+3. Confirmar que no hay scroll horizontal y que el menú mobile funciona.
+4. Ver la consola del navegador sin errores.
 
 ## 7. Diferencias con Figma (decisiones)
 
