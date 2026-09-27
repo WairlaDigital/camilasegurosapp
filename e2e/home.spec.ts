@@ -87,7 +87,7 @@ test("a use that no longer applies is cleared when the category changes", async 
   await expect(f.use).toHaveValue("");
 });
 
-test("validates the document on blur and submits a valid form keeping the values", async ({ page }) => {
+test("validates the document on blur and a valid form goes to the quote", async ({ page }) => {
   const f = form(page);
   await f.plate.fill("ABC-123");
   await f.documentType.selectOption("RUC");
@@ -105,11 +105,7 @@ test("validates the document on blur and submits a valid form keeping the values
   await f.submit.click();
 
   // ABC-123 is a complete vehicle in the fake API.
-  await expect(page.getByRole("status")).toContainText("Tus datos están completos");
-  await expect(f.plate).toHaveValue("ABC-123");
-  await expect(f.documentNumber).toHaveValue("20123456789");
-  await expect(f.email).toHaveValue("cliente@correo.pe");
-  await expect(f.consent).toBeChecked();
+  await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
 });
 
 test("FAQ opens one answer at a time", async ({ page }) => {

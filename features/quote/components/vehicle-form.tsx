@@ -275,12 +275,6 @@ export function VehicleForm({ types, initial, initialModels, initialVersions }: 
           {state.message}
         </p>
       )}
-      {/* TODO(quote screen): redirect to the quote step instead of this message. */}
-      {state.status === "ready" && (
-        <p role="status" className="rounded-control bg-brand-50 p-4 text-small font-semibold text-brand-900">
-          Datos guardados. La cotización se mostrará en el siguiente paso.
-        </p>
-      )}
 
       <div className="md:grid md:grid-cols-2 md:gap-x-8">
         <Button type="submit" fullWidth pending={pending} disabled={!filled && !pending} className="md:col-start-2">

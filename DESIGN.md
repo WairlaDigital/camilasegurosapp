@@ -52,7 +52,7 @@ Lineamientos de diseño del cotizador SOAT de seguroscamila.pe. Aplican a cualqu
 | `info` | `#0052a1` | Azul complementario (reservado) |
 | `danger` | `#d92d20` | Errores de formulario. **No está en Figma** |
 
-Degradados: `bg-gradient-primary` (botón principal), `bg-gradient-secondary` ("LO QUIERO"), `bg-gradient-page` (fondo de página: `brand-50` → `sand`, un solo degradado para toda la página; va en `<body>` con `<html>` en `bg-sand`; ponerlo en `<html>` o quitarle el fondo a `<html>` hace que se repita cada alto de ventana).
+Degradados: `bg-gradient-primary` (botón principal), `bg-gradient-secondary` ("LO QUIERO"), `bg-gradient-plan` (brillo `brand-400` arriba al centro de la tarjeta de plan), `bg-gradient-page` (fondo de página: `brand-50` → `sand`, un solo degradado para toda la página; va en `<body>` con `<html>` en `bg-sand`; ponerlo en `<html>` o quitarle el fondo a `<html>` hace que se repita cada alto de ventana).
 
 Contraste mínimo WCAG AA (4.5:1) en texto. `placeholder` no se usa para información necesaria.
 
@@ -69,6 +69,7 @@ Una sola familia: **Red Hat Display** (`next/font/google`).
 | `text-small` | 14px | bold | Labels inset, legales |
 | `text-caption` | 12px | semibold, mayúsculas | Pills |
 | `text-nav` | 13px, +0.02em | bold, mayúsculas | Navegación, botón mediano |
+| `text-watermark` | 152px, lh 1 | bold + `text-outline` | Marca de agua "SOAT" de la tarjeta de plan (solo decorativa, `aria-hidden`) |
 
 Énfasis en títulos: la frase va en medium y la palabra clave en bold ("Conoce las **coberturas de tu SOAT**").
 
@@ -112,8 +113,9 @@ Nunca usar `<input>`, `<select>` o `<button>` sueltos con estilos propios en pan
 - **Sección de contenido:** `Pill` (eyebrow) → título con palabra clave en bold → contenido.
 - **Hero:** panel `rounded-panel` con foto y velo violeta, breadcrumb `Pill tone="light"`, título `display`, beneficios con ícono, y el panel del formulario blanco superpuesto a la derecha (debajo en mobile). Desktop: grilla de 12 columnas sobre 1120px; formulario en 5 columnas (448px). Mobile: texto del hero con margen de 40px, formulario y coberturas de borde a borde con 20px.
 - **Footer:** desktop con 4 columnas; mobile solo logo centrado, datos de la empresa, teléfono y copyright (Figma "Group 86").
-- **Tarjeta de plan:** `Card tone="brand"`, marca de agua "SOAT", aseguradora en `subtitle`, precio en `title`, tag "Pago Anual" (`bg-brand-900 text-brand-200`), botón `secondary` a ancho completo y lista de coberturas con check `success`.
-- **Resumen del vehículo:** `Card tone="outlined"` con tile `brand-500` e ícono de auto, título en `brand-500` bold, datos "Etiqueta: valor" (etiqueta `brand-500`, valor `ink-strong`) separados por líneas verticales, y link "Editar".
+- **Tarjeta de plan** (`features/plans/components/plan-card.tsx`): `Card tone="brand"` con `bg-gradient-plan`, 352px de ancho (`md:w-88`), marca de agua "SOAT" (`text-watermark text-outline`), producto y aseguradora en `subtitle`, precio en `title`, tag "Pago Anual" (`bg-brand-900 text-brand-200`), botón `secondary` a ancho completo ("LO QUIERO" → "Elegido" con `aria-pressed` y anillo `brand-200`) y lista de coberturas con check `success`. Varios planes se centran en una fila que se envuelve; el destacado va primero.
+- **Resumen del vehículo** (`features/quote/components/vehicle-summary.tsx`): `Card tone="outlined"` con tile `brand-500` e ícono de auto, título en `brand-500`, datos "Etiqueta: valor" (`<dl>`; etiqueta `brand-500`, valor `ink-strong`) separados por líneas verticales en desktop y uno por línea en mobile, y link "Editar".
+- **Cotización:** encabezado de paso en 5 columnas y resumen del vehículo a la derecha (mín. 544px, crece hacia la izquierda para que "Placa | Tipo | Uso" quepa en una línea); tarjeta(s) de plan centradas; formulario de fecha y celular en 4 columnas (352px) alineado a la izquierda, con cada bloque titulado en `subtitle`.
 - **Coberturas:** grilla de `Card tone="brand-panel"` con ícono lineal blanco, título bold y monto.
 
 ## 5. Estados
@@ -156,6 +158,13 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 - Erratas corregidas en textos: "Contácnenos" → "Contáctanos", "Seguro Vehícular" → "Vehicular", "Compralo" → "Cómpralo", "vene" → "vence".
 - El año del copyright se calcula.
 - Menú mobile con ícono CSS provisional: el ícono de Figma no se pudo exportar.
+- Cotización:
+  - El título ocupa 5 columnas para que corte como en Figma ("…SOAT en / pocos minutos..."), y el resumen del vehículo crece hacia la izquierda cuando los datos no caben en una línea (Figma usa "VAN"; el catálogo real trae nombres más largos como "Automóvil").
+  - "Editar" también se muestra en mobile (Figma mobile no lo tiene, pero es la única forma de corregir el vehículo desde esta pantalla).
+  - Fecha con el selector nativo del navegador (Figma dibuja un ícono de calendario propio) y una ayuda que no está en Figma: "Si cambias la fecha, confirmamos el precio de nuevo." El formulario queda unos 25px más abajo por esa línea.
+  - El celular lleva etiqueta inset "Número de celular"; en Figma es solo un placeholder.
+  - Figma no define el estado elegido de "LO QUIERO": se usa "Elegido", `aria-pressed` y un anillo `brand-200` en la tarjeta. "Ir a pagar" queda deshabilitado hasta elegir el plan y escribir el celular, con la ayuda "Elige tu plan con «Lo quiero» para continuar.".
+  - Estado vacío (sin plan a la venta) no está en Figma: mensaje y acciones "Revisar mis datos" y "Volver al inicio".
 - Hero: el velo violeta se reproduce con degradados medidos sobre las capturas (desktop desde la izquierda, mobile desde abajo-izquierda); en mobile los beneficios se ocultan, como en Figma.
 
 ## 8. Recursos

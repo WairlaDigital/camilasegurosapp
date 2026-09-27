@@ -15,7 +15,7 @@ Alcance: SOAT para usos Particular, Taxi, Carga y Comercial (solo moto lineal). 
 | 2 | Consulta automática | Consulta la placa y cotiza | `POST /query-info` |
 | 3 | **Datos incompletos** | Solo si faltan datos del vehículo. Mensaje simple + "Completa y cotiza" | — |
 | 4 | **Datos del vehículo** (Paso 1) | Formulario prellenado y **editable**: uso, tipo, marca, modelo, asientos, año, VIN/serie | `GET /brands`, `/models/{brand}/type/{type}`, `/versions/{model}`, luego `POST /query-info` con los datos manuales |
-| 5 | **Cotización** | "Hola {nombre}", resumen del vehículo con "Editar", tarjeta de precio con coberturas y "LO QUIERO", fecha de inicio, celular, "Ir a pagar" | `POST /query-info` (nueva cotización si cambia la fecha) |
+| 5 | **Cotización** (`/cotizar/cotizacion`) | "Hola {nombre}", resumen del vehículo con "Editar", tarjeta de precio con coberturas y "LO QUIERO" (sin planes AFOCAT), fecha de inicio, celular, "Ir a pagar" | `POST /query-info` solo al presionar "Ir a pagar" con otra fecha; si el precio cambia, se muestra y se pide confirmar |
 | 6 | **Antes de pagar** (Paso 2/2) | Informativa. "Continuar con el pago" | `POST /data` (crea la orden y la orden de Culqi) |
 | 7 | **Checkout** | Modal de pago. **Proveedor pendiente** | `POST /charge` (si es Culqi) |
 | 8 | Confirmación | Gracias + qué sigue (la póliza llega por correo) | — |

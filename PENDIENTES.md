@@ -10,15 +10,15 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 **Hecho (en `main`):**
 - Reglas del proyecto, sistema de diseño desde Figma ([DESIGN.md](DESIGN.md)) y pruebas (Vitest + Playwright con servidor falso de la API).
 - Flujo: inicio → `POST /query-info` → "Datos incompletos" → "Datos del vehículo" → nueva cotización con datos manuales. El estado viaja en una cookie cifrada.
-- Hoy el flujo termina con un mensaje provisional ("Tus datos están completos" / "Datos guardados") porque la pantalla de cotización no existe.
 
-**Siguiente tarea: pantalla de cotización** (Figma `240:117`, mobile `565:921`; capturas `docs/figma/cotizacion-*`).
-- Qué incluye: saludo con el nombre del titular, resumen del vehículo con "Editar", tarjeta del plan (precio, "Pago Anual", coberturas, "LO QUIERO"), fecha de inicio y celular, botón "Ir a pagar".
-- Datos: ya están en la sesión (`features/quote/session.ts`): titular, vehículo, planes con `quoteToken` y precio en céntimos.
-- Al terminarla: reemplazar los mensajes provisionales del inicio y de "Datos del vehículo" por la redirección a esta pantalla (buscar `TODO(quote screen)`).
-- Decisiones que la afectan (abajo en esta lista): **filtrar planes AFOCAT**, **fecha de inicio** (cambiarla obliga a recotizar), **invalidar el token al usar "Editar"**, **orden de pasos** (Figma "PASO 3/3").
+**Hecho (en la rama `claude/pendientes-desarrollo-a07c2f`, falta fusionar):**
+- Pantalla de cotización (`/cotizar/cotizacion`): saludo, resumen del vehículo con "Editar", tarjeta del plan sin AFOCAT, fecha de inicio, celular e "Ir a pagar". El inicio (vehículo completo) y "Datos del vehículo" ya redirigen a ella.
+- "Ir a pagar" guarda el plan y el celular en la sesión. Si la fecha cambió, vuelve a cotizar una sola vez; si el precio cambió, lo muestra y pide confirmar de nuevo.
+- Hoy termina con un mensaje provisional ("Listo, guardamos tu elección…") porque "Antes de pagar" no existe (buscar `TODO(before-pay screen)`).
 
-**Después:** "Antes de pagar" (informativa) → checkout (**bloqueado** hasta decidir proveedor con La Positiva) → confirmación. La pantalla "Completa los datos del titular" espera la decisión sobre datos personales y orden de pasos.
+**Siguiente tarea: pantalla "Antes de pagar"** (informativa, spec "PASO 2/2"). Al terminarla, reemplazar el mensaje provisional de la cotización por la redirección.
+
+**Después:** checkout (**bloqueado** hasta decidir proveedor con La Positiva) → confirmación. La pantalla "Completa los datos del titular" espera la decisión sobre datos personales y orden de pasos.
 
 **Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas).
 
@@ -38,7 +38,7 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 
 - [ ] **Proveedor de checkout**: pasarela propia de La Positiva, Culqi de soatparataxi.pe o Culqi nuevo. Bloquea la pantalla de pago.
 - [ ] **IdUso de "Comercial"** para moto lineal.
-- [ ] **Mecanismo de invalidación del token** de cotización al usar "Editar" (en coordinación con la solución del bug de tokens duplicados).
+- [ ] **Mecanismo de invalidación del token** de cotización al usar "Editar" (en coordinación con la solución del bug de tokens duplicados). Hoy "Editar" → "Guardar y continuar" crea una cotización nueva que reemplaza a la anterior en la sesión (y borra el plan elegido); la anterior sigue válida en el backend.
 
 ## Decisiones de producto
 
@@ -50,7 +50,7 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [ ] **Tipo de vehículo inicial.** `/query-info` exige `type_id` y el inicio solo sabe auto/moto + uso. **Provisional:** auto → Automóvil; moto → Motocicleta (particular), Mototaxi (taxi), Motocarga (carga). En "Datos del vehículo" se puede corregir. Auto + Carga y Comercial muestran "no podemos cotizar en línea" hasta tener Camión/Furgón e IdUso Comercial.
 - [ ] **Placa `LN-NNNN` (ej. A1-1234).** Sin guion es ambigua con la placa de auto `A11-234`. ¿Se exige escribir el guion?
 - [ ] **Pasaporte.** El backend lo acepta, la spec solo pide DNI, CE y RUC. Por defecto: no se ofrece.
-- [ ] **Fecha de inicio.** Cambiarla obliga a volver a cotizar (nuevo precio y token). ¿Se mueve antes del precio o se bloquea tras "LO QUIERO" como en soatparataxi.pe?
+- [ ] **Fecha de inicio.** Cambiarla obliga a volver a cotizar (nuevo precio y token). ¿Se mueve antes del precio o se bloquea tras "LO QUIERO" como en soatparataxi.pe? **Provisional:** la fecha queda debajo del precio y es editable. "Ir a pagar" vuelve a cotizar una sola vez si la fecha cambió y, si el precio cambió, lo muestra y pide confirmar. Rango permitido: de hoy (Lima) a 12 meses (`MAX_START_DAYS`), a confirmar con La Positiva.
 - [ ] **Catálogo de vehículos.** Falta Camión/Furgón. ¿Trimoto equivale a "Motocarga" (id 16)?
 - [ ] **Confirmación de compra.** Sin endpoint de estado ni descarga, solo puede decir "te llegará por correo". ¿Es suficiente para la v1?
 - [ ] **Pagos diferidos** (banca móvil, agentes, billeteras). Definir la pantalla de "orden generada, paga antes de…".
@@ -76,14 +76,14 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [x] Pantalla "Datos incompletos" (falta la ilustración del auto con alerta).
 - [ ] Pantalla "Completa los datos del titular" (depende de la decisión sobre datos personales y orden de pasos).
 - [x] Pantalla "Ingresa los datos de tu vehículo": prellenada y editable, marca con autocompletado remoto, modelo y versión del catálogo, serie y VIN por separado. Revisada contra Figma en desktop y mobile. Al guardar vuelve a cotizar con los datos manuales; falta redirigir a la cotización.
-- [ ] Pantalla de cotización: saludo, resumen del vehículo con "Editar", tarjeta de plan, fecha de inicio, celular.
+- [x] Pantalla de cotización: saludo, resumen del vehículo con "Editar", tarjeta de plan, fecha de inicio, celular. Revisada contra Figma en 430, 1100 y 1640 px. Falta redirigir "Ir a pagar" a "Antes de pagar".
 - [ ] Pantalla "Antes de pagar" (informativa).
 - [ ] Checkout (bloqueado por la decisión del proveedor de pago).
 - [ ] Pantalla de confirmación de compra (y de orden generada para pagos diferidos).
 - [x] Services de catálogo (`/data`, `/brands`, `/models`, `/versions`) y cotización (`/query-info`) con Zod y precio en céntimos.
-- [x] Estado del flujo en cookie httpOnly cifrada (sobrevive recargas). Falta sumar `order_id` cuando exista el pago.
+- [x] Estado del flujo en cookie httpOnly cifrada (sobrevive recargas). Guarda la fecha cotizada, los datos manuales del vehículo (para volver a cotizar) y la elección (plan y celular). Falta sumar `order_id` cuando exista el pago.
 - [ ] **Rate limiting** en `/api/vehicles/*`: son públicos y cada llamada consume la API con nuestro token.
-- [ ] **Filtrar planes AFOCAT** en la cotización: el backend los devuelve en los grupos y la spec dice que AFOCAT no es parte de seguroscamila.pe.
+- [x] **Filtrar planes AFOCAT** en la cotización: el mapper de `/query-info` descarta los planes cuyo nombre empieza con "AFOCAT" (el backend no expone la aseguradora). Si no queda ninguno, la pantalla muestra un estado vacío.
 - [x] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.
 - [x] Pruebas: Vitest (reglas de placa, usos y documento) y Playwright (home en desktop y mobile).
 - [x] Servidor falso de la API para las e2e (`e2e/mock-api/server.mjs`).
@@ -97,3 +97,5 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [ ] Selector de uso del home: antes de ingresar la placa queda deshabilitado ("Primero ingresa tu placa"); Figma no define ese estado.
 - [ ] Datos del vehículo, diferencias con Figma a confirmar: campo **Versión** agregado (el backend lo exige), **serie y VIN separados** (el backend exige ambos), la ayuda lateral no se muestra en mobile (como en Figma) y el título usa "tu" en vez de "su".
 - [ ] Ilustración de "Datos incompletos" (auto con alerta) pendiente de exportar.
+- [ ] Cotización, diferencias con Figma a confirmar: "Editar" visible en mobile, ayuda bajo la fecha, estado "Elegido" de "LO QUIERO", etiqueta del celular y estado vacío sin plan (ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones)).
+- [ ] Nombre del producto en la tarjeta: se muestra tal como viene del backend ("SOAT" o "SOAT DIGITAL", según el plan). Figma solo muestra "SOAT".

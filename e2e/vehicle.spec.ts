@@ -64,7 +64,8 @@ test("an incomplete vehicle goes through 'Datos incompletos' to a prefilled form
   await expect(f.submit).toBeEnabled();
   await f.submit.click();
 
-  await expect(page.getByRole("status")).toContainText("Datos guardados");
+  await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
+  await expect(page.getByRole("heading", { name: "HYUNDAI H1 2016" })).toBeVisible();
 });
 
 test("choosing another brand loads its models and clears model and version", async ({ page }) => {

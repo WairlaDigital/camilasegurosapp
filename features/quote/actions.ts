@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { ApiError } from "@/services/errors";
 import { isVehicleComplete, queryInfo } from "@/services/quotes";
+import { todayInLima } from "./lib/dates";
 import { detectCategory } from "./lib/plate";
 import { DEFAULT_UBIGEO_ID, DOCUMENT_TYPES, defaultQuoteRequest } from "./lib/vehicle-rules";
 import { parseStartQuote, type FieldErrors } from "./schema";
@@ -11,8 +12,7 @@ import { writeQuoteSession } from "./session";
 export type StartQuoteState =
   | { status: "idle" }
   | { status: "invalid"; errors: FieldErrors }
-  | { status: "failed"; message: string }
-  | { status: "ready" };
+  | { status: "failed"; message: string };
 
 const UNAVAILABLE = "No pudimos consultar tu placa en este momento. Inténtalo de nuevo en unos minutos.";
 
@@ -34,6 +34,7 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
     };
   }
 
+  const startDate = todayInLima();
   let result;
   try {
     result = await queryInfo({
@@ -41,6 +42,7 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
       documentNumber: input.documentNumber,
       plate: input.plate,
       ubigeoId: DEFAULT_UBIGEO_ID,
+      startDate,
       ...request,
     });
   } catch (error) {
@@ -54,10 +56,7 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
     return { status: "failed", message: UNAVAILABLE };
   }
 
-  await writeQuoteSession({ input, request: { ...request, ubigeoId: DEFAULT_UBIGEO_ID }, result });
+  await writeQuoteSession({ input, request: { ...request, ubigeoId: DEFAULT_UBIGEO_ID, startDate }, result });
 
-  if (!isVehicleComplete(result.vehicle)) redirect("/cotizar/datos-incompletos");
-
-  // TODO(quote screen): redirect to the quote step once it exists.
-  return { status: "ready" };
+  redirect(isVehicleComplete(result.vehicle) ? "/cotizar/cotizacion" : "/cotizar/datos-incompletos");
 }

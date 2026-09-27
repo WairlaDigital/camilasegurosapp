@@ -55,6 +55,8 @@
   --text-nav: 0.8125rem; /* 13px header links */
   --text-nav--line-height: 1;
   --text-nav--letter-spacing: 0.02em;
+  --text-watermark: 9.5rem; /* 152px outlined "SOAT" on the plan card */
+  --text-watermark--line-height: 1;
 
   /* Radius */
   --radius-check: 5px;
@@ -87,6 +89,21 @@
     var(--color-brand-100) 11.667%,
     var(--color-brand-200) 175%
   );
+}
+
+/* Plan card (Figma 240:117): lighter glow at the top center over brand-500. */
+@utility bg-gradient-plan {
+  background-image: radial-gradient(
+    ellipse 90% 45% at 50% 0,
+    var(--color-brand-400) 0,
+    var(--color-brand-500) 100%
+  );
+}
+
+/* Outlined watermark text ("SOAT" on the plan card). */
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--color-brand-200) 25%, transparent);
 }
 
 /* One gradient for the whole page (Figma "gradiente" 197:294: 2812px tall on a 3389px

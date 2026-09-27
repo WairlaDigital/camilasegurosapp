@@ -1,8 +1,10 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { getVehicleTypes } from "@/services/catalog";
 import { ApiError } from "@/services/errors";
 import { queryInfo } from "@/services/quotes";
+import { todayInLima } from "./lib/dates";
 import { DOCUMENT_TYPES } from "./lib/vehicle-rules";
 import { readQuoteSession, writeQuoteSession } from "./session";
 import { parseVehicleForm, type VehicleFieldErrors } from "./vehicle-schema";
@@ -10,12 +12,11 @@ import { parseVehicleForm, type VehicleFieldErrors } from "./vehicle-schema";
 export type SaveVehicleState =
   | { status: "idle" }
   | { status: "invalid"; errors: VehicleFieldErrors }
-  | { status: "failed"; message: string }
-  | { status: "ready" };
+  | { status: "failed"; message: string };
 
 /**
- * Vehicle data form submit: re-quotes with the manual data (POST /query-info)
- * and updates the quote session.
+ * Vehicle data form submit: re-quotes with the manual data (POST /query-info),
+ * updates the quote session and moves to the quote screen.
  */
 export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): Promise<SaveVehicleState> {
   const session = await readQuoteSession();
@@ -35,6 +36,19 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
   if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
   const vehicle = parsed.data;
 
+  const manual = {
+    brandId: vehicle.brandId,
+    modelId: vehicle.modelId,
+    versionId: vehicle.versionId,
+    seats: vehicle.seats,
+    year: vehicle.year,
+    serial: vehicle.serial,
+    vin: vehicle.vin,
+  };
+  // Keep the start date chosen on the quote screen ("Editar") unless it is already past.
+  const today = todayInLima();
+  const startDate = session.request.startDate < today ? today : session.request.startDate;
+
   let result;
   try {
     result = await queryInfo({
@@ -44,15 +58,8 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
       typeId: vehicle.typeId,
       useId: vehicle.useId,
       ubigeoId: session.request.ubigeoId,
-      manual: {
-        brandId: vehicle.brandId,
-        modelId: vehicle.modelId,
-        versionId: vehicle.versionId,
-        seats: vehicle.seats,
-        year: vehicle.year,
-        serial: vehicle.serial,
-        vin: vehicle.vin,
-      },
+      startDate,
+      manual,
     });
   } catch (error) {
     if (error instanceof ApiError && error.code === "VALIDATION" && error.fieldErrors) {
@@ -72,10 +79,11 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
   }
 
   // The response only echoes models/versions that exist in the backend's local
-  // tables, so the session keeps what the user entered.
+  // tables, so the session keeps what the user entered. The new quote replaces
+  // the previous one and its plan choice (there is no endpoint to invalidate it).
   await writeQuoteSession({
-    ...session,
-    request: { ...session.request, typeId: vehicle.typeId, useId: vehicle.useId },
+    input: session.input,
+    request: { ...session.request, typeId: vehicle.typeId, useId: vehicle.useId, startDate, manual },
     result: {
       ...result,
       vehicle: {
@@ -93,6 +101,5 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
     },
   });
 
-  // TODO(quote screen): redirect to the quote step once it exists.
-  return { status: "ready" };
+  redirect("/cotizar/cotizacion");
 }

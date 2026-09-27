@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isVehicleComplete, queryInfoResponseSchema, toQuoteResult } from "./quote.schema";
+import {
+  isAfocatPlan,
+  isVehicleComplete,
+  planDisplayName,
+  queryInfoResponseSchema,
+  toQuoteResult,
+} from "./quote.schema";
 
 const request = { typeId: 1, useId: 5 };
 
@@ -58,6 +64,18 @@ describe("toQuoteResult", () => {
     expect(result.featuredPlanId).toBe(1);
   });
 
+  it("splits the plan name into product and insurer", () => {
+    expect(result.plans[0]).toMatchObject({ product: "SOAT", insurer: "La Positiva" });
+  });
+
+  it("drops AFOCAT plans and a featured id that pointed to one", () => {
+    const afocat = { id: 89, name: "AFOCAT--Lider--Automóvil", price: 60, features: [] };
+    const withAfocat = { ...response, plans: { featured: 89, plans: [...response.plans.plans, afocat] } };
+    const mapped = toQuoteResult(queryInfoResponseSchema.parse(withAfocat), request);
+    expect(mapped.plans.map((plan) => plan.id)).toEqual([1]);
+    expect(mapped.featuredPlanId).toBeNull();
+  });
+
   it("returns a null vehicle when the plate lookup failed (no vehicle key)", () => {
     const { vehicle, ...rest } = response;
     expect(vehicle).toBeDefined();
@@ -66,6 +84,30 @@ describe("toQuoteResult", () => {
 
   it("rejects a response that breaks the contract", () => {
     expect(queryInfoResponseSchema.safeParse({ plans: { plans: [{ id: "x" }] } }).success).toBe(false);
+  });
+});
+
+describe("planDisplayName", () => {
+  it("normalizes the spacing and the La Positiva variants found in the backend", () => {
+    expect(planDisplayName("SOAT DIGITAL-- Positiva -- Automovil -- Particular")).toEqual({
+      product: "SOAT DIGITAL",
+      insurer: "La Positiva",
+    });
+    expect(planDisplayName("SOAT DIGITAL -- La Positiva Seguros--Minivan de 9  a 16 asientos")).toEqual({
+      product: "SOAT DIGITAL",
+      insurer: "La Positiva",
+    });
+  });
+
+  it("keeps a name without separators as the product", () => {
+    expect(planDisplayName("SOAT")).toEqual({ product: "SOAT", insurer: "" });
+  });
+});
+
+describe("isAfocatPlan", () => {
+  it("matches the AFOCAT product only", () => {
+    expect(isAfocatPlan("AFOCAT--Metropolitana--COMBI--Servicio urbano")).toBe(true);
+    expect(isAfocatPlan("SOAT -- Positiva -- Camion < 12 Ton -- Carga")).toBe(false);
   });
 });
 

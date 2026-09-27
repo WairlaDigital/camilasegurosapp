@@ -7,7 +7,10 @@
 //   ABC-123  complete vehicle → quote ready
 //   AEF-710  incomplete vehicle (HYUNDAI H1, no version/serial/VIN) → vehicle form
 //   ZZZ-999  plate lookup fails (no vehicle); the backend then ignores manual data
+//   AFO-123  complete vehicle, but only AFOCAT plans (not sold here) → no plan to show
 //   ERR-500  upstream error (503)
+// Plans: La Positiva at S/ 210 for today (Lima) and S/ 215 for any other start date
+// (to test the re-quote), plus an AFOCAT plan that the front must hide.
 import { createServer } from "node:http";
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 3299);
@@ -53,8 +56,9 @@ function vehicleFor(body) {
   const manual = body.brand_id != null;
   switch (plate(body.plate)) {
     case "ABC123":
+    case "AFO123":
       return {
-        plate: "ABC-123",
+        plate: `${body.plate}`.toUpperCase(),
         year: 2018,
         seats: 5,
         serial: "SERIAL12345",
@@ -85,21 +89,41 @@ function vehicleFor(body) {
   }
 }
 
-const plans = {
-  featured: 1,
-  plans: [
-    {
-      id: 1,
-      name: "SOAT--La Positiva--Automóvil",
-      price: 210,
-      quote_token: "tok-e2e",
-      features: [
-        { name: "Coberturas por ley", status: true },
-        { name: "Cobertura a nivel nacional", status: true },
-      ],
-    },
-  ],
+const todayInLima = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+
+const afocatPlan = {
+  id: 89,
+  name: "AFOCAT--Lider--Automóvil",
+  price: 60,
+  quote_token: null,
+  features: [{ name: "Coberturas por ley", status: true }],
 };
+
+function plansFor(body) {
+  if (plate(body.plate) === "AFO123") return { featured: 89, plans: [afocatPlan] };
+  const startDate = body.start_date ?? todayInLima();
+  const today = startDate === todayInLima();
+  return {
+    featured: 1,
+    plans: [
+      {
+        id: 1,
+        name: "SOAT--La Positiva--Automóvil",
+        price: today ? 210 : 215,
+        quote_token: `tok-e2e-${startDate}`,
+        features: [
+          { name: "Coberturas por ley", status: true },
+          { name: "Cobertura a nivel nacional", status: true },
+          { name: "Servicio de grúa*", status: true },
+          { name: "Servicio de auxilio mecánico", status: true },
+          { name: "100% digital", status: true },
+        ],
+      },
+      afocatPlan,
+    ],
+  };
+}
 
 const REQUIRED = ["document_type", "document_number", "plate", "type_id", "use_id", "ubigeo_id"];
 
@@ -145,7 +169,7 @@ const server = createServer(async (req, res) => {
     const response = {
       document: { names: "MARTÍN JAVIER", last_name: "RODRIGUEZ GONZALES", company_name: null },
       ...(vehicle && { vehicle }),
-      plans,
+      plans: plansFor(body),
     };
     return send(res, 200, response);
   }

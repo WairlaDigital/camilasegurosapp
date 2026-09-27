@@ -61,6 +61,23 @@ function positivaOption(value: Merged): Option<string> | undefined {
 
 const optional = <T>(value: T | null | undefined) => value ?? undefined;
 
+/**
+ * Plan names are "PRODUCT--Insurer--Vehicle type[--Use]", with uneven spacing
+ * ("SOAT DIGITAL-- Positiva -- Automovil"). The card shows product and insurer.
+ */
+export function planDisplayName(name: string): { product: string; insurer: string } {
+  const [product = name, insurer = ""] = name
+    .split("--")
+    .map((part) => part.trim().replace(/\s+/g, " "))
+    .filter(Boolean);
+  return { product, insurer: /positiva/i.test(insurer) ? "La Positiva" : insurer };
+}
+
+/** AFOCAT is not sold on seguroscamila.pe (spec), but the backend returns it in the same groups. */
+export function isAfocatPlan(name: string): boolean {
+  return planDisplayName(name).product.toUpperCase().startsWith("AFOCAT");
+}
+
 export function toQuoteResult(
   data: z.infer<typeof queryInfoResponseSchema>,
   request: { typeId: number; useId: number },
@@ -80,6 +97,18 @@ export function toQuoteResult(
       }
     : null;
 
+  const plans = (data.plans?.plans ?? [])
+    .filter((plan) => !isAfocatPlan(plan.name))
+    .map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      ...planDisplayName(plan.name),
+      priceCents: Math.round(plan.price * 100),
+      quoteToken: plan.quote_token ?? null,
+      features: (plan.features ?? []).map((feature) => ({ name: feature.name, included: feature.status })),
+    }));
+  const featured = data.plans?.featured ?? null;
+
   return {
     vehicle,
     holder: data.document
@@ -89,14 +118,8 @@ export function toQuoteResult(
           companyName: optional(data.document.company_name),
         }
       : null,
-    plans: (data.plans?.plans ?? []).map((plan) => ({
-      id: plan.id,
-      name: plan.name,
-      priceCents: Math.round(plan.price * 100),
-      quoteToken: plan.quote_token ?? null,
-      features: (plan.features ?? []).map((feature) => ({ name: feature.name, included: feature.status })),
-    })),
-    featuredPlanId: data.plans?.featured ?? null,
+    plans,
+    featuredPlanId: plans.some((plan) => plan.id === featured) ? featured : null,
   };
 }
 

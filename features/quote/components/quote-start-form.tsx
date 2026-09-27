@@ -152,13 +152,6 @@ export function QuoteStartForm() {
         <Button type="submit" fullWidth pending={pending} className="mt-6">
           Comprar SOAT virtual
         </Button>
-
-        {/* TODO(quote screen): the complete-vehicle case will redirect to the quote step. */}
-        {state.status === "ready" && (
-          <p role="status" className="rounded-control bg-brand-50 p-4 text-small font-semibold text-brand-900">
-            Tus datos están completos. La cotización se mostrará en el siguiente paso.
-          </p>
-        )}
       </form>
     </Card>
   );

@@ -8,11 +8,13 @@ type StepHeaderProps = {
   /** Where the back arrow goes (previous step). */
   backHref: string;
   title: string;
+  /** Line under the title ("Contrátalo hoy…"). */
+  description?: string;
   plate?: string;
 };
 
-// Figma pattern "Encabezado de paso": step pill with back arrow, title and plate.
-export function StepHeader({ step, total, backHref, title, plate }: StepHeaderProps) {
+// Figma pattern "Encabezado de paso": step pill with back arrow, title and plate or description.
+export function StepHeader({ step, total, backHref, title, description, plate }: StepHeaderProps) {
   return (
     <div className="flex flex-col items-start gap-4 lg:gap-5">
       <Link href={backHref} className={pillVariants({ tone: "step" })} aria-label={`Volver. Paso ${step} de ${total}`}>
@@ -21,6 +23,7 @@ export function StepHeader({ step, total, backHref, title, plate }: StepHeaderPr
       </Link>
       <div className="flex flex-col gap-2">
         <h1 className="text-subtitle font-medium text-ink-strong lg:text-title">{title}</h1>
+        {description && <p className="text-body text-ink-strong lg:text-subtitle">{description}</p>}
         {plate && <p className="text-body text-ink-strong uppercase lg:text-subtitle">Placa: {plate}</p>}
       </div>
     </div>

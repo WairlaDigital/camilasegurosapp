@@ -27,10 +27,16 @@ export type Holder = {
 export type Plan = {
   id: number;
   name: string;
+  /** Display parts of `name` ("SOAT--La Positiva--Automóvil"): product and insurer. */
+  product: string;
+  insurer: string;
   priceCents: number;
   quoteToken: string | null;
   features: { name: string; included: boolean }[];
 };
+
+/** What the plan card needs: the quote token stays on the server. */
+export type PlanSummary = Omit<Plan, "name" | "quoteToken">;
 
 export type QuoteResult = {
   vehicle: VehicleData | null;

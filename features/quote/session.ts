@@ -22,7 +22,24 @@ const sessionSchema = z.object({
     use: z.enum(VEHICLE_USE_KEYS),
     email: z.string(),
   }),
-  request: z.object({ typeId: z.number(), useId: z.number(), ubigeoId: z.string() }),
+  // Everything needed to repeat POST /query-info (e.g. with another start date).
+  request: z.object({
+    typeId: z.number(),
+    useId: z.number(),
+    ubigeoId: z.string(),
+    startDate: z.string(), // YYYY-MM-DD the current prices were quoted for
+    manual: z
+      .object({
+        brandId: z.number(),
+        modelId: z.string(),
+        versionId: z.string(),
+        seats: z.number(),
+        year: z.number(),
+        serial: z.string(),
+        vin: z.string(),
+      })
+      .optional(),
+  }),
   result: z.object({
     vehicle: z
       .object({
@@ -45,6 +62,8 @@ const sessionSchema = z.object({
       z.object({
         id: z.number(),
         name: z.string(),
+        product: z.string(),
+        insurer: z.string(),
         priceCents: z.number(),
         quoteToken: z.string().nullable(),
         features: z.array(z.object({ name: z.string(), included: z.boolean() })),
@@ -52,6 +71,8 @@ const sessionSchema = z.object({
     ),
     featuredPlanId: z.number().nullable(),
   }),
+  /** Set by "Ir a pagar" on the quote screen; the price comes from `result`, never from here. */
+  selection: z.object({ planId: z.number(), phone: z.string() }).optional(),
 });
 
 export type QuoteSession = z.infer<typeof sessionSchema>;
