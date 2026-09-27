@@ -88,6 +88,7 @@ Toda pieza visual reutilizable vive en `components/ui/`. **Antes de crear algo, 
 |---|---|---|
 | `Button` · `buttonVariants` | `primary` para la acción principal (una por pantalla); `secondary` sobre fondos `brand-500`. `pending` mientras se envía (bloquea doble clic). Para links usar `buttonVariants` sobre `<Link>` | "COMPRAR SOAT VIRTUAL", "GUARDAR Y CONTINUAR", "IR A PAGAR", "LO QUIERO" |
 | `Input`, `Select` | `stacked` (label arriba) en el formulario del home y datos sueltos; `inset` (label dentro) en formularios de pasos. `disabled` para datos prellenados que no se editan | Home; titular; vehículo; fecha |
+| `Combobox` | Búsqueda remota en catálogos grandes (marcas: 2.684). Patrón WAI-ARIA: flechas, Enter, Escape; el valor solo cambia al elegir una opción | Marca (datos del vehículo) |
 | `Checkbox` | Consentimientos | Home |
 | `Radio` | Opciones excluyentes cortas, dentro de `<fieldset>` con `<legend>` | "¿Comprobante de pago…?" |
 | `Pill` | `brand`: eyebrow de sección · `light`: breadcrumb sobre imagen · `step`: indicador de paso | "Coberturas", "SEGUROS \ SOAT", "PASO 1/3" |
@@ -105,7 +106,9 @@ Nunca usar `<input>`, `<select>` o `<button>` sueltos con estilos propios en pan
 
 - **Encabezado de paso** (titular, vehículo, cotización): `Pill tone="step"` con flecha de volver ("PASO n/3") → título `text-title` → dato de contexto `text-subtitle` ("PLACA: AEF-710").
 - **Formulario de paso:** grilla de campos `inset` (3 columnas en titular, 2 en vehículo; 1 en mobile), separación 32px horizontal y 20px vertical. Campos anchos (domicilio, VIN) ocupan 2 columnas. El CTA primario va debajo, alineado al borde derecho del formulario en desktop y a ancho completo en mobile.
-- **Ayuda lateral:** en desktop, texto a la derecha del formulario ("Información adicional de tu vehículo"); en mobile, debajo del título.
+- **Ayuda lateral:** en desktop, texto a la derecha del formulario alineado con la primera fila de campos ("Información adicional de tu vehículo"); en mobile no se muestra (como en Figma).
+- **Listas dependientes** (tipo → modelos, marca → modelos → versiones): al cambiar el padre se vacían los hijos; mientras cargan dicen "Cargando…" y quedan deshabilitadas; si fallan, "No pudimos cargar la lista".
+- **Botón de formulario de paso:** deshabilitado hasta que todos los campos obligatorios tengan valor (spec); los errores de formato se muestran al salir del campo o al enviar.
 - **Sección de contenido:** `Pill` (eyebrow) → título con palabra clave en bold → contenido.
 - **Hero:** panel `rounded-panel` con foto y velo violeta, breadcrumb `Pill tone="light"`, título `display`, beneficios con ícono, y el panel del formulario blanco superpuesto a la derecha (debajo en mobile). Desktop: grilla de 12 columnas sobre 1120px; formulario en 5 columnas (448px). Mobile: texto del hero con margen de 40px, formulario y coberturas de borde a borde con 20px.
 - **Footer:** desktop con 4 columnas; mobile solo logo centrado, datos de la empresa, teléfono y copyright (Figma "Group 86").
@@ -147,6 +150,8 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 - Se agregó `danger` para errores; Figma no define estados de error ni de foco.
 - Etiquetas de campos inset unificadas en `brand-500`; en Figma el campo de fecha las tiene en `info` (azul).
 - FAQ: el chevron no rota al abrir, igual que en Figma.
+- Datos del vehículo: se agregó **Versión** y se separaron **Nro. de serie** y **VIN** (el backend exige los tres); título con "tu" (tuteo) en vez de "su".
+- Un campo con `disabled` se pinta gris solo si el control está deshabilitado: `has-disabled` también detectaría la `<option>` placeholder deshabilitada de un select.
 - Tarjetas de categoría (auto/moto): la spec las fija según la placa, pero en Figma parecen seleccionables. Se agregó la ayuda "Se marca sola al ingresar tu placa." bajo las tarjetas (no está en Figma), el clic en una tarjeta lleva el foco al campo de placa y un aviso oculto anuncia la categoría detectada a lectores de pantalla.
 - Erratas corregidas en textos: "Contácnenos" → "Contáctanos", "Seguro Vehícular" → "Vehicular", "Compralo" → "Cómpralo", "vene" → "vence".
 - El año del copyright se calcula.

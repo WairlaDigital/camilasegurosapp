@@ -9,6 +9,18 @@ Backend Laravel que expone vehículos, cotización de planes SOAT (incluida La P
 
 Todo acceso pasa por `apiRequest()` en `services/http.ts`.
 
+## Cómo lo usa este front
+
+| Endpoint | Dónde | Notas |
+|---|---|---|
+| `GET /data` | `services/catalog.ts` → `getVehicleTypes()` | Caché 24 h. Se descartan los tipos sin usos. |
+| `GET /brands?search=` | `/api/vehicles/brands` → `searchBrands()` | 2.684 marcas: siempre búsqueda remota. Ids **locales**. |
+| `GET /models/{brand}/type/{type}` | `/api/vehicles/models` → `getModels()` | Ids de **La Positiva**, llegan como texto. |
+| `GET /versions/{model}` | `/api/vehicles/versions` → `getVersions()` | Ids de **La Positiva**, llegan como número. |
+| `POST /query-info` | `services/quotes.ts` → `queryInfo()` | Inicio (sin datos manuales) y datos del vehículo (con `brand_id` local, `model_id`/`version_id` de La Positiva, `seats`, `year`, `serial`, `vin`: todos o ninguno). **Cada llamada crea una cotización nueva**: una por paso. |
+
+En las pruebas e2e todo esto lo responde el servidor falso `e2e/mock-api/server.mjs`.
+
 ## Endpoints protegidos (requieren token)
 
 ### `GET /brands`

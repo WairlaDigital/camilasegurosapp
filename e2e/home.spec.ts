@@ -104,7 +104,8 @@ test("validates the document on blur and submits a valid form keeping the values
   await f.consent.check();
   await f.submit.click();
 
-  await expect(page.getByRole("status")).toContainText("Datos validados");
+  // ABC-123 is a complete vehicle in the fake API.
+  await expect(page.getByRole("status")).toContainText("Tus datos están completos");
   await expect(f.plate).toHaveValue("ABC-123");
   await expect(f.documentNumber).toHaveValue("20123456789");
   await expect(f.email).toHaveValue("cliente@correo.pe");

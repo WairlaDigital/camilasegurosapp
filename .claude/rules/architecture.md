@@ -18,7 +18,7 @@ UI (app, features, components)  →  services  →  API externa
 ```
 app/                     # Solo routing: layouts, páginas, metadata, loading/error
   planes/[planId]/page.tsx
-  api/                   # Route Handlers solo si algo externo necesita un endpoint (webhooks)
+  api/                   # Route Handlers: webhooks o catálogos que el navegador consulta (la API y su token no salen del servidor)
 components/
   ui/                    # Primitivas del design system (Button, Card, Input…). Sin datos ni negocio
   layout/                # Header, Footer, Container…
@@ -57,7 +57,8 @@ ESLint aplica estas reglas (`no-restricted-imports` en `eslint.config.mjs`). No 
 - **Páginas delgadas.** Un `page.tsx` llama a un service y compone componentes de `features/`. Nada de `fetch` ni transformaciones de datos en `app/` o en componentes.
 - **Un solo cliente HTTP** (`services/http.ts`). Todo archivo de `services/` empieza con `import 'server-only'`: la API y sus credenciales nunca llegan al navegador.
 - **Validar y mapear en el borde.** Cada respuesta se parsea con Zod en `services/schemas/` y se convierte a un tipo de `types/`. Los componentes nunca reciben la respuesta cruda de la API. Si el contrato cambia, falla ahí con un error claro.
-- **Errores**: `http.ts` lanza un `ApiError` con `status` y `code`. La UI decide qué mostrar; nunca muestra mensajes crudos del backend.
+- **Errores**: los services lanzan `ApiError` (`services/errors.ts`) con `status`, `code` y `fieldErrors`. La UI decide qué mostrar; nunca muestra mensajes crudos del backend.
+- **Estado del flujo de compra**: cookie httpOnly cifrada (AES-256-GCM) en `features/quote/session.ts`, validada con Zod al leerla. Guarda lo mínimo para no repetir `POST /query-info` (cada llamada crea una cotización nueva en el backend). Nada de `localStorage` para datos personales.
 - **Server Actions delgadas**: validan el input con Zod, llaman al service y devuelven un resultado serializable `{ ok: true, data } | { ok: false, error }`.
 - No crear abstracciones "por si acaso". Una función en `services/` es suficiente hasta que haya una necesidad real.
 

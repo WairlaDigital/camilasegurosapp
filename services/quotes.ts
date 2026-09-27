@@ -1,0 +1,56 @@
+import "server-only";
+import type { QuoteResult } from "@/types/quote";
+import { apiRequest } from "./http";
+import { queryInfoResponseSchema, toQuoteResult } from "./schemas/quote.schema";
+
+export { isVehicleComplete } from "./schemas/quote.schema";
+
+export type QueryInfoInput = {
+  documentType: number; // API document type id
+  documentNumber: string;
+  plate: string;
+  typeId: number;
+  useId: number;
+  ubigeoId: string;
+  startDate?: string; // YYYY-MM-DD
+  /** Manual vehicle data: the backend requires all of it or none. */
+  manual?: {
+    brandId: number;
+    modelId: string;
+    versionId: string;
+    seats: number;
+    year: number;
+    serial: string;
+    vin: string;
+  };
+};
+
+/**
+ * Looks up the plate and the holder's document and quotes the plans (POST /query-info).
+ * Every call creates a new quote in the backend: call it once per step, not on every render.
+ */
+export async function queryInfo(input: QueryInfoInput): Promise<QuoteResult> {
+  const data = await apiRequest("/query-info", queryInfoResponseSchema, {
+    method: "POST",
+    timeoutMs: 30_000, // plate, RENIEC/SUNAT and La Positiva lookups
+    body: {
+      document_type: input.documentType,
+      document_number: input.documentNumber,
+      plate: input.plate,
+      type_id: input.typeId,
+      use_id: input.useId,
+      ubigeo_id: input.ubigeoId,
+      start_date: input.startDate,
+      ...(input.manual && {
+        brand_id: input.manual.brandId,
+        model_id: Number(input.manual.modelId),
+        version_id: Number(input.manual.versionId),
+        seats: input.manual.seats,
+        year: input.manual.year,
+        serial: input.manual.serial,
+        vin: input.manual.vin,
+      }),
+    },
+  });
+  return toQuoteResult(data, { typeId: input.typeId, useId: input.useId });
+}

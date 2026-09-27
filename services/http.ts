@@ -1,36 +1,17 @@
 import "server-only";
 import { z } from "zod";
 import { env } from "@/lib/env";
+import { ApiError, type ApiErrorCode } from "./errors";
 
-export type ApiErrorCode =
-  | "UNAUTHORIZED"
-  | "NOT_FOUND"
-  | "VALIDATION"
-  | "UNAVAILABLE"
-  | "INVALID_RESPONSE"
-  | "NETWORK";
-
-/**
- * Error returned by every service. `message` is for logs only: the UI maps
- * `code` (and `fieldErrors` for forms) to its own copy.
- */
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly code: ApiErrorCode,
-    readonly status?: number,
-    readonly fieldErrors?: Record<string, string[]>,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
+export { ApiError };
 
 type RequestOptions = {
   method?: "GET" | "POST";
   body?: unknown;
   searchParams?: Record<string, string | number | undefined>;
   timeoutMs?: number;
+  /** Seconds to cache a GET response (catalogs). Omit for uncached calls. */
+  revalidate?: number;
 };
 
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -62,7 +43,7 @@ function codeFromStatus(status: number): ApiErrorCode {
 export async function apiRequest<T>(
   path: string,
   schema: z.ZodType<T>,
-  { method = "GET", body, searchParams, timeoutMs = DEFAULT_TIMEOUT_MS }: RequestOptions = {},
+  { method = "GET", body, searchParams, timeoutMs = DEFAULT_TIMEOUT_MS, revalidate }: RequestOptions = {},
 ): Promise<T> {
   let response: Response;
   try {
@@ -75,6 +56,7 @@ export async function apiRequest<T>(
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(timeoutMs),
+      ...(revalidate !== undefined ? { next: { revalidate } } : { cache: "no-store" as const }),
     });
   } catch (cause) {
     throw new ApiError(`${method} ${path} failed: ${String(cause)}`, "NETWORK");

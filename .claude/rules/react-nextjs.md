@@ -15,7 +15,7 @@
 - Peticiones independientes en paralelo con `Promise.all`; evitar cascadas de `await`.
 - Streaming con `<Suspense>` y `loading.tsx` para que el shell se pinte de inmediato.
 - Mutaciones (cotizar, comprar) con **Server Actions** + `useActionState` / `useFormStatus` para estados pendientes. Revalidar con `revalidateTag` / `updateTag` / `refresh` según corresponda.
-- Route Handlers (`app/api/**/route.ts`) solo cuando algo externo necesita un endpoint HTTP (webhooks de pago, callbacks).
+- Route Handlers (`app/api/**/route.ts`) cuando algo externo necesita un endpoint HTTP (webhooks) o cuando un componente cliente consulta un catálogo (ej. `/api/vehicles/*`): validan los parámetros con Zod, llaman a `services/` y nunca devuelven detalles del backend.
 
 ## Caché
 
@@ -75,5 +75,5 @@
 | CI (cuando haya remoto) | `npm test` + `npm run test:e2e` | En cada push y en cada PR; el PR no se fusiona en rojo. |
 
 Si una prueba falla, se corrige el código o se actualiza la prueba con una razón explícita; nunca se salta ni se borra para que pase.
-- La API no se llama desde el navegador, así que Playwright no puede simularla: cuando el flujo use la API, las e2e apuntarán a un servidor falso (ver PENDIENTES.md).
+- La API se llama desde el servidor de Next, así que Playwright no puede interceptarla: las e2e usan el **servidor falso** `e2e/mock-api/server.mjs` (lo levanta `playwright.config.ts`). Sus placas de ejemplo definen cada caso (ABC-123 completa, AEF-710 incompleta, ZZZ-999 sin datos, ERR-500 error). Al agregar un endpoint o un caso, se agrega también al servidor falso. Nunca usar la API real en pruebas: consulta datos de personas reales y crea cotizaciones.
 - No se comparan capturas contra las exportaciones de Figma (no coinciden píxel a píxel).

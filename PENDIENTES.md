@@ -5,7 +5,8 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 ## Insumos por recibir
 
-- [ ] **Token de la API** (Sanctum). Colocarlo en `.env.local` → `LAPOSITIVA_API_TOKEN`. No compartirlo por chat.
+- [x] **Token de la API** (Sanctum) en `.env.local`. Probado con los catálogos (2026-09-27).
+- [ ] **`SESSION_SECRET`** en el `.env.local` de cada entorno (ver `.env.example`); sin él la app no arranca.
 - [x] **Figma**. Recibido 2026-09-26. Lineamientos en [DESIGN.md](DESIGN.md); capturas en [docs/figma/](docs/figma).
 - [x] **Recursos del home** exportados de Figma (2026-09-27): foto del hero, ícono de categoría auto, 4 íconos de beneficios y 5 de coberturas. Integrados y revisados contra Figma.
 - [ ] **Recursos que aún faltan:** ícono de menú mobile ([559:71](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=559-71), hoy es un ícono CSS provisional) y manchas decorativas del fondo ([197:296](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-296), [197:297](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-297)).
@@ -26,7 +27,8 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 - [ ] **Orden de pasos.** Figma usa "PASO x/3" (titular → vehículo → cotización); la spec usa "PASO 1" en vehículo y "PASO 2/2" en "Antes de pagar".
 - [ ] **Entrega por WhatsApp.** El hero y la FAQ de Figma dicen que el SOAT llega por WhatsApp; el backend solo envía correo.
 - [ ] **"Desde S/33 al año"** en el hero: confirmar el precio mínimo real.
-- [ ] **Zona de circulación (`ubigeo_id`).** El backend la exige; la spec no tiene el campo. ¿Se pregunta (Lima/Callao) o se asume?
+- [ ] **Zona de circulación (`ubigeo_id`).** El backend la exige; la spec no tiene el campo. **Hoy se envía Lima (150101) de forma provisional** (`DEFAULT_UBIGEO_ID`). ¿Se pregunta (Lima/Callao) o se asume?
+- [ ] **Tipo de vehículo inicial.** `/query-info` exige `type_id` y el inicio solo sabe auto/moto + uso. **Provisional:** auto → Automóvil; moto → Motocicleta (particular), Mototaxi (taxi), Motocarga (carga). En "Datos del vehículo" se puede corregir. Auto + Carga y Comercial muestran "no podemos cotizar en línea" hasta tener Camión/Furgón e IdUso Comercial.
 - [ ] **Placa `LN-NNNN` (ej. A1-1234).** Sin guion es ambigua con la placa de auto `A11-234`. ¿Se exige escribir el guion?
 - [ ] **Pasaporte.** El backend lo acepta, la spec solo pide DNI, CE y RUC. Por defecto: no se ofrece.
 - [ ] **Fecha de inicio.** Cambiarla obliga a volver a cotizar (nuevo precio y token). ¿Se mueve antes del precio o se bloquea tras "LO QUIERO" como en soatparataxi.pe?
@@ -51,20 +53,21 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 - [x] Design system desde Figma: tokens en `app/globals.css`, primitivas en `components/ui/`, header y footer en `components/layout/`.
 - [x] Pantalla de inicio: hero, formulario con detección de categoría por placa, filtro de usos por categoría, validación de documento (cliente y servidor); coberturas y FAQ. Verificada contra Figma en 430, 1100 y 1640 px.
-- [ ] Conectar el envío del formulario de inicio: hoy solo valida (`features/quote/actions.ts`). Falta consultar la placa/cotizar, guardar el estado y pasar al siguiente paso (depende del orden de pasos y del token).
-- [ ] Pantalla "Datos incompletos" (transición hacia el formulario del vehículo).
+- [x] Envío del formulario de inicio conectado a `POST /query-info`; resultado en sesión cifrada; vehículo incompleto → "Datos incompletos". Si el vehículo está completo, falta redirigir a la cotización (pantalla pendiente).
+- [x] Pantalla "Datos incompletos" (falta la ilustración del auto con alerta).
 - [ ] Pantalla "Completa los datos del titular" (depende de la decisión sobre datos personales y orden de pasos).
-- [ ] Pantalla "Ingresa los datos de su vehículo": campos prellenados y editables, marca/modelo/versión remotos.
+- [x] Pantalla "Ingresa los datos de tu vehículo": prellenada y editable, marca con autocompletado remoto, modelo y versión del catálogo, serie y VIN por separado. Revisada contra Figma en desktop y mobile. Al guardar vuelve a cotizar con los datos manuales; falta redirigir a la cotización.
 - [ ] Pantalla de cotización: saludo, resumen del vehículo con "Editar", tarjeta de plan, fecha de inicio, celular.
 - [ ] Pantalla "Antes de pagar" (informativa).
 - [ ] Checkout (bloqueado por la decisión del proveedor de pago).
 - [ ] Pantalla de confirmación de compra (y de orden generada para pagos diferidos).
-- [ ] Service del catálogo (`GET /data`) con esquema Zod.
-- [ ] Service de cotización (`POST /query-info`) con esquema Zod y mapeo de precio a céntimos.
-- [ ] Persistir `quote_token` y `order_id` en servidor (cookie httpOnly firmada) para sobrevivir a recargas.
+- [x] Services de catálogo (`/data`, `/brands`, `/models`, `/versions`) y cotización (`/query-info`) con Zod y precio en céntimos.
+- [x] Estado del flujo en cookie httpOnly cifrada (sobrevive recargas). Falta sumar `order_id` cuando exista el pago.
+- [ ] **Rate limiting** en `/api/vehicles/*`: son públicos y cada llamada consume la API con nuestro token.
+- [ ] **Filtrar planes AFOCAT** en la cotización: el backend los devuelve en los grupos y la spec dice que AFOCAT no es parte de seguroscamila.pe.
 - [x] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.
 - [x] Pruebas: Vitest (reglas de placa, usos y documento) y Playwright (home en desktop y mobile).
-- [ ] Servidor falso de la API para las e2e cuando el flujo consulte placa/cotización (las llamadas salen del servidor de Next, Playwright no puede interceptarlas).
+- [x] Servidor falso de la API para las e2e (`e2e/mock-api/server.mjs`).
 - [ ] Correr `npm test` y `npm run test:e2e` en CI cuando haya remoto.
 
 ### Diseño
@@ -73,3 +76,5 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 - [ ] Confirmar si la etiqueta azul (`info`) del campo de fecha es intencional; hoy se unificó en `brand-500` (ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones)).
 - [ ] Footer mobile: Figma oculta el mapa de sitio, seguros y redes sociales (incluido "Términos y Condiciones"). Confirmar que es intencional.
 - [ ] Selector de uso del home: antes de ingresar la placa queda deshabilitado ("Primero ingresa tu placa"); Figma no define ese estado.
+- [ ] Datos del vehículo, diferencias con Figma a confirmar: campo **Versión** agregado (el backend lo exige), **serie y VIN separados** (el backend exige ambos), la ayuda lateral no se muestra en mobile (como en Figma) y el título usa "tu" en vez de "su".
+- [ ] Ilustración de "Datos incompletos" (auto con alerta) pendiente de exportar.

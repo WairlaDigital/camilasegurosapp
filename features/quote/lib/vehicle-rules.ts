@@ -46,3 +46,24 @@ const DOCUMENT_RULES: Record<DocumentType, { pattern: RegExp; message: string; n
 export function documentRule(type: DocumentType) {
   return DOCUMENT_RULES[type];
 }
+
+// ── /query-info defaults ────────────────────────────────────────────────────
+// The home form only knows the category (from the plate) and the use, but
+// /query-info needs a vehicle type id and a circulation zone. Until the flow
+// asks for them, these PROVISIONAL defaults are used (see PENDIENTES.md); the
+// vehicle data screen lets the user pick the exact type from the catalog.
+
+/** Default vehicle type id (GET /data) per category and use. Missing ⇒ not quotable online yet. */
+const DEFAULT_TYPE_ID: Record<VehicleCategory, Partial<Record<VehicleUse, number>>> = {
+  auto: { particular: 1, taxi: 1 }, // Automóvil. No "Camión/Furgón" type in the catalog for carga.
+  moto: { particular: 10, taxi: 2, carga: 16 }, // Motocicleta, Mototaxi, Motocarga. "Comercial" has no use id.
+};
+
+/** Lima. PROVISIONAL until the zone question is decided. */
+export const DEFAULT_UBIGEO_ID = "150101";
+
+export function defaultQuoteRequest(category: VehicleCategory, use: VehicleUse): { typeId: number; useId: number } | null {
+  const typeId = DEFAULT_TYPE_ID[category][use];
+  const useId = VEHICLE_USES[use].apiId;
+  return typeId !== undefined && useId !== null ? { typeId, useId } : null;
+}

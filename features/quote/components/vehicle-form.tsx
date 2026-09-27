@@ -1,0 +1,292 @@
+"use client";
+
+import { startTransition, useActionState, useRef, useState, type FormEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import type { Option, VehicleData, VehicleTypeOption } from "@/types/quote";
+import { saveVehicle, type SaveVehicleState } from "../vehicle-actions";
+import { parseVehicleForm, type VehicleField, type VehicleFieldErrors } from "../vehicle-schema";
+
+type VehicleFormProps = {
+  types: VehicleTypeOption[];
+  initial: VehicleData;
+  initialModels: Option<string>[];
+  initialVersions: Option<string>[];
+};
+
+type ListStatus = "idle" | "loading" | "error";
+
+async function fetchOptions(url: string): Promise<Option<string>[]> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${url} → ${response.status}`);
+  const body: { data: { id: string | number; name: string }[] } = await response.json();
+  return body.data.map(({ id, name }) => ({ id: String(id), name }));
+}
+
+const searchBrands = async (query: string): Promise<ComboboxOption[]> =>
+  fetchOptions(`/api/vehicles/brands?search=${encodeURIComponent(query)}`);
+
+const FIELDS: VehicleField[] = ["useId", "typeId", "brandId", "modelId", "versionId", "seats", "year", "serial", "vin"];
+
+/** Figma "Ingresa los datos de su vehículo" (267:24). Prefilled and editable (spec section 6). */
+export function VehicleForm({ types, initial, initialModels, initialVersions }: VehicleFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [state, formAction, pending] = useActionState<SaveVehicleState, FormData>(saveVehicle, { status: "idle" });
+
+  const [typeId, setTypeId] = useState(initial.typeId ? String(initial.typeId) : "");
+  const [useId, setUseId] = useState(initial.useId ? String(initial.useId) : "");
+  const [brand, setBrand] = useState<ComboboxOption | null>(initial.brand ?? null);
+  const [models, setModels] = useState(initialModels);
+  const [modelsStatus, setModelsStatus] = useState<ListStatus>("idle");
+  const [modelId, setModelId] = useState(initial.model?.id ?? "");
+  const [versions, setVersions] = useState(initialVersions);
+  const [versionsStatus, setVersionsStatus] = useState<ListStatus>("idle");
+  const [versionId, setVersionId] = useState(initial.version?.id ?? "");
+  const [seats, setSeats] = useState(initial.seats ? String(initial.seats) : "");
+  const [year, setYear] = useState(initial.year ? String(initial.year) : "");
+  const [serial, setSerial] = useState(initial.serial ?? "");
+  const [vin, setVin] = useState(initial.vin ?? "");
+  const [clientErrors, setClientErrors] = useState<Partial<Record<VehicleField, string | null>>>({});
+
+  const type = types.find((option) => String(option.id) === typeId);
+  const uses = type?.uses ?? [];
+  // Derived: a use that the chosen type does not allow is dropped.
+  const selectedUse = uses.some((use) => String(use.id) === useId) ? useId : "";
+  const modelName = models.find((model) => model.id === modelId)?.name ?? "";
+  const versionName = versions.find((version) => version.id === versionId)?.name ?? "";
+  // Spec: "Continuar" is enabled only when every required field has a value.
+  const filled = [typeId, selectedUse, brand, modelId, versionId, seats, year, serial, vin].every((value) =>
+    typeof value === "string" ? value.trim() !== "" : value !== null,
+  );
+
+  const serverErrors: VehicleFieldErrors = state.status === "invalid" ? state.errors : {};
+  const errorFor = (field: VehicleField) => {
+    const clientError = clientErrors[field];
+    return clientError === null ? undefined : (clientError ?? serverErrors[field]);
+  };
+
+  // Models depend on brand + type; versions on the model. Loaded from event handlers.
+  async function loadModels(nextBrand: ComboboxOption | null, nextTypeId: string) {
+    setModelId("");
+    setVersionId("");
+    setModels([]);
+    setVersions([]);
+    if (!nextBrand || !nextTypeId) return;
+    setModelsStatus("loading");
+    try {
+      setModels(await fetchOptions(`/api/vehicles/models?brandId=${nextBrand.id}&typeId=${nextTypeId}`));
+      setModelsStatus("idle");
+    } catch {
+      setModelsStatus("error");
+    }
+  }
+
+  async function loadVersions(nextModelId: string) {
+    setVersionId("");
+    setVersions([]);
+    if (!nextModelId) return;
+    setVersionsStatus("loading");
+    try {
+      setVersions(await fetchOptions(`/api/vehicles/versions?modelId=${nextModelId}`));
+      setVersionsStatus("idle");
+    } catch {
+      setVersionsStatus("error");
+    }
+  }
+
+  function validate(): VehicleFieldErrors {
+    if (!formRef.current) return {};
+    const result = parseVehicleForm(Object.fromEntries(new FormData(formRef.current)), types);
+    return result.ok ? {} : result.errors;
+  }
+
+  function handleBlur(field: VehicleField) {
+    const errors = validate();
+    setClientErrors((prev) => ({ ...prev, [field]: errors[field] ?? null }));
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const errors = validate();
+    setClientErrors(Object.fromEntries(FIELDS.map((field) => [field, errors[field] ?? null])));
+    if (Object.keys(errors).length > 0) {
+      requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      return;
+    }
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  }
+
+  const listPlaceholder = (status: ListStatus, empty: string, ready: string) =>
+    status === "loading" ? "Cargando…" : status === "error" ? "No pudimos cargar la lista" : empty || ready;
+
+  return (
+    <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-10">
+      <input type="hidden" name="brandName" value={brand?.name ?? ""} />
+      <input type="hidden" name="modelName" value={modelName} />
+      <input type="hidden" name="versionName" value={versionName} />
+
+      <div className="grid gap-5 md:grid-cols-2 md:gap-x-8">
+        <Select
+          name="useId"
+          label="Tipo de uso"
+          variant="inset"
+          placeholder={type ? "Selecciona el uso" : "Primero elige el tipo de vehículo"}
+          disabled={!type}
+          value={selectedUse}
+          onChange={(event) => setUseId(event.target.value)}
+          onBlur={() => handleBlur("useId")}
+          error={errorFor("useId")}
+        >
+          {uses.map((use) => (
+            <option key={use.id} value={use.id}>
+              {use.name.toUpperCase()}
+            </option>
+          ))}
+        </Select>
+
+        <Select
+          name="typeId"
+          label="Tipo de vehículo"
+          variant="inset"
+          placeholder="Selecciona el tipo"
+          value={typeId}
+          onChange={(event) => {
+            setTypeId(event.target.value);
+            void loadModels(brand, event.target.value);
+          }}
+          onBlur={() => handleBlur("typeId")}
+          error={errorFor("typeId")}
+        >
+          {types.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name.toUpperCase()}
+            </option>
+          ))}
+        </Select>
+
+        <Combobox
+          name="brandId"
+          label="Marca"
+          variant="inset"
+          placeholder="Escribe la marca"
+          value={brand}
+          onChange={(option) => {
+            setBrand(option);
+            void loadModels(option, typeId);
+          }}
+          loadOptions={searchBrands}
+          error={errorFor("brandId")}
+        />
+
+        <Select
+          name="modelId"
+          label="Modelo"
+          variant="inset"
+          placeholder={listPlaceholder(modelsStatus, brand ? "" : "Primero elige la marca", "Selecciona el modelo")}
+          disabled={models.length === 0}
+          value={modelId}
+          onChange={(event) => {
+            setModelId(event.target.value);
+            void loadVersions(event.target.value);
+          }}
+          onBlur={() => handleBlur("modelId")}
+          error={errorFor("modelId")}
+        >
+          {models.map((model) => (
+            <option key={model.id} value={model.id}>
+              {model.name}
+            </option>
+          ))}
+        </Select>
+
+        <Select
+          name="versionId"
+          label="Versión"
+          variant="inset"
+          placeholder={listPlaceholder(versionsStatus, modelId ? "" : "Primero elige el modelo", "Selecciona la versión")}
+          disabled={versions.length === 0}
+          value={versionId}
+          onChange={(event) => setVersionId(event.target.value)}
+          onBlur={() => handleBlur("versionId")}
+          error={errorFor("versionId")}
+        >
+          {versions.map((version) => (
+            <option key={version.id} value={version.id}>
+              {version.name}
+            </option>
+          ))}
+        </Select>
+
+        <Input
+          name="seats"
+          label="Nro. de asientos"
+          variant="inset"
+          inputMode="numeric"
+          maxLength={2}
+          value={seats}
+          onChange={(event) => setSeats(event.target.value)}
+          onBlur={() => handleBlur("seats")}
+          error={errorFor("seats")}
+        />
+
+        <Input
+          name="year"
+          label="Año de fabricación"
+          variant="inset"
+          inputMode="numeric"
+          maxLength={4}
+          value={year}
+          onChange={(event) => setYear(event.target.value)}
+          onBlur={() => handleBlur("year")}
+          error={errorFor("year")}
+        />
+
+        <Input
+          name="serial"
+          label="Nro. de serie"
+          variant="inset"
+          autoCapitalize="characters"
+          maxLength={20}
+          value={serial}
+          onChange={(event) => setSerial(event.target.value.toUpperCase())}
+          onBlur={() => handleBlur("serial")}
+          error={errorFor("serial")}
+        />
+
+        <Input
+          name="vin"
+          label="VIN"
+          variant="inset"
+          autoCapitalize="characters"
+          maxLength={20}
+          value={vin}
+          onChange={(event) => setVin(event.target.value.toUpperCase())}
+          onBlur={() => handleBlur("vin")}
+          error={errorFor("vin")}
+          className="md:col-span-2"
+        />
+      </div>
+
+      {state.status === "failed" && (
+        <p role="alert" className="rounded-control border border-danger p-4 text-small font-semibold text-danger">
+          {state.message}
+        </p>
+      )}
+      {/* TODO(quote screen): redirect to the quote step instead of this message. */}
+      {state.status === "ready" && (
+        <p role="status" className="rounded-control bg-brand-50 p-4 text-small font-semibold text-brand-900">
+          Datos guardados. La cotización se mostrará en el siguiente paso.
+        </p>
+      )}
+
+      <div className="md:grid md:grid-cols-2 md:gap-x-8">
+        <Button type="submit" fullWidth pending={pending} disabled={!filled && !pending} className="md:col-start-2">
+          Guardar y continuar
+        </Button>
+      </div>
+    </form>
+  );
+}
