@@ -20,7 +20,7 @@ Lineamientos de diseño del cotizador SOAT de seguroscamila.pe. Aplican a cualqu
 
 - **Claridad antes que decoración.** Una acción principal por pantalla. Primero precio y cobertura; la letra chica después (acordeón o "Ver detalle").
 - **Lenguaje simple**, español de Perú, tuteo. Evitar jerga ("prima", "deducible") o explicarla en contexto.
-- **Confianza.** Precios siempre con moneda y periodicidad ("S/ 210.00 · Pago anual"), sin costos ocultos, resumen antes de pagar.
+- **Confianza.** Precios siempre con moneda y periodicidad ("S/ 210.00 · Pago anual"), sin costos ocultos, resumen antes de pagar. La moneda nunca se separa del monto al hacer salto de línea: espacio no separable entre "S/" y el número (`S/\u00a022,000`).
 - **Mobile-first.** Diseñar a 360–430 px primero; nunca scroll horizontal; áreas táctiles de 44×44 px mínimo.
 - **Fidelidad a Figma.** Ante una duda visual, manda la captura de `docs/figma/`. Las desviaciones se anotan en la sección 7.
 
@@ -150,12 +150,15 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 - Erratas corregidas en textos: "Contácnenos" → "Contáctanos", "Seguro Vehícular" → "Vehicular", "Compralo" → "Cómpralo", "vene" → "vence".
 - El año del copyright se calcula.
 - Menú mobile con ícono CSS provisional: el ícono de Figma no se pudo exportar.
+- Hero: el velo violeta se reproduce con degradados medidos sobre las capturas (desktop desde la izquierda, mobile desde abajo-izquierda); en mobile los beneficios se ocultan, como en Figma.
 
 ## 8. Recursos
 
 - `public/brand/`: símbolo, wordmark (oscuro y blanco), patrón del footer.
-- `public/icons/`: chevrons, check, calendario, editar, auto, paso atrás, teléfono, Facebook. Se usan con `next/image` sin alterar el SVG.
-- Pendientes de exportar (límite de la API de Figma): íconos de categoría auto/moto, coberturas y beneficios, menú mobile, fotos del hero. Ver [PENDIENTES.md](PENDIENTES.md).
+- `public/icons/`: chevrons, check, calendario, editar, auto (tarjeta de resumen), paso atrás, teléfono, Facebook, categorías (`category-auto`, `moto-part-a/b`), beneficios (`benefit-*`) y coberturas (`coverage-*`). Se usan con `next/image` en su tamaño natural, sin alterar el SVG. El ancho y alto del `<Image>` deben ser enteros o coincidir con el tamaño renderizado (si no, Next avisa en consola).
+- `public/images/hero-banner.jpg`: foto del hero a 2x (2840×1200). Se sirve optimizada con `next/image` y `preload`; el velo violeta se aplica con CSS (no está en la foto).
+- `preload` solo en imágenes visibles al cargar (logo del header, foto del hero). En Next 16 `priority` está deprecado.
+- Pendientes de exportar: ícono de menú mobile y manchas decorativas del fondo. Ver [PENDIENTES.md](PENDIENTES.md).
 
 ### Pantallas en Figma
 | Pantalla | Nodo desktop | Nodo mobile |

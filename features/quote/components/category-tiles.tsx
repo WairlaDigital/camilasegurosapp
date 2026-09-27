@@ -39,8 +39,11 @@ export function CategoryTiles({ detected }: CategoryTilesProps) {
               )}
             >
               <span className="grid h-12.5 place-items-center">
-                {/* TODO: auto icon pending export from Figma (see PENDIENTES.md). */}
-                {category === "moto" && <MotoIcon />}
+                {category === "auto" ? (
+                  <Image src="/icons/category-auto.svg" alt="" width={80} height={50} />
+                ) : (
+                  <MotoIcon />
+                )}
               </span>
               <span className="text-small leading-none font-bold text-ink">{CATEGORIES[category].label}</span>
               <input type="radio" name="category" value={category} checked={selected} readOnly disabled className="peer sr-only" />

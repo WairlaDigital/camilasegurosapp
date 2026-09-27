@@ -1,14 +1,41 @@
 // Home copy from Figma. Items marked "provisional" need approval (see PENDIENTES.md).
 
-export const heroBenefits = ["Entrega inmediata", "Compra segura", "100% digital", "Disponibilidad 24/7"] as const;
+// Icons exported from Figma (natural size kept; do not resize the SVGs).
+export const heroBenefits = [
+  { label: "Entrega Inmediata", icon: { src: "/icons/benefit-delivery.svg", width: 48, height: 49 } },
+  { label: "Compra Segura", icon: { src: "/icons/benefit-secure.svg", width: 46, height: 55 } },
+  { label: "100% Digital", icon: { src: "/icons/benefit-digital.svg", width: 38, height: 57 } },
+  { label: "Disponibilidad 24/7", icon: { src: "/icons/benefit-availability.svg", width: 48, height: 48 } },
+] as const;
 
-// Amounts in UIT as shown in Figma (UIT = S/ 5,500).
+// Amounts in UIT as shown in Figma (UIT = S/ 5,500). Titles are the two desktop lines from Figma;
+// mobile wraps naturally. "S/" and the amount never split (non-breaking space).
 export const coverages = [
-  { title: "Cobertura por Fallecimiento", amount: "Hasta 4 UIT o S/ 22,000" },
-  { title: "Cobertura por Gastos Médicos", amount: "Hasta 5 UIT o S/ 27,500" },
-  { title: "Cobertura por Incapacidad Temporal", amount: "Hasta 1 UIT o S/ 5,500" },
-  { title: "Cobertura por Invalidez Permanente", amount: "Hasta 4 UIT o S/ 22,000" },
-  { title: "Cobertura por Gastos de Sepelio", amount: "Hasta 1 UIT o S/ 5,500" },
+  {
+    titleLines: ["Cobertura por", "Fallecimiento"],
+    amount: "Hasta 4 UIT o S/\u00a022,000",
+    icon: { src: "/icons/coverage-death.svg", width: 48, height: 52 },
+  },
+  {
+    titleLines: ["Cobertura por", "Gastos Médicos"],
+    amount: "Hasta 5 UIT o S/\u00a027,500",
+    icon: { src: "/icons/coverage-medical.svg", width: 62, height: 54 },
+  },
+  {
+    titleLines: ["Cobertura por", "Incapacidad Temporal"],
+    amount: "Hasta 1 UIT o S/\u00a05,500",
+    icon: { src: "/icons/coverage-temporary-disability.svg", width: 48, height: 57 },
+  },
+  {
+    titleLines: ["Cobertura por", "Invalidez Permanente"],
+    amount: "Hasta 4 UIT o S/\u00a022,000",
+    icon: { src: "/icons/coverage-permanent-disability.svg", width: 52, height: 54 },
+  },
+  {
+    titleLines: ["Cobertura por Gastos", "de Sepelio"],
+    amount: "Hasta 1 UIT o S/\u00a05,500",
+    icon: { src: "/icons/coverage-funeral.svg", width: 70, height: 39 },
+  },
 ] as const;
 
 export const faqs = [

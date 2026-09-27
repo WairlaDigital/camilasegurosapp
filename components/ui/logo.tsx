@@ -12,17 +12,19 @@ const SYMBOL_BOX = { top: 0, right: "64.69%", bottom: "0.41%", left: 0 };
 const WORDMARK_BOX = { top: "9.33%", right: 0, bottom: "0.31%", left: "40.53%" };
 
 export function Logo({ tone = "dark", className }: LogoProps) {
+  // Only the header logo (dark) is above the fold; the footer one loads lazily.
+  const preload = tone === "dark";
   return (
     <span role="img" aria-label="Camila Seguros" className={cn("relative inline-block aspect-160/53 w-40", className)}>
       <span className="absolute" style={SYMBOL_BOX}>
-        <Image src="/brand/logo-symbol.svg" alt="" fill priority />
+        <Image src="/brand/logo-symbol.svg" alt="" fill preload={preload} />
       </span>
       <span className="absolute" style={WORDMARK_BOX}>
         <Image
           src={tone === "dark" ? "/brand/logo-wordmark.svg" : "/brand/logo-wordmark-white.svg"}
           alt=""
           fill
-          priority
+          preload={preload}
         />
       </span>
     </span>

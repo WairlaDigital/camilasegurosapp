@@ -7,7 +7,8 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 - [ ] **Token de la API** (Sanctum). Colocarlo en `.env.local` → `LAPOSITIVA_API_TOKEN`. No compartirlo por chat.
 - [x] **Figma**. Recibido 2026-09-26. Lineamientos en [DESIGN.md](DESIGN.md); capturas en [docs/figma/](docs/figma).
-- [ ] **Recursos gráficos pendientes de exportar** (se alcanzó el límite de la API de Figma, plan Starter): ícono de categoría **auto** (el de moto ya está), íconos de coberturas y de beneficios del hero, ícono de menú mobile, foto del hero. Exportarlos como SVG/WebP o ampliar el plan de Figma. Sus espacios ya están reservados en el home.
+- [x] **Recursos del home** exportados de Figma (2026-09-27): foto del hero, ícono de categoría auto, 4 íconos de beneficios y 5 de coberturas. Integrados y revisados contra Figma.
+- [ ] **Recursos que aún faltan:** ícono de menú mobile ([559:71](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=559-71), hoy es un ícono CSS provisional) y manchas decorativas del fondo ([197:296](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-296), [197:297](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-297)).
 - [ ] **Respuestas de la FAQ.** Figma solo trae la primera; las otras 5 son textos provisionales en `features/home/content.ts`. Validarlas.
 - [x] **Logo, tipografía y colores**. Tomados de Figma (Red Hat Display, violeta `#4740de`).
 - [ ] **URLs del sitio**: menú (Seguros, Beneficios, Testimonios, Blog), Contáctanos, Términos y Condiciones, Facebook. Hoy son `#` en `lib/site.ts`.

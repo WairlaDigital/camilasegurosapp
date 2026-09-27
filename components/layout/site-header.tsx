@@ -24,7 +24,7 @@ export function SiteHeader() {
                 >
                   {item.label}
                   {item.label === "Seguros" && (
-                    <Image src="/icons/chevron-down.svg" alt="" width={9} height={4.9} />
+                    <Image src="/icons/chevron-down.svg" alt="" width={9} height={5} />
                   )}
                 </Link>
               </li>
