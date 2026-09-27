@@ -89,18 +89,25 @@
   );
 }
 
+/* One gradient for the whole page (Figma "gradiente" 197:294: 2812px tall on a 3389px
+   frame, solid until 57.4% of it) ⇒ solid until ~48% of the page, sand from ~83%.
+   Apply it to <body> with no-repeat; <html> keeps the solid sand (see app/layout.tsx). */
 @utility bg-gradient-page {
   background-image: linear-gradient(
     to bottom,
     var(--color-brand-50) 0,
-    var(--color-brand-50) 57.4%,
-    var(--color-sand) 100%
+    var(--color-brand-50) 48%,
+    var(--color-sand) 83%
   );
+  background-repeat: no-repeat;
 }
 
 @layer base {
   html {
     color-scheme: light;
+    /* A background on <html> stops the browser from moving the body's background
+       to the viewport, where it would be sized to the window and repeat. */
+    @apply bg-sand;
   }
 
   body {

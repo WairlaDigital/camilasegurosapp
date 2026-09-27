@@ -52,7 +52,7 @@ Lineamientos de diseño del cotizador SOAT de seguroscamila.pe. Aplican a cualqu
 | `info` | `#0052a1` | Azul complementario (reservado) |
 | `danger` | `#d92d20` | Errores de formulario. **No está en Figma** |
 
-Degradados: `bg-gradient-primary` (botón principal), `bg-gradient-secondary` ("LO QUIERO"), `bg-gradient-page` (fondo de página: `brand-50` → `sand`).
+Degradados: `bg-gradient-primary` (botón principal), `bg-gradient-secondary` ("LO QUIERO"), `bg-gradient-page` (fondo de página: `brand-50` → `sand`, un solo degradado para toda la página; va en `<body>` con `<html>` en `bg-sand`; ponerlo en `<html>` o quitarle el fondo a `<html>` hace que se repita cada alto de ventana).
 
 Contraste mínimo WCAG AA (4.5:1) en texto. `placeholder` no se usa para información necesaria.
 
