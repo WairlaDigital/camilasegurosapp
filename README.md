@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Camila Seguros — cotizador SOAT
 
-## Getting Started
+Front de **seguroscamila.pe**: cotiza y vende el SOAT de La Positiva. Next.js 16 (App Router), React 19, Tailwind 4 y TypeScript. Consume la API Laravel **app-soat-taxi**, la misma que usa soatparataxi.pe.
 
-First, run the development server:
+## Empezar aquí
+
+| Documento | Para qué |
+|---|---|
+| [AGENTS.md](AGENTS.md) | Reglas del proyecto (arquitectura, React/Next, pruebas). Léelas antes de escribir código |
+| [PENDIENTES.md](PENDIENTES.md) | Backlog y **estado actual / siguiente paso** |
+| [DESIGN.md](DESIGN.md) | Sistema de diseño: tokens, componentes, patrones, diferencias con Figma |
+| [docs/flujo.md](docs/flujo.md) | Pantallas y reglas de negocio del cotizador |
+| [docs/api.md](docs/api.md) | Contrato de la API y cómo la usa este front |
+
+## Requisitos
+
+- Node 24 y npm.
+- Para trabajar con datos reales: la API app-soat-taxi corriendo en local (`http://app-soat-taxi.test/api`) y un token de Sanctum. Sin API se puede trabajar con el servidor falso (`npm run dev:mock`).
+- Para las pruebas e2e: Google Chrome instalado (en CI, `npx playwright install chromium`).
+
+## Configuración
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Completa `.env.local` (nunca se sube al repo):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Qué es |
+|---|---|
+| `LAPOSITIVA_API_URL` | URL de la API, con `/api` al final |
+| `LAPOSITIVA_API_TOKEN` | Token de Sanctum. Solo servidor: nunca con prefijo `NEXT_PUBLIC_` |
+| `SESSION_SECRET` | Clave para cifrar la cookie de la cotización (mínimo 32 caracteres). Genérala con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sin estas variables la app no arranca y muestra cuál falta.
 
-## Learn More
+## Comandos
 
-To learn more about Next.js, take a look at the following resources:
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | App en http://localhost:3000 contra la API real |
+| `npm run dev:mock` | App en http://localhost:3100 contra el **servidor falso** (`e2e/mock-api`), sin datos reales. Placas de ejemplo: `ABC-123` (vehículo completo), `AEF-710` (incompleto), `ZZZ-999` (sin datos), `ERR-500` (error de la API) |
+| `npm run build` · `npm start` | Build y servidor de producción |
+| `npm run lint` · `npx tsc --noEmit` | Lint y tipos |
+| `npm test` · `npm run test:watch` | Pruebas unitarias (Vitest) |
+| `npm run test:e2e` | Pruebas e2e (Playwright, desktop y mobile). Hace un build y lo corre en el puerto 3211 contra el servidor falso |
+| `npm run test:all` | Unitarias + e2e. Obligatorio antes de fusionar a `main` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Next 16 permite **un solo `next dev` por carpeta**. Las e2e usan un build de producción, así que pueden correr con `npm run dev` abierto.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Cuándo correr cada verificación: [.claude/rules/react-nextjs.md](.claude/rules/react-nextjs.md#cuándo-correr-cada-verificación).
 
-## Deploy on Vercel
+## Estructura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/          Rutas: páginas, layouts, Route Handlers (/api/vehicles/*)
+features/     UI por funcionalidad: home, quote (formularios, Server Actions, sesión)
+components/   ui/ (primitivas del design system) y layout/ (header, footer)
+services/     Única capa que habla con la API (Zod + mappers)
+types/        Tipos compartidos
+lib/          Utilidades (env, cn, contenido del sitio)
+e2e/          Pruebas Playwright y servidor falso de la API
+docs/         Flujo, API y capturas de Figma
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Las dependencias entre capas las valida ESLint. Detalle en [.claude/rules/architecture.md](.claude/rules/architecture.md).

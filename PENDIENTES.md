@@ -3,10 +3,29 @@
 Registro de todo lo que falta decidir, recibir o corregir. Marca `[x]` al cerrar y anota la decisión debajo del ítem.
 Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-backend-decidir-antes-de-implementar) · Contrato de la API: [docs/api.md](docs/api.md).
 
+## Estado actual y siguiente paso
+
+_Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
+
+**Hecho (en `main`):**
+- Reglas del proyecto, sistema de diseño desde Figma ([DESIGN.md](DESIGN.md)) y pruebas (Vitest + Playwright con servidor falso de la API).
+- Flujo: inicio → `POST /query-info` → "Datos incompletos" → "Datos del vehículo" → nueva cotización con datos manuales. El estado viaja en una cookie cifrada.
+- Hoy el flujo termina con un mensaje provisional ("Tus datos están completos" / "Datos guardados") porque la pantalla de cotización no existe.
+
+**Siguiente tarea: pantalla de cotización** (Figma `240:117`, mobile `565:921`; capturas `docs/figma/cotizacion-*`).
+- Qué incluye: saludo con el nombre del titular, resumen del vehículo con "Editar", tarjeta del plan (precio, "Pago Anual", coberturas, "LO QUIERO"), fecha de inicio y celular, botón "Ir a pagar".
+- Datos: ya están en la sesión (`features/quote/session.ts`): titular, vehículo, planes con `quoteToken` y precio en céntimos.
+- Al terminarla: reemplazar los mensajes provisionales del inicio y de "Datos del vehículo" por la redirección a esta pantalla (buscar `TODO(quote screen)`).
+- Decisiones que la afectan (abajo en esta lista): **filtrar planes AFOCAT**, **fecha de inicio** (cambiarla obliga a recotizar), **invalidar el token al usar "Editar"**, **orden de pasos** (Figma "PASO 3/3").
+
+**Después:** "Antes de pagar" (informativa) → checkout (**bloqueado** hasta decidir proveedor con La Positiva) → confirmación. La pantalla "Completa los datos del titular" espera la decisión sobre datos personales y orden de pasos.
+
+**Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas).
+
 ## Insumos por recibir
 
 - [x] **Token de la API** (Sanctum) en `.env.local`. Probado con los catálogos (2026-09-27).
-- [ ] **`SESSION_SECRET`** en el `.env.local` de cada entorno (ver `.env.example`); sin él la app no arranca.
+- [x] **`SESSION_SECRET`** en el `.env.local` local (carpeta principal y worktree). Falta definirlo en cada entorno de despliegue (ver `.env.example`); sin él la app no arranca.
 - [x] **Figma**. Recibido 2026-09-26. Lineamientos en [DESIGN.md](DESIGN.md); capturas en [docs/figma/](docs/figma).
 - [x] **Recursos del home** exportados de Figma (2026-09-27): foto del hero, ícono de categoría auto, 4 íconos de beneficios y 5 de coberturas. Integrados y revisados contra Figma.
 - [ ] **Recursos que aún faltan:** ícono de menú mobile ([559:71](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=559-71), hoy es un ícono CSS provisional) y manchas decorativas del fondo ([197:296](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-296), [197:297](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-297)).

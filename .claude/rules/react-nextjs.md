@@ -77,3 +77,4 @@
 Si una prueba falla, se corrige el código o se actualiza la prueba con una razón explícita; nunca se salta ni se borra para que pase.
 - La API se llama desde el servidor de Next, así que Playwright no puede interceptarla: las e2e usan el **servidor falso** `e2e/mock-api/server.mjs` (lo levanta `playwright.config.ts`). Sus placas de ejemplo definen cada caso (ABC-123 completa, AEF-710 incompleta, ZZZ-999 sin datos, ERR-500 error). Al agregar un endpoint o un caso, se agrega también al servidor falso. Nunca usar la API real en pruebas: consulta datos de personas reales y crea cotizaciones.
 - No se comparan capturas contra las exportaciones de Figma (no coinciden píxel a píxel).
+- **Procesos:** para revisar a mano contra el servidor falso usa `npm run dev:mock` (puerto 3100). Para detener un servidor, usa el PID del proceso que tú arrancaste; **nunca** mates procesos por puerto (el 3000 suele ser el `npm run dev` de otra carpeta del mismo equipo).

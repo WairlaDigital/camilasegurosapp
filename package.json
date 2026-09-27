@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:mock": "node e2e/mock-api/server.mjs & LAPOSITIVA_API_URL=http://localhost:3299/api LAPOSITIVA_API_TOKEN=test-token next dev --port 3100",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
