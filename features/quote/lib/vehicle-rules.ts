@@ -17,6 +17,7 @@ export const CATEGORIES: Record<VehicleCategory, { label: string }> = {
   auto: { label: "Autos, camionetas y camiones" },
   moto: { label: "Motos, mototaxis y trimotos" },
 };
+export const CATEGORY_KEYS: readonly VehicleCategory[] = ["auto", "moto"];
 
 // Uses offered on the home form for each detected category. The exact vehicle
 // type (e.g. moto lineal vs mototaxi) is only known after the plate lookup,

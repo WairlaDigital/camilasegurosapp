@@ -59,6 +59,26 @@ test("the plate detects the category and filters the uses", async ({ page }) => 
   await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "Particular", "Taxi", "Carga"]);
 });
 
+test("category tiles are read-only: clicking one sends the user to the plate", async ({ page }) => {
+  const f = form(page);
+  await expect(page.getByText("Se marca sola al ingresar tu placa.")).toBeVisible();
+
+  // The tile is the label of a disabled radio, which Playwright treats as "not enabled";
+  // a real click still reaches the tile's handler, so skip the actionability check.
+  await page.getByText("Motos, mototaxis y trimotos").click({ force: true });
+  await expect(f.plate).toBeFocused();
+  await expect(f.motoTile).not.toBeChecked();
+  await expect(f.autoTile).not.toBeChecked();
+
+  await f.plate.fill("1234-AB");
+  await expect(page.getByText("Tipo de vehículo detectado: Motos, mototaxis y trimotos.")).toBeAttached();
+
+  // Clicking the other tile does not override the plate detection.
+  await page.getByText("Autos, camionetas y camiones").click({ force: true });
+  await expect(f.motoTile).toBeChecked();
+  await expect(f.autoTile).not.toBeChecked();
+});
+
 test("a use that no longer applies is cleared when the category changes", async ({ page }) => {
   const f = form(page);
   await f.plate.fill("1234-AB");

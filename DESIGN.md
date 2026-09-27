@@ -147,6 +147,7 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 - Se agregó `danger` para errores; Figma no define estados de error ni de foco.
 - Etiquetas de campos inset unificadas en `brand-500`; en Figma el campo de fecha las tiene en `info` (azul).
 - FAQ: el chevron no rota al abrir, igual que en Figma.
+- Tarjetas de categoría (auto/moto): la spec las fija según la placa, pero en Figma parecen seleccionables. Se agregó la ayuda "Se marca sola al ingresar tu placa." bajo las tarjetas (no está en Figma), el clic en una tarjeta lleva el foco al campo de placa y un aviso oculto anuncia la categoría detectada a lectores de pantalla.
 - Erratas corregidas en textos: "Contácnenos" → "Contáctanos", "Seguro Vehícular" → "Vehicular", "Compralo" → "Cómpralo", "vene" → "vence".
 - El año del copyright se calcula.
 - Menú mobile con ícono CSS provisional: el ícono de Figma no se pudo exportar.

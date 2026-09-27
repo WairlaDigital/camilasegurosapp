@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { cn } from "@/lib/cn";
 import type { VehicleCategory } from "../lib/plate";
-import { CATEGORIES } from "../lib/vehicle-rules";
+import { CATEGORIES, CATEGORY_KEYS } from "../lib/vehicle-rules";
 
 // Moto icon from Figma: two SVG groups placed inside a 67.39×49.09 box.
 function MotoIcon() {
@@ -17,24 +17,30 @@ function MotoIcon() {
   );
 }
 
-type CategoryTilesProps = { detected: VehicleCategory | null };
+type CategoryTilesProps = {
+  detected: VehicleCategory | null;
+  /** Clicking a tile sends the user to the plate field, which is what sets the category. */
+  onTileClick: () => void;
+};
 
 /**
  * Figma "Component 7". The category is detected from the plate and cannot be
- * changed by hand (spec 4.1), so the tiles are read-only indicators.
+ * changed by hand (spec 4.1), so the tiles are read-only indicators. The hint
+ * and the click-to-plate behavior make that clear instead of looking broken.
  */
-export function CategoryTiles({ detected }: CategoryTilesProps) {
+export function CategoryTiles({ detected, onTileClick }: CategoryTilesProps) {
   return (
-    <fieldset>
+    <fieldset className="flex flex-col gap-3">
       <legend className="sr-only">Tipo de vehículo (se detecta con tu placa)</legend>
       <div className="grid grid-cols-2 gap-3">
-        {(Object.keys(CATEGORIES) as VehicleCategory[]).map((category) => {
+        {CATEGORY_KEYS.map((category) => {
           const selected = detected === category;
           return (
             <label
               key={category}
+              onClick={onTileClick}
               className={cn(
-                "flex h-35.5 flex-col items-center justify-end gap-3 rounded-control border px-3 pb-3.5 text-center transition-colors",
+                "flex h-35.5 cursor-pointer flex-col items-center justify-end gap-3 rounded-control border px-3 pb-3.5 text-center transition-colors",
                 selected ? "border-brand-500 bg-brand-50" : "border-line bg-white",
               )}
             >
@@ -55,6 +61,11 @@ export function CategoryTiles({ detected }: CategoryTilesProps) {
           );
         })}
       </div>
+      <p className="text-small text-ink-muted">Se marca sola al ingresar tu placa.</p>
+      {/* Announces the detected category to screen readers when the plate changes. */}
+      <p aria-live="polite" className="sr-only">
+        {detected ? `Tipo de vehículo detectado: ${CATEGORIES[detected].label}.` : ""}
+      </p>
     </fieldset>
   );
 }

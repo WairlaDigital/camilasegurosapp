@@ -22,6 +22,7 @@ type ClientErrors = Partial<Record<StartQuoteField, string | null>>;
 /** Home form (Figma "Group 9"): plate, document, use, email and consent. */
 export function QuoteStartForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const plateRef = useRef<HTMLInputElement>(null);
   const [state, formAction, pending] = useActionState<StartQuoteState, FormData>(startQuote, { status: "idle" });
   const [plate, setPlate] = useState("");
   const [documentType, setDocumentType] = useState<DocumentType>("DNI");
@@ -70,9 +71,10 @@ export function QuoteStartForm() {
   return (
     <Card tone="surface" className="px-5 pt-7.5 pb-7 md:px-10">
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-        <CategoryTiles detected={category} />
+        <CategoryTiles detected={category} onTileClick={() => plateRef.current?.focus()} />
 
         <Input
+          ref={plateRef}
           name="plate"
           label="Ingresa tu placa:"
           placeholder="ABC-123"
@@ -83,7 +85,7 @@ export function QuoteStartForm() {
           onChange={(event) => setPlate(normalizePlate(event.target.value))}
           onBlur={() => handleBlur("plate")}
           error={errorFor("plate")}
-          className="mt-3"
+          className="mt-2"
         />
 
         <DocumentField
