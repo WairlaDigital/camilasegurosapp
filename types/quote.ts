@@ -23,6 +23,14 @@ export type VehicleData = {
   registeredCategory?: VehicleCategory;
 };
 
+/** What the vehicle registration says (plate lookup, POST /query-plate). */
+export type PlateRegistration = {
+  category?: VehicleCategory;
+  /** La Positiva vehicle class (IdClase), e.g. 10 = Motocicleta. */
+  vehicleClass?: Option;
+  seats?: number;
+};
+
 export type Holder = {
   firstName?: string;
   lastName?: string;

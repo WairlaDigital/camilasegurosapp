@@ -13,7 +13,7 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - Pantalla de cotización (`/cotizar/cotizacion`): saludo, resumen del vehículo con "Editar", tarjeta del plan sin AFOCAT, fecha de inicio, celular e "Ir a pagar". Si la fecha cambió, vuelve a cotizar una sola vez; si el precio cambió, lo muestra y pide confirmar de nuevo.
 - Pantalla "Antes de pagar" (`/cotizar/antes-de-pagar`, spec sección 8). "Ir a pagar" guarda plan y celular y lleva a ella. "Continuar con el pago" muestra un aviso provisional (buscar `TODO(checkout)`).
 
-**Siguiente: checkout con Culqi.** La API ya integra Culqi; al front le toca: crear la orden (`POST /data`, devuelve `order_id` y los `settings` de Culqi), abrir Culqi Checkout en el navegador, enviar el `token` a `POST /charge` y, si la persona elige un pago diferido (PagoEfectivo con la `order`), mostrar "orden generada". Falta la **llave pública de Culqi** y resolver de dónde salen dirección, departamento y distrito del titular (ver "Datos personales para la orden"). Mientras tanto se puede avanzar en: tipo real del vehículo en el camino directo y rate limiting de `/api/vehicles/*`. La pantalla "Completa los datos del titular" espera la decisión sobre datos personales y orden de pasos.
+**Siguiente: checkout con Culqi.** La API ya integra Culqi; al front le toca: crear la orden (`POST /data`, devuelve `order_id` y los `settings` de Culqi), abrir Culqi Checkout en el navegador, enviar el `token` a `POST /charge` y, si la persona elige un pago diferido (PagoEfectivo con la `order`), mostrar "orden generada". Falta la **llave pública de Culqi** y resolver de dónde salen dirección, departamento y distrito del titular (ver "Datos personales para la orden"). Mientras tanto se puede avanzar en: rate limiting de `/api/vehicles/*`. La pantalla "Completa los datos del titular" espera la decisión sobre datos personales y orden de pasos.
 
 **Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas).
 
@@ -43,7 +43,7 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [ ] **Entrega por WhatsApp.** El hero y la FAQ de Figma dicen que el SOAT llega por WhatsApp; el backend solo envía correo.
 - [ ] **"Desde S/33 al año"** en el hero: confirmar el precio mínimo real.
 - [ ] **Zona de circulación (`ubigeo_id`).** El backend la exige; la spec no tiene el campo. **Hoy se envía Lima (150101) de forma provisional** (`DEFAULT_UBIGEO_ID`). ¿Se pregunta (Lima/Callao) o se asume?
-- [ ] **Tipo de vehículo inicial.** `/query-info` exige `type_id` y el inicio solo sabe auto/moto + uso. **Provisional:** auto → Automóvil; moto → Motocicleta (particular), Mototaxi (taxi), Motocarga (carga). En "Datos del vehículo" se puede corregir. Auto + Carga y Comercial muestran "no podemos cotizar en línea" hasta tener Camión/Furgón e IdUso Comercial.
+- [ ] **Tipo de vehículo inicial.** `/query-info` exige `type_id` y el inicio solo sabe auto/moto + uso. **Provisional:** auto → Automóvil; moto → Motocicleta (particular), Mototaxi (taxi), Motocarga (carga). En "Datos del vehículo" se puede corregir. Auto + Carga y Comercial muestran "no podemos cotizar en línea" hasta tener Camión/Furgón e IdUso Comercial. **Actualizado:** el tipo por defecto solo se usa si la consulta de placa no trae la clase del vehículo; si la trae, se cotiza con el tipo real.
 - [ ] **Placa `LN-NNNN` (ej. A1-1234).** Sin guion es ambigua con la placa de auto `A11-234`. ¿Se exige escribir el guion?
 - [ ] **Pasaporte.** El backend lo acepta, la spec solo pide DNI, CE y RUC. Por defecto: no se ofrece.
 - [ ] **Fecha de inicio.** Cambiarla obliga a volver a cotizar (nuevo precio y token). ¿Se mueve antes del precio o se bloquea tras "LO QUIERO" como en soatparataxi.pe? **Provisional:** la fecha queda debajo del precio y es editable. "Ir a pagar" vuelve a cotizar una sola vez si la fecha cambió y, si el precio cambió, lo muestra y pide confirmar. Rango permitido: de hoy (Lima) a 12 meses (`MAX_START_DAYS`), a confirmar con La Positiva.
@@ -63,6 +63,8 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [ ] **Nombres con RUC.** `first_name`/`last_name` obligatorios incluso para empresas; solo letras y espacios (rechaza guiones y apóstrofos).
 - [ ] **Estado y descarga de la póliza** para el cliente (endpoint nuevo, p. ej. estado por orden y descarga firmada).
 - [ ] Cada `POST /query-info` crea un registro `Driver` nuevo.
+- [ ] **Exponer la clase de La Positiva (`positiva_id`) en `GET /data`.** Hoy el front traduce clase → tipo con una tabla fija (`catalogTypeForClass`) copiada de la base del backend; si cambian los tipos, hay que actualizarla a mano.
+- [ ] **Caché de la consulta de placa.** `getPlate` no guarda caché: al iniciar, la placa se consulta dos veces (`/query-plate` y dentro de `/query-info`).
 
 ## Front (este repo)
 
@@ -76,7 +78,8 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [x] Pantalla "Antes de pagar" (informativa, spec sección 8). Revisada contra la captura de la spec en 1440 px y en mobile. "Continuar con el pago" espera el checkout.
 - [x] **Tabla tipo → usos (spec sección 2) y categoría fija (spec 4.1).** Tabla propia en `features/quote/lib/use-matrix.ts`, validada en cliente y servidor. Uso único sin selector. "Datos del vehículo" solo ofrece tipos de la categoría de la placa. Si el registro vehicular contradice la categoría de la placa, el inicio avisa y no sigue.
 - [x] **RUC + moto lineal ⇒ solo "Comercial" (spec 4.2)** en "Datos del vehículo". Como "Comercial" aún no tiene IdUso, esa combinación queda sin uso cotizable y el formulario lo explica.
-- [ ] **Tipo real del vehículo en el camino directo.** Si la consulta trae el vehículo completo, se cotiza con el tipo por defecto de la categoría (ver "Tipo de vehículo inicial") y la persona nunca ve el formulario: una moto lineal con RUC o una mototaxi cotizada como Motocicleta no se detectan. La consulta de placa trae la clase de La Positiva (`vehicle.type.positiva`); falta mapearla a los tipos del catálogo (la clase 33 corresponde a dos camionetas) y recotizar si difiere.
+- [x] **Tipo real del vehículo en el camino directo.** El inicio consulta `POST /query-plate` (sin cotizar), traduce la clase de La Positiva al tipo del catálogo y cotiza una vez con él. Si el uso no aplica al tipo real (o es RUC + moto lineal), lo marca en el campo "Uso".
+- [x] Los errores por campo que devuelve una Server Action (p. ej. 422 de la API en placa o documento) quedaban ocultos al enviar un formulario válido. Corregido en los tres formularios.
 - [ ] Checkout con **Culqi Checkout** (`https://js.culqi.com/checkout-js`): `POST /data` → abrir el modal con `settings` y `client.email` → `token` a `POST /charge` (Server Action) → confirmación; `order` → pantalla de orden generada. Manejar `REVIEW` (3DS) y errores con `user_message`. Hoy "Continuar con el pago" muestra un aviso provisional (`TODO(checkout)`).
 - [ ] Pantalla de confirmación de compra (y de orden generada para pagos diferidos).
 - [x] Services de catálogo (`/data`, `/brands`, `/models`, `/versions`) y cotización (`/query-info`) con Zod y precio en céntimos.

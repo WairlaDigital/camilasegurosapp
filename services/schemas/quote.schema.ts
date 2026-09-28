@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Option, QuoteResult, VehicleCategory, VehicleData } from "@/types/quote";
+import type { Option, PlateRegistration, QuoteResult, VehicleCategory, VehicleData } from "@/types/quote";
 
 // POST /query-info response (see docs/api.md). Null keys are dropped by the backend.
 
@@ -37,6 +37,9 @@ const planSchema = z.object({
   quote_token: z.string().nullish(),
   features: z.array(z.object({ name: z.string(), status: z.boolean() })).nullish(),
 });
+
+/** POST /query-plate: the plate lookup alone (no quote), wrapped by Laravel in `data`. */
+export const plateLookupResponseSchema = z.object({ data: vehicleSchema });
 
 export const queryInfoResponseSchema = z.object({
   document: documentSchema.optional(),
@@ -146,4 +149,16 @@ export function isVehicleComplete(vehicle: VehicleData | null): boolean {
   return Boolean(
     vehicle?.brand && vehicle.model && vehicle.version && vehicle.year && vehicle.seats && vehicle.serial && vehicle.vin,
   );
+}
+
+/** Registration data used to pick the catalog type before quoting. */
+export function toPlateRegistration(data: z.infer<typeof plateLookupResponseSchema>): PlateRegistration {
+  const vehicle = data.data;
+  const classId = Number(vehicle.type?.positiva?.id);
+  const className = vehicle.type?.positiva?.name;
+  return {
+    category: registeredCategory(vehicle.category),
+    vehicleClass: classId > 0 && className ? { id: classId, name: className } : undefined,
+    seats: optional(vehicle.seats),
+  };
 }

@@ -17,6 +17,7 @@ Todo acceso pasa por `apiRequest()` en `services/http.ts`.
 | `GET /brands?search=` | `/api/vehicles/brands` → `searchBrands()` | 2.684 marcas: siempre búsqueda remota. Ids **locales**. |
 | `GET /models/{brand}/type/{type}` | `/api/vehicles/models` → `getModels()` | Ids de **La Positiva**, llegan como texto. |
 | `GET /versions/{model}` | `/api/vehicles/versions` → `getVersions()` | Ids de **La Positiva**, llegan como número. |
+| `POST /query-plate` | `services/quotes.ts` → `lookupPlate()` | Inicio, **antes** de cotizar: consulta la placa sin crear cotización para saber el tipo real (clase de La Positiva en `type.positiva`) y la categoría del registro (`category.positiva`). 404 = sin datos; si falla, se cotiza con el tipo por defecto de la categoría. La API no guarda caché de esta consulta: la placa se consulta dos veces al iniciar (aquí y dentro de `/query-info`). |
 | `POST /query-info` | `services/quotes.ts` → `queryInfo()` | Inicio (sin datos manuales) y datos del vehículo (con `brand_id` local, `model_id`/`version_id` de La Positiva, `seats`, `year`, `serial`, `vin`: todos o ninguno). **Cada llamada crea una cotización nueva**: una por paso, más una en la cotización si se cambia la fecha de inicio (`start_date`, siempre se envía; por defecto hoy en Lima). El mapper descarta los planes AFOCAT (nombre "AFOCAT--…"): no se venden en seguroscamila.pe. |
 
 En las pruebas e2e todo esto lo responde el servidor falso `e2e/mock-api/server.mjs`.

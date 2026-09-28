@@ -3,14 +3,19 @@ import { expect, test, type Page } from "@playwright/test";
 // Quote screen (Figma 240:117): greeting, vehicle summary, plan card, start date,
 // phone and "Ir a pagar". The fake API (e2e/mock-api) drives each case by plate.
 
-async function openQuote(page: Page, plate: string) {
+async function submitHome(page: Page, plate: string, { use = "particular", ruc = false } = {}) {
   await page.goto("/");
   await page.getByLabel("Ingresa tu placa:").fill(plate);
-  await page.getByLabel("Número de documento:").fill("12345678");
-  await page.getByLabel("Uso:").selectOption("particular");
+  if (ruc) await page.getByLabel("Tipo de documento").selectOption("RUC");
+  await page.getByLabel("Número de documento:").fill(ruc ? "20123456789" : "12345678");
+  await page.getByLabel("Uso:").selectOption(use);
   await page.getByLabel("Correo electrónico:").fill("cliente@correo.pe");
   await page.getByRole("checkbox", { name: /Consentimiento de datos/ }).check();
   await page.getByRole("button", { name: "Comprar SOAT virtual" }).click();
+}
+
+async function openQuote(page: Page, plate: string, options?: { use?: string; ruc?: boolean }) {
+  await submitHome(page, plate, options);
   await page.waitForURL(/\/cotizar\/cotizacion$/);
 }
 
@@ -111,6 +116,32 @@ test("without a plan for sale it explains it and offers to review the data", asy
   await expect(page.getByRole("button", { name: "Ir a pagar" })).toHaveCount(0);
   await page.getByRole("link", { name: "Revisar mis datos" }).click();
   await expect(page).toHaveURL(/\/cotizar\/vehiculo$/);
+});
+
+// The vehicle registration (POST /query-plate) gives the real type before quoting.
+test("a complete camioneta is quoted as a camioneta, not as the default Automóvil", async ({ page }) => {
+  await openQuote(page, "CAM-777");
+  await expect(page.getByText("Camioneta hasta 7 asientos")).toBeVisible();
+});
+
+test("a complete mototaxi is quoted as a mototaxi, not as the default Motocicleta", async ({ page }) => {
+  await openQuote(page, "4321-AB");
+  await expect(page.getByText("Mototaxi", { exact: true })).toBeVisible();
+});
+
+test("a use that the registered type does not allow is flagged on the home form", async ({ page }) => {
+  await submitHome(page, "5555-AB", { use: "taxi" });
+  await expect(
+    page.getByText("Según el registro vehicular, tu vehículo es de tipo Motocicleta: el uso Taxi no aplica. Elige Particular."),
+  ).toBeVisible();
+  await expect(page.getByLabel("Uso:")).toHaveAttribute("aria-invalid", "true");
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("with RUC, a registered moto lineal cannot be quoted as Particular (spec 4.2)", async ({ page }) => {
+  await submitHome(page, "5555-AB", { ruc: true });
+  await expect(page.getByText(/Con RUC, una moto lineal solo puede tener uso Comercial/)).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test("the quote screen needs a quote session", async ({ page }) => {

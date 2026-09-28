@@ -116,11 +116,14 @@ export function VehicleForm({ types, documentType, initial, initialModels, initi
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const errors = validate();
-    setClientErrors(Object.fromEntries(FIELDS.map((field) => [field, errors[field] ?? null])));
     if (Object.keys(errors).length > 0) {
+      // `null` hides a stale server error on a field that is now valid.
+      setClientErrors(Object.fromEntries(FIELDS.map((field) => [field, errors[field] ?? null])));
       requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return;
     }
+    // Valid: let the Server Action's field errors (if any) show.
+    setClientErrors({});
     const formData = new FormData(event.currentTarget);
     startTransition(() => formAction(formData));
   }

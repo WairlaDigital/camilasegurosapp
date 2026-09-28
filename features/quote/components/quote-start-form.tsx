@@ -56,12 +56,15 @@ export function QuoteStartForm() {
     event.preventDefault();
     const errors = validate();
     const fields: StartQuoteField[] = ["plate", "documentType", "documentNumber", "use", "email", "consent"];
-    setClientErrors(Object.fromEntries(fields.map((field) => [field, errors[field] ?? null])));
 
     if (Object.keys(errors).length > 0) {
+      // `null` hides a stale server error on a field that is now valid.
+      setClientErrors(Object.fromEntries(fields.map((field) => [field, errors[field] ?? null])));
       requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return;
     }
+    // Valid: let the Server Action's field errors (if any) show.
+    setClientErrors({});
     // Calling the action inside a transition (instead of <form action>) keeps the
     // typed values: React resets uncontrolled forms after a form action.
     const formData = new FormData(event.currentTarget);

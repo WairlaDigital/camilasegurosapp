@@ -2,9 +2,11 @@
 
 import { redirect } from "next/navigation";
 import { ApiError } from "@/services/errors";
-import { isVehicleComplete, queryInfo } from "@/services/quotes";
+import { getVehicleTypes } from "@/services/catalog";
+import { isVehicleComplete, lookupPlate, queryInfo } from "@/services/quotes";
 import { todayInLima } from "./lib/dates";
 import { detectCategory } from "./lib/plate";
+import { CATEGORY_MISMATCH, NOT_ONLINE, quoteRequestFor } from "./lib/quote-request";
 import { DEFAULT_UBIGEO_ID, DOCUMENT_TYPES, defaultQuoteRequest } from "./lib/vehicle-rules";
 import { parseStartQuote, type FieldErrors } from "./schema";
 import { writeQuoteSession } from "./session";
@@ -14,16 +16,12 @@ export type StartQuoteState =
   | { status: "invalid"; errors: FieldErrors }
   | { status: "failed"; message: string };
 
-const CATEGORY_MISMATCH = {
-  auto: "Según el registro vehicular, esta placa es de una moto, mototaxi o trimoto, pero su formato es de auto. Revisa la placa o escríbenos y te ayudamos.",
-  moto: "Según el registro vehicular, esta placa es de un auto, camioneta o camión, pero su formato es de moto. Revisa la placa o escríbenos y te ayudamos.",
-} as const;
-
 const UNAVAILABLE = "No pudimos consultar tu placa en este momento. Inténtalo de nuevo en unos minutos.";
 
 /**
- * Home form submit: validates, looks up the plate and quotes (POST /query-info),
- * keeps the result in the quote session and moves to the next step.
+ * Home form submit: validates, looks up the vehicle registration (POST
+ * /query-plate, no quote) to quote with the real vehicle type, quotes once
+ * (POST /query-info), keeps the result in the quote session and moves on.
  */
 export async function startQuote(_prev: StartQuoteState, formData: FormData): Promise<StartQuoteState> {
   const parsed = parseStartQuote(Object.fromEntries(formData));
@@ -31,13 +29,34 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
   const input = parsed.data;
 
   const category = detectCategory(input.plate);
-  const request = category ? defaultQuoteRequest(category, input.use) : null;
-  if (!request) {
-    return {
-      status: "failed",
-      message: "Por ahora no podemos cotizar en línea este tipo de uso. Escríbenos y te ayudamos.",
-    };
+  if (!category || !defaultQuoteRequest(category, input.use)) return { status: "failed", message: NOT_ONLINE };
+
+  // Without the registration or the catalog, the category's default type is used
+  // (and the vehicle data form lets the person fix it): never block the quote on them.
+  const [registration, types] = await Promise.all([
+    lookupPlate(input.plate).catch((error: unknown) => {
+      console.error("startQuote: /query-plate failed", error);
+      return null;
+    }),
+    getVehicleTypes().catch((error: unknown) => {
+      console.error("startQuote: /data failed", error);
+      return [];
+    }),
+  ]);
+
+  const resolved = quoteRequestFor({
+    category,
+    use: input.use,
+    documentType: input.documentType,
+    registration,
+    types,
+  });
+  if (!resolved.ok) {
+    return resolved.field === "use"
+      ? { status: "invalid", errors: { use: resolved.message } }
+      : { status: "failed", message: resolved.message };
   }
+  const request = { typeId: resolved.typeId, useId: resolved.useId };
 
   const startDate = todayInLima();
   let result;
@@ -61,10 +80,9 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
     return { status: "failed", message: UNAVAILABLE };
   }
 
-  // Spec 4.1: the category is fixed by the plate format; if the registration says
-  // otherwise, say it clearly instead of quoting the wrong kind of vehicle.
+  // Spec 4.1 again, for when /query-plate failed but /query-info got the registration.
   const registered = result.vehicle?.registeredCategory;
-  if (category && registered && registered !== category) {
+  if (registered && registered !== category) {
     return { status: "failed", message: CATEGORY_MISMATCH[category] };
   }
 

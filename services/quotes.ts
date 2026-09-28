@@ -1,7 +1,12 @@
 import "server-only";
-import type { QuoteResult } from "@/types/quote";
-import { apiRequest } from "./http";
-import { queryInfoResponseSchema, toQuoteResult } from "./schemas/quote.schema";
+import type { PlateRegistration, QuoteResult } from "@/types/quote";
+import { ApiError, apiRequest } from "./http";
+import {
+  plateLookupResponseSchema,
+  queryInfoResponseSchema,
+  toPlateRegistration,
+  toQuoteResult,
+} from "./schemas/quote.schema";
 
 export { isVehicleComplete } from "./schemas/quote.schema";
 
@@ -53,4 +58,22 @@ export async function queryInfo(input: QueryInfoInput): Promise<QuoteResult> {
     },
   });
   return toQuoteResult(data, { typeId: input.typeId, useId: input.useId });
+}
+
+/**
+ * Vehicle registration for a plate (POST /query-plate): read-only, it creates no
+ * quote. Null when the lookup finds nothing (404).
+ */
+export async function lookupPlate(plate: string): Promise<PlateRegistration | null> {
+  try {
+    const data = await apiRequest("/query-plate", plateLookupResponseSchema, {
+      method: "POST",
+      timeoutMs: 20_000,
+      body: { plate },
+    });
+    return toPlateRegistration(data);
+  } catch (error) {
+    if (error instanceof ApiError && error.code === "NOT_FOUND") return null;
+    throw error;
+  }
 }

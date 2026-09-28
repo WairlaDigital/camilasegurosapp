@@ -14,7 +14,7 @@ Alcance: SOAT para usos Particular, Taxi, Carga y Comercial (solo moto lineal). 
 | # | Pantalla | Qué hace | API |
 |---|---|---|---|
 | 1 | **Inicio** (formulario) | Placa (detecta Auto/Moto), tipo y n.º de documento, uso, correo, consentimiento. CTA "Comprar SOAT virtual" | `GET /data` (catálogo de tipos y usos) |
-| 2 | Consulta automática | Consulta la placa y cotiza | `POST /query-info` |
+| 2 | Consulta automática | Consulta el registro de la placa (tipo real y categoría), valida categoría y uso, y cotiza una vez con el tipo real | `POST /query-plate` (sin cotizar), luego `POST /query-info` |
 | 3 | **Datos incompletos** | Solo si faltan datos del vehículo. Mensaje simple + "Completa y cotiza" | — |
 | 4 | **Datos del vehículo** (Paso 1) | Formulario prellenado y **editable**: uso, tipo, marca, modelo, asientos, año, VIN/serie | `GET /brands`, `/models/{brand}/type/{type}`, `/versions/{model}`, luego `POST /query-info` con los datos manuales |
 | 5 | **Cotización** (`/cotizar/cotizacion`) | "Hola {nombre}", resumen del vehículo con "Editar", tarjeta de precio con coberturas y "LO QUIERO" (sin planes AFOCAT), fecha de inicio, celular, "Ir a pagar" | `POST /query-info` solo al presionar "Ir a pagar" con otra fecha; si el precio cambia, se muestra y se pide confirmar |
@@ -53,7 +53,9 @@ Si la consulta de placa devuelve un tipo que contradice la categoría detectada,
 - **RUC + Moto lineal ⇒ solo Comercial.** No aplica a otros tipos.
 - Cambiar el tipo de vehículo vuelve a filtrar los usos.
 
-**Implementación:** la tabla está en `features/quote/lib/use-matrix.ts` (tipos del catálogo asignados a cada fila; Trimoto = Motocarga es provisional). Un uso se ofrece si lo permiten la tabla **y** el catálogo; los tipos fuera de la tabla siguen el catálogo. "Comercial" no tiene IdUso, así que no se ofrece: con RUC, una moto lineal queda sin uso cotizable y el formulario lo explica. El formulario del inicio solo conoce la categoría, así que la regla RUC + moto lineal aplica en "Datos del vehículo".
+**Tipo real del vehículo:** el inicio solo sabe auto/moto, pero `/query-info` cotiza con el `type_id` que enviamos. Por eso, antes de cotizar, `POST /query-plate` devuelve la clase del registro (La Positiva `IdClase`) y `catalogTypeForClass` la traduce al tipo del catálogo: 1 → Automóvil, 2 → Station wagon, 10 → Motocicleta, 25 → Mototaxi, 33 → Camioneta hasta 7 u 8 asientos (según asientos), 34 → Microbús. Es el `positiva_id` de cada tipo en la base del backend, que `GET /data` no expone. Si el uso elegido no aplica al tipo real, el inicio lo marca en el campo "Uso". Sin clase conocida se usa el tipo por defecto de la categoría (`features/quote/lib/quote-request.ts`).
+
+**Implementación:** la tabla está en `features/quote/lib/use-matrix.ts` (tipos del catálogo asignados a cada fila; Trimoto = Motocarga es provisional). Un uso se ofrece si lo permiten la tabla **y** el catálogo; los tipos fuera de la tabla siguen el catálogo. "Comercial" no tiene IdUso, así que no se ofrece: con RUC, una moto lineal queda sin uso cotizable y el formulario lo explica. La regla RUC + moto lineal aplica en "Datos del vehículo" y, con el tipo real del registro, también en el inicio.
 
 ### Documento
 DNI, Carné de Extranjería y RUC (el backend también acepta Pasaporte; la spec no lo incluye). El nombre del saludo viene de `document.names` (RENIEC) o `document.company_name` (SUNAT) en `/query-info`.

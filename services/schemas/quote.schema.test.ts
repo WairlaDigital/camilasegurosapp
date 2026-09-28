@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   isAfocatPlan,
+  plateLookupResponseSchema,
+  toPlateRegistration,
   isVehicleComplete,
   planDisplayName,
   queryInfoResponseSchema,
@@ -142,5 +144,28 @@ describe("isVehicleComplete", () => {
     expect(isVehicleComplete({ ...complete, version: undefined })).toBe(false);
     expect(isVehicleComplete({ ...complete, vin: undefined })).toBe(false);
     expect(isVehicleComplete(null)).toBe(false);
+  });
+});
+
+describe("toPlateRegistration (POST /query-plate)", () => {
+  it("reads the registration category, the La Positiva class and the seats", () => {
+    const data = plateLookupResponseSchema.parse({
+      data: {
+        plate: "4321-AB",
+        seats: 3,
+        category: { positiva: { id: 5, name: "L5" } },
+        type: { positiva: { id: 25, name: "MOTOTAXI" } },
+      },
+    });
+    expect(toPlateRegistration(data)).toEqual({
+      category: "moto",
+      vehicleClass: { id: 25, name: "MOTOTAXI" },
+      seats: 3,
+    });
+  });
+
+  it("leaves out a class the lookup did not return", () => {
+    const data = plateLookupResponseSchema.parse({ data: { plate: "ABC-123", type: { positiva: { id: 0, name: null } } } });
+    expect(toPlateRegistration(data)).toEqual({ category: undefined, vehicleClass: undefined, seats: undefined });
   });
 });

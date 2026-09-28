@@ -9,6 +9,9 @@
 //   ZZZ-999  plate lookup fails (no vehicle); the backend then ignores manual data
 //   AFO-123  complete vehicle, but only AFOCAT plans (not sold here) → no plan to show
 //   MOT-123  auto-format plate registered as a moto (category L3) → mismatch message (spec 4.1)
+//   CAM-777  complete camioneta (class 33, 5 seats) → quoted as "Camioneta hasta 7 asientos"
+//   4321-AB  complete mototaxi (class 25) → quoted as Mototaxi, not the default Motocicleta
+//   5555-AB  complete motocicleta (class 10) → Taxi does not apply; with RUC nothing applies (spec 4.2)
 //   ERR-500  upstream error (503)
 // Plans: La Positiva at S/ 210 for today (Lima) and S/ 215 for any other start date
 // (to test the re-quote), plus an AFOCAT plan that the front must hide.
@@ -51,34 +54,47 @@ const versions = {
 };
 
 const merged = (local, positiva) => ({ ...(local ?? {}), positiva });
-// Registration category from the plate lookup (MTC classes: L* motos, M* cars).
-const CAR = merged({ id: 6, name: "M1" }, { id: 6, name: "M1" });
-const MOTO = merged({ id: 6, name: "M1" }, { id: 3, name: "L3" });
 const plate = (value) => String(value ?? "").toUpperCase().replace(/-/g, "");
+
+// What the vehicle registration says (La Positiva's plate lookup): MTC category
+// (L* motos, M* cars) and vehicle class (IdClase). Used by /query-plate and /query-info.
+const CAR = { id: 6, name: "M1" };
+const REGISTRY = {
+  ABC123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: 5 },
+  AFO123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: 5 },
+  AEF710: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: null },
+  MOT123: { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, seats: 2 },
+  CAM777: { category: CAR, class: { id: 33, name: "CAMIONETA" }, seats: 5 },
+  "4321AB": { category: { id: 5, name: "L5" }, class: { id: 25, name: "MOTOTAXI" }, seats: 3 },
+  "5555AB": { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, seats: 2 },
+};
+const COMPLETE = ["ABC123", "AFO123", "MOT123", "CAM777", "4321AB", "5555AB"];
+// The backend merges our local type/category with the lookup's (positiva) values.
+const categoryOf = (key) => merged(CAR, REGISTRY[key]?.category ?? CAR);
 
 function vehicleFor(body) {
   const manual = body.brand_id != null;
-  switch (plate(body.plate)) {
-    case "ABC123":
-    case "AFO123":
-    case "MOT123":
-      return {
-        plate: `${body.plate}`.toUpperCase(),
-        category: plate(body.plate) === "MOT123" ? MOTO : CAR,
-        year: 2018,
-        seats: 5,
-        serial: "SERIAL12345",
-        vin: "VIN1234567890",
-        brand: merged({ id: 1035, name: "HYUNDAI" }, { id: 5, name: "HYUNDAI" }),
-        model: merged(null, { id: 1003272, name: "ACCENT" }),
-        version: merged(null, { id: 10006180, name: "1.3" }),
-      };
+  const key = plate(body.plate);
+  if (COMPLETE.includes(key)) {
+    return {
+      plate: `${body.plate}`.toUpperCase(),
+      category: categoryOf(key),
+      year: 2018,
+      seats: REGISTRY[key].seats,
+      serial: "SERIAL12345",
+      vin: "VIN1234567890",
+      brand: merged({ id: 1035, name: "HYUNDAI" }, { id: 5, name: "HYUNDAI" }),
+      model: merged(null, { id: 1003272, name: "ACCENT" }),
+      version: merged(null, { id: 10006180, name: "1.3" }),
+    };
+  }
+  switch (key) {
     case "AEF710":
       return manual
         ? { plate: "AEF-710", year: body.year, seats: body.seats, serial: body.serial, vin: body.vin, brand: merged(brands.find((b) => b.id === body.brand_id), null) }
         : {
             plate: "AEF-710",
-            category: CAR,
+            category: categoryOf("AEF710"),
             year: 2016,
             seats: null,
             serial: null,
@@ -163,6 +179,22 @@ const server = createServer(async (req, res) => {
 
   const versionsMatch = path.match(/^\/versions\/(\d+)$/);
   if (req.method === "GET" && versionsMatch) return send(res, 200, { data: filter(versions[versionsMatch[1]] ?? []) });
+
+  if (req.method === "POST" && path === "/query-plate") {
+    const body = await readJson(req);
+    const key = plate(body.plate);
+    if (key === "ERR500") return send(res, 503, { error: "La Positiva no responde" });
+    const registry = REGISTRY[key];
+    if (!registry) return send(res, 404, { error: "No se encontró información para la placa" });
+    return send(res, 200, {
+      data: {
+        plate: String(body.plate).toUpperCase(),
+        seats: registry.seats,
+        category: { positiva: registry.category },
+        type: { positiva: registry.class },
+      },
+    });
+  }
 
   if (req.method === "POST" && path === "/query-info") {
     const body = await readJson(req);
