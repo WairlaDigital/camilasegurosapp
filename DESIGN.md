@@ -168,6 +168,7 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
   - Figma no define el estado elegido de "LO QUIERO": se usa "Elegido", `aria-pressed` y un anillo `brand-200` en la tarjeta. "Ir a pagar" queda deshabilitado hasta elegir el plan y escribir el celular, con la ayuda "Elige tu plan con «Lo quiero» para continuar.".
   - Estado vacío (sin plan a la venta) no está en Figma: mensaje y acciones "Revisar mis datos" y "Volver al inicio".
 - Antes de pagar (no está en Figma; referencia: captura de la spec): el indicador dice "PASO 3/3" para seguir la numeración de Figma (la cotización es 3/3), aunque la spec muestra "PASO 2/2". "Continuar con el pago" muestra un aviso provisional mientras no exista el checkout.
+- Datos del vehículo: cuando el tipo tiene un solo uso posible (spec sección 2), "Tipo de uso" se muestra como campo deshabilitado con la ayuda "Es el único uso posible para este tipo de vehículo."; si no hay uso cotizable en línea (RUC + moto lineal, spec 4.2), el selector queda deshabilitado ("No disponible en línea") con la explicación debajo. Figma no define estos estados.
 - Hero: el velo violeta se reproduce con degradados medidos sobre las capturas (desktop desde la izquierda, mobile desde abajo-izquierda); en mobile los beneficios se ocultan, como en Figma.
 
 ## 8. Recursos

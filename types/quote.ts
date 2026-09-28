@@ -2,6 +2,9 @@
 
 export type Option<Id extends string | number = number> = { id: Id; name: string };
 
+/** Plate category (spec 4.1): motos, mototaxis and trimotos vs. autos, camionetas and camiones. */
+export type VehicleCategory = "auto" | "moto";
+
 export type VehicleTypeOption = Option & { uses: Option[] };
 
 /** Vehicle data as the front knows it. Any field can be missing after the plate lookup. */
@@ -16,6 +19,8 @@ export type VehicleData = {
   seats?: number;
   serial?: string;
   vin?: string;
+  /** Category of the vehicle registration (plate lookup), when the API returns it. */
+  registeredCategory?: VehicleCategory;
 };
 
 export type Holder = {

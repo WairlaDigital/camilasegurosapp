@@ -14,6 +14,11 @@ export type StartQuoteState =
   | { status: "invalid"; errors: FieldErrors }
   | { status: "failed"; message: string };
 
+const CATEGORY_MISMATCH = {
+  auto: "Según el registro vehicular, esta placa es de una moto, mototaxi o trimoto, pero su formato es de auto. Revisa la placa o escríbenos y te ayudamos.",
+  moto: "Según el registro vehicular, esta placa es de un auto, camioneta o camión, pero su formato es de moto. Revisa la placa o escríbenos y te ayudamos.",
+} as const;
+
 const UNAVAILABLE = "No pudimos consultar tu placa en este momento. Inténtalo de nuevo en unos minutos.";
 
 /**
@@ -54,6 +59,13 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
     }
     console.error("startQuote: /query-info failed", error);
     return { status: "failed", message: UNAVAILABLE };
+  }
+
+  // Spec 4.1: the category is fixed by the plate format; if the registration says
+  // otherwise, say it clearly instead of quoting the wrong kind of vehicle.
+  const registered = result.vehicle?.registeredCategory;
+  if (category && registered && registered !== category) {
+    return { status: "failed", message: CATEGORY_MISMATCH[category] };
   }
 
   await writeQuoteSession({ input, request: { ...request, ubigeoId: DEFAULT_UBIGEO_ID, startDate }, result });

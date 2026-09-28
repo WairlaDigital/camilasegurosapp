@@ -53,6 +53,7 @@ const sessionSchema = z.object({
         seats: z.number().optional(),
         serial: z.string().optional(),
         vin: z.string().optional(),
+        registeredCategory: z.enum(["auto", "moto"]).optional(),
       })
       .nullable(),
     holder: z

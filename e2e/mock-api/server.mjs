@@ -8,6 +8,7 @@
 //   AEF-710  incomplete vehicle (HYUNDAI H1, no version/serial/VIN) → vehicle form
 //   ZZZ-999  plate lookup fails (no vehicle); the backend then ignores manual data
 //   AFO-123  complete vehicle, but only AFOCAT plans (not sold here) → no plan to show
+//   MOT-123  auto-format plate registered as a moto (category L3) → mismatch message (spec 4.1)
 //   ERR-500  upstream error (503)
 // Plans: La Positiva at S/ 210 for today (Lima) and S/ 215 for any other start date
 // (to test the re-quote), plus an AFOCAT plan that the front must hide.
@@ -50,6 +51,9 @@ const versions = {
 };
 
 const merged = (local, positiva) => ({ ...(local ?? {}), positiva });
+// Registration category from the plate lookup (MTC classes: L* motos, M* cars).
+const CAR = merged({ id: 6, name: "M1" }, { id: 6, name: "M1" });
+const MOTO = merged({ id: 6, name: "M1" }, { id: 3, name: "L3" });
 const plate = (value) => String(value ?? "").toUpperCase().replace(/-/g, "");
 
 function vehicleFor(body) {
@@ -57,8 +61,10 @@ function vehicleFor(body) {
   switch (plate(body.plate)) {
     case "ABC123":
     case "AFO123":
+    case "MOT123":
       return {
         plate: `${body.plate}`.toUpperCase(),
+        category: plate(body.plate) === "MOT123" ? MOTO : CAR,
         year: 2018,
         seats: 5,
         serial: "SERIAL12345",
@@ -72,6 +78,7 @@ function vehicleFor(body) {
         ? { plate: "AEF-710", year: body.year, seats: body.seats, serial: body.serial, vin: body.vin, brand: merged(brands.find((b) => b.id === body.brand_id), null) }
         : {
             plate: "AEF-710",
+            category: CAR,
             year: 2016,
             seats: null,
             serial: null,

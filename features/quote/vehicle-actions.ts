@@ -5,6 +5,8 @@ import { getVehicleTypes } from "@/services/catalog";
 import { ApiError } from "@/services/errors";
 import { queryInfo } from "@/services/quotes";
 import { todayInLima } from "./lib/dates";
+import { detectCategory } from "./lib/plate";
+import { typesForCategory } from "./lib/use-matrix";
 import { DOCUMENT_TYPES } from "./lib/vehicle-rules";
 import { readQuoteSession, writeQuoteSession } from "./session";
 import { parseVehicleForm, type VehicleFieldErrors } from "./vehicle-schema";
@@ -32,7 +34,12 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
     return { status: "failed", message: "No pudimos validar tus datos. Inténtalo de nuevo en unos minutos." };
   }
 
-  const parsed = parseVehicleForm(Object.fromEntries(formData), types);
+  // Only types of the category fixed by the plate (spec 4.1). The plate was validated on the home form.
+  const category = detectCategory(session.input.plate) ?? "auto";
+  const parsed = parseVehicleForm(Object.fromEntries(formData), {
+    types: typesForCategory(types, category),
+    documentType: session.input.documentType,
+  });
   if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
   const vehicle = parsed.data;
 

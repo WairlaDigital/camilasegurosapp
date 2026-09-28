@@ -51,7 +51,19 @@ describe("toQuoteResult", () => {
       seats: undefined,
       serial: undefined,
       vin: undefined,
+      registeredCategory: undefined,
     });
+  });
+
+  it.each([
+    [{ id: 3, name: "L3" }, "moto"],
+    [{ id: 5, name: null }, "moto"],
+    [{ id: 6, name: "M1" }, "auto"],
+    [{ id: 10, name: "N2" }, "auto"],
+    [{ id: 0, name: "" }, undefined],
+  ])("reads the registration category %j as %s", (positiva, expected) => {
+    const withCategory = { ...response, vehicle: { ...response.vehicle, category: { id: 6, name: "M1", positiva } } };
+    expect(toQuoteResult(queryInfoResponseSchema.parse(withCategory), request).vehicle?.registeredCategory).toBe(expected);
   });
 
   it("converts prices in soles to integer cents", () => {

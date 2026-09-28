@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { StepHeader } from "@/features/quote/components/step-header";
+import { detectCategory } from "@/features/quote/lib/plate";
+import { typesForCategory } from "@/features/quote/lib/use-matrix";
 import { VehicleForm } from "@/features/quote/components/vehicle-form";
 import { readQuoteSession } from "@/features/quote/session";
 import { getModels, getVehicleTypes, getVersions } from "@/services/catalog";
@@ -20,17 +22,25 @@ export default async function VehiclePage() {
   };
 
   // Lists for the prefilled brand/model, fetched in parallel with the types.
-  const [types, models, versions] = await Promise.all([
+  const [allTypes, models, versions] = await Promise.all([
     getVehicleTypes(),
     vehicle.brand ? getModels(vehicle.brand.id, vehicle.typeId) : [],
     vehicle.model ? getVersions(vehicle.model.id) : [],
   ]);
+  // Spec 4.1: the category comes from the plate and cannot change here.
+  const types = typesForCategory(allTypes, detectCategory(session.input.plate) ?? "auto");
 
   return (
     <Container className="grid gap-10 pt-7.5 pb-20 lg:grid-cols-12 lg:gap-x-8 lg:pt-20">
       <div className="flex flex-col gap-6 lg:col-span-8 lg:gap-12.5">
         <StepHeader step={2} total={3} backHref="/" title="Ingresa los datos de tu vehículo." plate={vehicle.plate} />
-        <VehicleForm types={types} initial={vehicle} initialModels={models} initialVersions={versions} />
+        <VehicleForm
+          types={types}
+          documentType={session.input.documentType}
+          initial={vehicle}
+          initialModels={models}
+          initialVersions={versions}
+        />
       </div>
       {/* Figma: help text beside the form on desktop only. */}
       <aside className="hidden flex-col gap-1 lg:col-span-4 lg:col-start-9 lg:flex lg:pt-43">

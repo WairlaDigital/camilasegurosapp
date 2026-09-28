@@ -18,7 +18,7 @@ Alcance: SOAT para usos Particular, Taxi, Carga y Comercial (solo moto lineal). 
 | 3 | **Datos incompletos** | Solo si faltan datos del vehículo. Mensaje simple + "Completa y cotiza" | — |
 | 4 | **Datos del vehículo** (Paso 1) | Formulario prellenado y **editable**: uso, tipo, marca, modelo, asientos, año, VIN/serie | `GET /brands`, `/models/{brand}/type/{type}`, `/versions/{model}`, luego `POST /query-info` con los datos manuales |
 | 5 | **Cotización** (`/cotizar/cotizacion`) | "Hola {nombre}", resumen del vehículo con "Editar", tarjeta de precio con coberturas y "LO QUIERO" (sin planes AFOCAT), fecha de inicio, celular, "Ir a pagar" | `POST /query-info` solo al presionar "Ir a pagar" con otra fecha; si el precio cambia, se muestra y se pide confirmar |
-| 6 | **Antes de pagar** (`/cotizar/antes-de-pagar`, Paso 2/2 en la spec) | Informativa: "¡Estás a un paso de obtener tu SOAT!", dos notas con check (instrucciones de pago por correo, horarios si paga en agente) y "Continuar con el pago", que abre el checkout | `POST /data` (crea la orden y la orden de Culqi). Pendiente: necesita los datos personales del titular y el proveedor de pago |
+| 6 | **Antes de pagar** (`/cotizar/antes-de-pagar`, Paso 2/2 en la spec) | Informativa: "¡Estás a un paso de obtener tu SOAT!", dos notas con check (instrucciones de pago por correo, horarios si paga en agente) y "Continuar con el pago", que abre el checkout | `POST /data` (crea la orden y la orden de Culqi). Pendiente: necesita los datos personales del titular |
 | 7 | **Checkout** | Modal de **Culqi Checkout** (JS en el navegador, con la llave pública). Con tarjeta o Yape devuelve un `token`; con banca móvil, agentes o billeteras (PagoEfectivo) usa la `order` de Culqi que crea la API | `POST /data` (orden + `culqi`), luego `POST /charge` con el token. Los pagos con `order` se confirman por webhook |
 | 8 | Confirmación | Gracias + qué sigue (la póliza llega por correo) | — |
 
@@ -36,6 +36,8 @@ Moto/Mototaxi/Trimoto si la placa coincide **exactamente** con uno de estos patr
 
 Si la consulta de placa devuelve un tipo que contradice la categoría detectada, se muestra un mensaje claro en lugar de fallar en silencio.
 
+**Implementación:** la categoría del registro llega en `vehicle.category.positiva` de `/query-info` (`Categoria.IdCategoria` de La Positiva, clases del MTC: L1–L5 = motos, M/N/O = autos, buses, camiones y remolques). Si contradice la de la placa, el inicio muestra un aviso y no guarda la sesión. Sin datos de la consulta, el backend repite la categoría del tipo enviado, así que no hay falso aviso. En "Datos del vehículo" solo se ofrecen tipos de la categoría de la placa (también se valida en el servidor).
+
 ### Tipo de vehículo → usos (spec 2 vs catálogo real de `GET /data`)
 
 | Spec | Usos (spec) | Catálogo backend (id → usos) |
@@ -50,6 +52,8 @@ Si la consulta de placa devuelve un tipo que contradice la categoría detectada,
 - Si solo hay un uso posible (Carga), no se muestra selector.
 - **RUC + Moto lineal ⇒ solo Comercial.** No aplica a otros tipos.
 - Cambiar el tipo de vehículo vuelve a filtrar los usos.
+
+**Implementación:** la tabla está en `features/quote/lib/use-matrix.ts` (tipos del catálogo asignados a cada fila; Trimoto = Motocarga es provisional). Un uso se ofrece si lo permiten la tabla **y** el catálogo; los tipos fuera de la tabla siguen el catálogo. "Comercial" no tiene IdUso, así que no se ofrece: con RUC, una moto lineal queda sin uso cotizable y el formulario lo explica. El formulario del inicio solo conoce la categoría, así que la regla RUC + moto lineal aplica en "Datos del vehículo".
 
 ### Documento
 DNI, Carné de Extranjería y RUC (el backend también acepta Pasaporte; la spec no lo incluye). El nombre del saludo viene de `document.names` (RENIEC) o `document.company_name` (SUNAT) en `/query-info`.

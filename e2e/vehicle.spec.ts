@@ -3,19 +3,20 @@ import { expect, test, type Page } from "@playwright/test";
 // Home → plate lookup → "Datos incompletos" → vehicle data form (Figma 267:24).
 // Runs against the fake API (e2e/mock-api), whose example plates drive each case.
 
-async function startQuote(page: Page, plate: string) {
+async function startQuote(page: Page, plate: string, { use = "particular", ruc = false } = {}) {
   await page.goto("/");
   await page.getByLabel("Ingresa tu placa:").fill(plate);
-  await page.getByLabel("Número de documento:").fill("12345678");
-  await page.getByLabel("Uso:").selectOption("particular");
+  if (ruc) await page.getByLabel("Tipo de documento").selectOption("RUC");
+  await page.getByLabel("Número de documento:").fill(ruc ? "20123456789" : "12345678");
+  await page.getByLabel("Uso:").selectOption(use);
   await page.getByLabel("Correo electrónico:").fill("cliente@correo.pe");
   await page.getByRole("checkbox", { name: /Consentimiento de datos/ }).check();
   await page.getByRole("button", { name: "Comprar SOAT virtual" }).click();
 }
 
 /** Goes through the real flow so the quote session cookie is set before the form loads. */
-async function openVehicleForm(page: Page, plate: string) {
-  await startQuote(page, plate);
+async function openVehicleForm(page: Page, plate: string, options?: { use?: string; ruc?: boolean }) {
+  await startQuote(page, plate, options);
   await page.waitForURL(/\/cotizar\/datos-incompletos$/);
   await page.getByRole("link", { name: "Completa y cotiza" }).click();
   await page.waitForURL(/\/cotizar\/vehiculo$/);
@@ -95,12 +96,55 @@ test("the brand autocomplete works with the keyboard", async ({ page }) => {
   await expect(page.getByRole("listbox")).toBeHidden();
 });
 
-test("changing the vehicle type filters the allowed uses", async ({ page }) => {
+test("an auto plate only offers auto types, and a single use has no selector", async ({ page }) => {
   await openVehicleForm(page, "AEF-710");
   const f = vehicleForm(page);
 
-  await f.type.selectOption("10"); // Motocicleta: only Particular
-  await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "PARTICULAR"]);
+  // Spec 4.1: the category is fixed by the plate (no Mototaxi, Motocicleta or Motocarga).
+  await expect(f.type.locator("option")).toHaveText([
+    "Selecciona el tipo",
+    "AUTOMÓVIL",
+    "CAMIONETA HASTA 7 ASIENTOS",
+    "MINIVAN (9 A 16 ASIENTOS)",
+  ]);
+  await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "TAXI", "PARTICULAR"]);
+
+  await f.type.selectOption("8"); // Minivan: only Particular in the catalog
+  await expect(f.use).toBeDisabled();
+  await expect(f.use).toHaveValue("PARTICULAR");
+  await expect(page.getByText("Es el único uso posible para este tipo de vehículo.")).toBeVisible();
+});
+
+test("a moto plate only offers moto types; Motocarga is Carga only (spec section 2)", async ({ page }) => {
+  await openVehicleForm(page, "1234-AB", { use: "carga" });
+  const f = vehicleForm(page);
+
+  await expect(f.type.locator("option")).toHaveText(["Selecciona el tipo", "MOTOTAXI", "MOTOCICLETA", "MOTOCARGA"]);
+  await expect(f.type).toHaveValue("16");
+  await expect(f.use).toBeDisabled();
+  await expect(f.use).toHaveValue("CARGA");
+
+  await f.type.selectOption("2"); // Mototaxi: Particular or Taxi
+  await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "PARTICULAR", "TAXI"]);
+});
+
+test("with RUC, a moto lineal cannot be Particular (spec 4.2)", async ({ page }) => {
+  await openVehicleForm(page, "1234-AB", { ruc: true });
+  const f = vehicleForm(page);
+
+  await expect(f.type).toHaveValue("10"); // Motocicleta
+  await expect(f.use).toBeDisabled();
+  await expect(page.getByText(/Con RUC, una moto lineal solo puede tener uso Comercial/)).toBeVisible();
+  await expect(f.submit).toBeDisabled();
+
+  await f.type.selectOption("2"); // the rule is only for moto lineal
+  await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "PARTICULAR", "TAXI"]);
+});
+
+test("a registration that contradicts the plate format stops with a clear message (spec 4.1)", async ({ page }) => {
+  await startQuote(page, "MOT-123");
+  await expect(alertWith(page, "Según el registro vehicular, esta placa es de una moto")).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test("invalid values show an error when leaving the field", async ({ page }) => {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Option, QuoteResult, VehicleData } from "@/types/quote";
+import type { Option, QuoteResult, VehicleCategory, VehicleData } from "@/types/quote";
 
 // POST /query-info response (see docs/api.md). Null keys are dropped by the backend.
 
@@ -16,6 +16,7 @@ const vehicleSchema = z.object({
   seats: z.number().nullish(),
   vin: z.string().nullish(),
   serial: z.string().nullish(),
+  category: mergedSchema,
   type: mergedSchema,
   use: mergedSchema,
   brand: mergedSchema,
@@ -62,6 +63,22 @@ function positivaOption(value: Merged): Option<string> | undefined {
 const optional = <T>(value: T | null | undefined) => value ?? undefined;
 
 /**
+ * Category of the registration found by the plate lookup (La Positiva's
+ * IdCategoria / Descripcion, the MTC classes): L1–L5 are motos, mototaxis and
+ * trimotos; M, N and O are cars, buses, trucks and trailers. Without lookup data
+ * the backend echoes the category of the type we sent, so it never contradicts it.
+ */
+function registeredCategory(value: Merged): VehicleCategory | undefined {
+  const name = value?.positiva?.name?.trim().toUpperCase() ?? "";
+  if (/^L\d/.test(name)) return "moto";
+  if (/^[MNO]\d/.test(name)) return "auto";
+  const id = Number(value?.positiva?.id);
+  if (id >= 1 && id <= 5) return "moto";
+  if (id >= 6 && id <= 15) return "auto";
+  return undefined;
+}
+
+/**
  * Plan names are "PRODUCT--Insurer--Vehicle type[--Use]", with uneven spacing
  * ("SOAT DIGITAL-- Positiva -- Automovil"). The card shows product and insurer.
  */
@@ -94,6 +111,7 @@ export function toQuoteResult(
         seats: optional(data.vehicle.seats),
         serial: optional(data.vehicle.serial) || undefined,
         vin: optional(data.vehicle.vin) || undefined,
+        registeredCategory: registeredCategory(data.vehicle.category),
       }
     : null;
 

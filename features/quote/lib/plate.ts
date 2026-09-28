@@ -1,6 +1,8 @@
 // Plate rules from the spec (docs/flujo.md, "Categoría por placa").
 
-export type VehicleCategory = "auto" | "moto";
+import type { VehicleCategory } from "@/types/quote";
+
+export type { VehicleCategory };
 
 /** Uppercases and strips spaces; keeps the hyphen if the user typed it. */
 export function normalizePlate(raw: string): string {

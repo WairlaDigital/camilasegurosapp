@@ -6,11 +6,15 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { Option, VehicleData, VehicleTypeOption } from "@/types/quote";
+import { allowedUses } from "../lib/use-matrix";
+import type { DocumentType } from "../lib/vehicle-rules";
 import { saveVehicle, type SaveVehicleState } from "../vehicle-actions";
-import { parseVehicleForm, type VehicleField, type VehicleFieldErrors } from "../vehicle-schema";
+import { noUseMessage, parseVehicleForm, type VehicleField, type VehicleFieldErrors } from "../vehicle-schema";
 
 type VehicleFormProps = {
+  /** Only the types of the category fixed by the plate (spec 4.1). */
   types: VehicleTypeOption[];
+  documentType: DocumentType;
   initial: VehicleData;
   initialModels: Option<string>[];
   initialVersions: Option<string>[];
@@ -31,7 +35,7 @@ const searchBrands = async (query: string): Promise<ComboboxOption[]> =>
 const FIELDS: VehicleField[] = ["useId", "typeId", "brandId", "modelId", "versionId", "seats", "year", "serial", "vin"];
 
 /** Figma "Ingresa los datos de su vehículo" (267:24). Prefilled and editable (spec section 6). */
-export function VehicleForm({ types, initial, initialModels, initialVersions }: VehicleFormProps) {
+export function VehicleForm({ types, documentType, initial, initialModels, initialVersions }: VehicleFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState<SaveVehicleState, FormData>(saveVehicle, { status: "idle" });
 
@@ -51,9 +55,11 @@ export function VehicleForm({ types, initial, initialModels, initialVersions }: 
   const [clientErrors, setClientErrors] = useState<Partial<Record<VehicleField, string | null>>>({});
 
   const type = types.find((option) => String(option.id) === typeId);
-  const uses = type?.uses ?? [];
-  // Derived: a use that the chosen type does not allow is dropped.
-  const selectedUse = uses.some((use) => String(use.id) === useId) ? useId : "";
+  // Spec section 2: uses allowed by the table and the catalog for this type.
+  const uses = type ? allowedUses(type, documentType) : [];
+  // Derived: a single possible use is fixed (no selector); one the type does not allow is dropped.
+  const onlyUse = uses.length === 1 ? uses[0] : null;
+  const selectedUse = onlyUse ? String(onlyUse.id) : uses.some((use) => String(use.id) === useId) ? useId : "";
   const modelName = models.find((model) => model.id === modelId)?.name ?? "";
   const versionName = versions.find((version) => version.id === versionId)?.name ?? "";
   // Spec: "Continuar" is enabled only when every required field has a value.
@@ -98,7 +104,7 @@ export function VehicleForm({ types, initial, initialModels, initialVersions }: 
 
   function validate(): VehicleFieldErrors {
     if (!formRef.current) return {};
-    const result = parseVehicleForm(Object.fromEntries(new FormData(formRef.current)), types);
+    const result = parseVehicleForm(Object.fromEntries(new FormData(formRef.current)), { types, documentType });
     return result.ok ? {} : result.errors;
   }
 
@@ -129,23 +135,42 @@ export function VehicleForm({ types, initial, initialModels, initialVersions }: 
       <input type="hidden" name="versionName" value={versionName} />
 
       <div className="grid gap-5 md:grid-cols-2 md:gap-x-8">
-        <Select
-          name="useId"
-          label="Tipo de uso"
-          variant="inset"
-          placeholder={type ? "Selecciona el uso" : "Primero elige el tipo de vehículo"}
-          disabled={!type}
-          value={selectedUse}
-          onChange={(event) => setUseId(event.target.value)}
-          onBlur={() => handleBlur("useId")}
-          error={errorFor("useId")}
-        >
-          {uses.map((use) => (
-            <option key={use.id} value={use.id}>
-              {use.name.toUpperCase()}
-            </option>
-          ))}
-        </Select>
+        {onlyUse ? (
+          // Spec section 2: with a single possible use there is no selector.
+          <>
+            <input type="hidden" name="useId" value={onlyUse.id} />
+            <Input
+              name="useIdFixed"
+              label="Tipo de uso"
+              variant="inset"
+              disabled
+              value={onlyUse.name.toUpperCase()}
+              readOnly
+              hint="Es el único uso posible para este tipo de vehículo."
+            />
+          </>
+        ) : (
+          <Select
+            name="useId"
+            label="Tipo de uso"
+            variant="inset"
+            placeholder={
+              !type ? "Primero elige el tipo de vehículo" : uses.length === 0 ? "No disponible en línea" : "Selecciona el uso"
+            }
+            disabled={uses.length === 0}
+            value={selectedUse}
+            onChange={(event) => setUseId(event.target.value)}
+            onBlur={() => handleBlur("useId")}
+            error={type && uses.length === 0 ? undefined : errorFor("useId")}
+            hint={type && uses.length === 0 ? noUseMessage(type.id, documentType) : undefined}
+          >
+            {uses.map((use) => (
+              <option key={use.id} value={use.id}>
+                {use.name.toUpperCase()}
+              </option>
+            ))}
+          </Select>
+        )}
 
         <Select
           name="typeId"

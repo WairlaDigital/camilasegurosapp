@@ -7,6 +7,7 @@ const types: VehicleTypeOption[] = [
   { id: 1, name: "Automóvil", uses: [{ id: 1, name: "Taxi" }, { id: 5, name: "Particular" }] },
   { id: 10, name: "Motocicleta", uses: [{ id: 5, name: "Particular" }] },
 ];
+const rules = { types, documentType: "DNI" as const };
 
 const valid = {
   useId: "5",
@@ -24,13 +25,13 @@ const valid = {
 };
 
 const errorsFor = (input: Record<string, unknown>) => {
-  const result = parseVehicleForm(input, types);
+  const result = parseVehicleForm(input, rules);
   return result.ok ? {} : result.errors;
 };
 
 describe("parseVehicleForm", () => {
   it("accepts a complete form, coerces numbers and uppercases serial and VIN", () => {
-    const result = parseVehicleForm(valid, types);
+    const result = parseVehicleForm(valid, rules);
     expect(result.ok && result.data).toMatchObject({
       useId: 5,
       typeId: 1,
@@ -51,6 +52,21 @@ describe("parseVehicleForm", () => {
 
   it("requires a use allowed for the vehicle type", () => {
     expect(errorsFor({ ...valid, typeId: "10", useId: "1" }).useId).toMatch(/no aplica/);
+  });
+
+  it("applies the table of spec section 2, including RUC + moto lineal (spec 4.2)", () => {
+    const automovilWithCarga = { ...types[0], uses: [...types[0].uses, { id: 7, name: "Carga" }] };
+    const withCarga = parseVehicleForm({ ...valid, useId: "7" }, { ...rules, types: [automovilWithCarga] });
+    expect(!withCarga.ok && withCarga.errors.useId).toMatch(/no aplica/);
+
+    const ruc = parseVehicleForm({ ...valid, typeId: "10", useId: "5" }, { ...rules, documentType: "RUC" });
+    expect(!ruc.ok && ruc.errors.useId).toMatch(/Con RUC, una moto lineal solo puede tener uso Comercial/);
+  });
+
+  it("rejects a type outside the plate's category (not in the list it receives)", () => {
+    const autoTypes = { ...rules, types: [types[0]] };
+    const result = parseVehicleForm({ ...valid, typeId: "10" }, autoTypes);
+    expect(!result.ok && result.errors.typeId).toBe("Selecciona el tipo de vehículo.");
   });
 
   it("rejects an unknown vehicle type", () => {
