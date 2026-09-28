@@ -107,6 +107,8 @@ Crea (o reutiliza, si llega `order_id`) la póliza pendiente, el conductor y una
 
 Respuesta: `{ "order_id", "culqi": { "amount" /* céntimos */, "title", "currency", "order" /* id de orden Culqi */ } }`.
 
+`culqi` son los `settings` de Culqi Checkout en el front (`new CulqiCheckout(llavePública, { settings, client: { email } … })`). La `order` habilita los pagos diferidos (PagoEfectivo: banca móvil, agentes, billeteras); con tarjeta o Yape, Culqi devuelve un `token` que se envía a `POST /charge`. Referencia: `plugins/culqi.client.js` y `components/forms/payment.vue` en soat-para-taxi.
+
 - Con `plan.token`, **el precio sale de la cotización guardada**; el precio enviado se ignora.
 - Validación (`ValidateResponseRequest`): nombres y apellidos solo letras y espacios (mín. 2, obligatorios incluso con RUC), `phone` empieza con 9, `email` con verificación DNS, `serial` alfanumérico mín. 8, `year_built` 1980–2030.
 - Cotización inválida o expirada → **500** con mensaje genérico (no 422).

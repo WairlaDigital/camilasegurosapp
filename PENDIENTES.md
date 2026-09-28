@@ -10,13 +10,10 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 **Hecho (en `main`):**
 - Reglas del proyecto, sistema de diseño desde Figma ([DESIGN.md](DESIGN.md)) y pruebas (Vitest + Playwright con servidor falso de la API).
 - Flujo: inicio → `POST /query-info` → "Datos incompletos" → "Datos del vehículo" → nueva cotización con datos manuales. El estado viaja en una cookie cifrada.
-- Pantalla de cotización (`/cotizar/cotizacion`): saludo, resumen del vehículo con "Editar", tarjeta del plan sin AFOCAT, fecha de inicio, celular e "Ir a pagar". El inicio (vehículo completo) y "Datos del vehículo" ya redirigen a ella.
-- "Ir a pagar" guarda el plan y el celular en la sesión. Si la fecha cambió, vuelve a cotizar una sola vez; si el precio cambió, lo muestra y pide confirmar de nuevo.
-- Hoy termina con un mensaje provisional ("Listo, guardamos tu elección…") porque "Antes de pagar" no existe (buscar `TODO(before-pay screen)`).
+- Pantalla de cotización (`/cotizar/cotizacion`): saludo, resumen del vehículo con "Editar", tarjeta del plan sin AFOCAT, fecha de inicio, celular e "Ir a pagar". Si la fecha cambió, vuelve a cotizar una sola vez; si el precio cambió, lo muestra y pide confirmar de nuevo.
+- Pantalla "Antes de pagar" (`/cotizar/antes-de-pagar`, spec sección 8). "Ir a pagar" guarda plan y celular y lleva a ella. "Continuar con el pago" muestra un aviso provisional (buscar `TODO(checkout)`).
 
-**Siguiente tarea: pantalla "Antes de pagar"** (informativa, spec "PASO 2/2"). Al terminarla, reemplazar el mensaje provisional de la cotización por la redirección.
-
-**Después:** checkout (**bloqueado** hasta decidir proveedor con La Positiva) → confirmación. La pantalla "Completa los datos del titular" espera la decisión sobre datos personales y orden de pasos.
+**Siguiente: checkout con Culqi.** La API ya integra Culqi; al front le toca: crear la orden (`POST /data`, devuelve `order_id` y los `settings` de Culqi), abrir Culqi Checkout en el navegador, enviar el `token` a `POST /charge` y, si la persona elige un pago diferido (PagoEfectivo con la `order`), mostrar "orden generada". Falta la **llave pública de Culqi** y resolver de dónde salen dirección, departamento y distrito del titular (ver "Datos personales para la orden"). Mientras tanto se puede avanzar en: validación de categoría contra la consulta de placa (spec 4.1) y rate limiting de `/api/vehicles/*`. La pantalla "Completa los datos del titular" espera la decisión sobre datos personales y orden de pasos.
 
 **Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas).
 
@@ -28,20 +25,21 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [x] **Recursos del home** exportados de Figma (2026-09-27): foto del hero, ícono de categoría auto, 4 íconos de beneficios y 5 de coberturas. Integrados y revisados contra Figma.
 - [ ] **Recursos que aún faltan:** ícono de menú mobile ([559:71](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=559-71), hoy es un ícono CSS provisional) y manchas decorativas del fondo ([197:296](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-296), [197:297](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-297)).
 - [ ] **Respuestas de la FAQ.** Figma solo trae la primera; las otras 5 son textos provisionales en `features/home/content.ts`. Validarlas.
+- [ ] **Llave pública de Culqi** (`pk_test_…` para desarrollo y `pk_live_…` para producción). Es pública por diseño (va al navegador como `NEXT_PUBLIC_CULQI_PUBLIC_KEY`); la llave secreta vive solo en la API.
 - [x] **Logo, tipografía y colores**. Tomados de Figma (Red Hat Display, violeta `#4740de`).
 - [ ] **URLs del sitio**: menú (Seguros, Beneficios, Testimonios, Blog), Contáctanos, Términos y Condiciones, Facebook. Hoy son `#` en `lib/site.ts`.
 - [ ] **Textos legales**: URL de la Política de Privacidad y del Consentimiento de datos para usos adicionales.
 
 ## Pendiente con La Positiva (Fidel)
 
-- [ ] **Proveedor de checkout**: pasarela propia de La Positiva, Culqi de soatparataxi.pe o Culqi nuevo. Bloquea la pantalla de pago.
+- [x] **Proveedor de checkout.** Decidido (2026-09-27): Culqi, a través de la API. La sección 9 de la spec ("pendiente con La Positiva") era un error del cliente: el front nunca se conecta a La Positiva, solo a la API, que ya integra Culqi (`token` para tarjeta/Yape y `order` para PagoEfectivo). Falta la integración front con Culqi Checkout.
 - [ ] **IdUso de "Comercial"** para moto lineal.
 - [ ] **Mecanismo de invalidación del token** de cotización al usar "Editar" (en coordinación con la solución del bug de tokens duplicados). Hoy "Editar" → "Guardar y continuar" crea una cotización nueva que reemplaza a la anterior en la sesión (y borra el plan elegido); la anterior sigue válida en el backend.
 
 ## Decisiones de producto
 
-- [ ] **Datos personales para la orden.** Figma agrega la pantalla "Completa los datos del titular" (tipo de persona, documento, apellidos, nombres, domicilio, referencia, departamento/provincia/distrito, correo, celular, comprobante a nombre del contratante), que la spec no tiene. Falta definir en qué paso va y qué campos llegan prellenados de RENIEC/SUNAT. El backend no recibe provincia, referencia ni la opción de comprobante.
-- [ ] **Orden de pasos.** Figma usa "PASO x/3" (titular → vehículo → cotización); la spec usa "PASO 1" en vehículo y "PASO 2/2" en "Antes de pagar".
+- [ ] **Datos personales para la orden.** `POST /data` exige nombres, apellidos, dirección, departamento y distrito. `/query-info` ya devuelve `address`, `state` y `district` cuando RENIEC/SUNAT los encuentran (hoy el mapper los descarta): si llegan completos, la orden se puede crear sin pedir nada más; si no, hace falta la pantalla de titular. Figma agrega la pantalla "Completa los datos del titular" (tipo de persona, documento, apellidos, nombres, domicilio, referencia, departamento/provincia/distrito, correo, celular, comprobante a nombre del contratante), que la spec no tiene. Falta definir en qué paso va y qué campos llegan prellenados de RENIEC/SUNAT. El backend no recibe provincia, referencia ni la opción de comprobante.
+- [ ] **Orden de pasos.** Figma usa "PASO x/3" (titular → vehículo → cotización); la spec usa "PASO 1" en vehículo y "PASO 2/2" en "Antes de pagar". **Provisional:** "Antes de pagar" también dice "PASO 3/3" para no retroceder en la numeración.
 - [ ] **Entrega por WhatsApp.** El hero y la FAQ de Figma dicen que el SOAT llega por WhatsApp; el backend solo envía correo.
 - [ ] **"Desde S/33 al año"** en el hero: confirmar el precio mínimo real.
 - [ ] **Zona de circulación (`ubigeo_id`).** El backend la exige; la spec no tiene el campo. **Hoy se envía Lima (150101) de forma provisional** (`DEFAULT_UBIGEO_ID`). ¿Se pregunta (Lima/Callao) o se asume?
@@ -75,8 +73,10 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [ ] Pantalla "Completa los datos del titular" (depende de la decisión sobre datos personales y orden de pasos).
 - [x] Pantalla "Ingresa los datos de tu vehículo": prellenada y editable, marca con autocompletado remoto, modelo y versión del catálogo, serie y VIN por separado. Revisada contra Figma en desktop y mobile. Al guardar vuelve a cotizar con los datos manuales; falta redirigir a la cotización.
 - [x] Pantalla de cotización: saludo, resumen del vehículo con "Editar", tarjeta de plan, fecha de inicio, celular. Revisada contra Figma en 430, 1100 y 1640 px. Falta redirigir "Ir a pagar" a "Antes de pagar".
-- [ ] Pantalla "Antes de pagar" (informativa).
-- [ ] Checkout (bloqueado por la decisión del proveedor de pago).
+- [x] Pantalla "Antes de pagar" (informativa, spec sección 8). Revisada contra la captura de la spec en 1440 px y en mobile. "Continuar con el pago" espera el checkout.
+- [ ] **Validación de categoría (spec 4.1):** si la consulta de placa devuelve un tipo de vehículo que contradice la categoría detectada (auto/moto), mostrar un mensaje claro en lugar de seguir. Hoy no se compara.
+- [ ] **RUC + moto lineal ⇒ solo "Comercial" (spec 4.2).** No implementado: depende del IdUso de "Comercial" (pendiente con La Positiva).
+- [ ] Checkout con **Culqi Checkout** (`https://js.culqi.com/checkout-js`): `POST /data` → abrir el modal con `settings` y `client.email` → `token` a `POST /charge` (Server Action) → confirmación; `order` → pantalla de orden generada. Manejar `REVIEW` (3DS) y errores con `user_message`. Hoy "Continuar con el pago" muestra un aviso provisional (`TODO(checkout)`).
 - [ ] Pantalla de confirmación de compra (y de orden generada para pagos diferidos).
 - [x] Services de catálogo (`/data`, `/brands`, `/models`, `/versions`) y cotización (`/query-info`) con Zod y precio en céntimos.
 - [x] Estado del flujo en cookie httpOnly cifrada (sobrevive recargas). Guarda la fecha cotizada, los datos manuales del vehículo (para volver a cotizar) y la elección (plan y celular). Falta sumar `order_id` cuando exista el pago.
@@ -94,6 +94,6 @@ _Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
 - [ ] Footer mobile: Figma oculta el mapa de sitio, seguros y redes sociales (incluido "Términos y Condiciones"). Confirmar que es intencional.
 - [ ] Selector de uso del home: antes de ingresar la placa queda deshabilitado ("Primero ingresa tu placa"); Figma no define ese estado.
 - [ ] Datos del vehículo, diferencias con Figma a confirmar: campo **Versión** agregado (el backend lo exige), **serie y VIN separados** (el backend exige ambos), la ayuda lateral no se muestra en mobile (como en Figma) y el título usa "tu" en vez de "su".
-- [ ] Ilustración de "Datos incompletos" (auto con alerta) pendiente de exportar.
+- [ ] Ilustración de "Datos incompletos" (auto con alerta) pendiente de exportar. La spec la muestra, pero su imagen es de baja resolución (390px de ancho toda la pantalla) y no sirve como recurso.
 - [ ] Cotización, diferencias con Figma a confirmar: "Editar" visible en mobile, ayuda bajo la fecha, estado "Elegido" de "LO QUIERO", etiqueta del celular y estado vacío sin plan (ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones)).
 - [ ] Nombre del producto en la tarjeta: se muestra tal como viene del backend ("SOAT" o "SOAT DIGITAL", según el plan). Figma solo muestra "SOAT".

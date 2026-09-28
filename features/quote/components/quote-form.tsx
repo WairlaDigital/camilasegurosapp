@@ -161,12 +161,6 @@ export function QuoteForm({ plans, today, initial }: QuoteFormProps) {
               {state.message}
             </p>
           )}
-          {/* TODO(before-pay screen): the action will redirect instead of this message. */}
-          {state.status === "ready" && (
-            <p role="status" className="rounded-control bg-brand-100 p-4 text-small font-semibold text-brand-900">
-              Listo, guardamos tu elección. El pago se habilitará en el siguiente paso.
-            </p>
-          )}
 
           <Button type="submit" fullWidth pending={pending} disabled={!filled && !pending}>
             Ir a pagar

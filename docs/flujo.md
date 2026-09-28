@@ -5,6 +5,8 @@ Fuentes:
 - **Referencia funcional**: el front existente `~/sites/soat-para-taxi` (Nuxt 3), que ya compra SOAT contra el mismo backend.
 - **Backend**: `~/sites/app-soat-taxi` (Laravel). Contrato en [api.md](api.md).
 
+**El front nunca se conecta a La Positiva.** Solo habla con la API `app-soat-taxi`, que es la que está homologada con La Positiva (cotización, emisión) y la que integra Culqi (órdenes y cobros). Cuando esta documentación dice "La Positiva", se refiere a datos que llegan a través de esa API.
+
 Alcance: SOAT para usos Particular, Taxi, Carga y Comercial (solo moto lineal). Sin AFOCAT ni paneles de administración o puntos de venta.
 
 ## Pantallas
@@ -16,8 +18,8 @@ Alcance: SOAT para usos Particular, Taxi, Carga y Comercial (solo moto lineal). 
 | 3 | **Datos incompletos** | Solo si faltan datos del vehículo. Mensaje simple + "Completa y cotiza" | — |
 | 4 | **Datos del vehículo** (Paso 1) | Formulario prellenado y **editable**: uso, tipo, marca, modelo, asientos, año, VIN/serie | `GET /brands`, `/models/{brand}/type/{type}`, `/versions/{model}`, luego `POST /query-info` con los datos manuales |
 | 5 | **Cotización** (`/cotizar/cotizacion`) | "Hola {nombre}", resumen del vehículo con "Editar", tarjeta de precio con coberturas y "LO QUIERO" (sin planes AFOCAT), fecha de inicio, celular, "Ir a pagar" | `POST /query-info` solo al presionar "Ir a pagar" con otra fecha; si el precio cambia, se muestra y se pide confirmar |
-| 6 | **Antes de pagar** (Paso 2/2) | Informativa. "Continuar con el pago" | `POST /data` (crea la orden y la orden de Culqi) |
-| 7 | **Checkout** | Modal de pago. **Proveedor pendiente** | `POST /charge` (si es Culqi) |
+| 6 | **Antes de pagar** (`/cotizar/antes-de-pagar`, Paso 2/2 en la spec) | Informativa: "¡Estás a un paso de obtener tu SOAT!", dos notas con check (instrucciones de pago por correo, horarios si paga en agente) y "Continuar con el pago", que abre el checkout | `POST /data` (crea la orden y la orden de Culqi). Pendiente: necesita los datos personales del titular y el proveedor de pago |
+| 7 | **Checkout** | Modal de **Culqi Checkout** (JS en el navegador, con la llave pública). Con tarjeta o Yape devuelve un `token`; con banca móvil, agentes o billeteras (PagoEfectivo) usa la `order` de Culqi que crea la API | `POST /data` (orden + `culqi`), luego `POST /charge` con el token. Los pagos con `order` se confirman por webhook |
 | 8 | Confirmación | Gracias + qué sigue (la póliza llega por correo) | — |
 
 ## Reglas de negocio
@@ -79,4 +81,4 @@ Cómo encaja con el backend:
 8. **Estado y descarga de la póliza.** No hay endpoint público para saber si la póliza se emitió ni para descargarla (`/file/{policy}/dl` quedó sin uso; `policy_id`/`certificate_id` solo existen dentro del backend). La confirmación solo puede decir "te llegará por correo".
 9. **Cotizaciones que no vencen.** `expiresAt` nunca se asigna, así que una cotización vieja se acepta.
 10. **Pagos diferidos** (banca móvil, agentes, billeteras). Se confirman por webhook; el front actual no muestra nada tras generar la orden. Definir pantalla de "orden generada, paga antes de…".
-11. **Checkout.** Proveedor pendiente: pasarela de La Positiva, Culqi de soatparataxi.pe o Culqi nuevo.
+11. ~~**Checkout.** Proveedor pendiente~~ **Resuelto:** la sección 9 de la spec es un error del cliente. La API ya integra Culqi (crea la orden de Culqi y cobra con el token); al front le toca integrar Culqi Checkout en el navegador.

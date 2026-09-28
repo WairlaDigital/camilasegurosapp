@@ -47,7 +47,7 @@ test("a complete vehicle goes straight to the quote with the La Positiva plan on
   expect(overflow).toBe(false);
 });
 
-test("'Ir a pagar' needs a plan and a phone, and saves the choice", async ({ page }) => {
+test("'Ir a pagar' needs a plan and a phone, and keeps the choice", async ({ page }) => {
   await openQuote(page, "ABC-123");
   const f = quoteForm(page);
 
@@ -66,10 +66,11 @@ test("'Ir a pagar' needs a plan and a phone, and saves the choice", async ({ pag
   await f.phone.fill("987 654 321");
   await expect(f.phone).toHaveValue("987654321");
   await f.submit.click();
-  await expect(page.getByRole("status")).toContainText("guardamos tu elección");
+  await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
 
-  // The choice survives a reload (quote session).
-  await page.reload();
+  // Going back keeps the choice (quote session).
+  await page.getByRole("link", { name: "Volver. Paso 3 de 3" }).click();
+  await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
   await expect(f.choose).toHaveAttribute("aria-pressed", "true");
   await expect(f.phone).toHaveValue("987654321");
 });
@@ -88,7 +89,7 @@ test("another start date quotes again and shows the new price before continuing"
   await expect(f.date).toHaveValue(limaDate(1));
 
   await f.submit.click();
-  await expect(page.getByRole("status")).toContainText("guardamos tu elección");
+  await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
 });
 
 test("'Editar' opens the vehicle form and saving it comes back to the quote", async ({ page }) => {

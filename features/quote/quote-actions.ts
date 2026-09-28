@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { formatMoney } from "@/lib/money";
 import { queryInfo } from "@/services/quotes";
 import { formatDate, todayInLima } from "./lib/dates";
@@ -12,8 +13,7 @@ export type ConfirmQuoteState =
   | { status: "invalid"; errors: QuoteFieldErrors }
   | { status: "failed"; message: string }
   /** The new start date changed the price: the page shows it and the user confirms again. */
-  | { status: "repriced"; message: string }
-  | { status: "ready" };
+  | { status: "repriced"; message: string };
 
 /** Quotes again for another start date (the quote token is tied to it). */
 async function requote(session: QuoteSession, startDate: string) {
@@ -79,7 +79,5 @@ export async function confirmQuote(_prev: ConfirmQuoteState, formData: FormData)
   }
 
   await writeQuoteSession({ ...session, request, result, selection: { planId, phone } });
-
-  // TODO(before-pay screen): redirect to "Antes de pagar" once it exists.
-  return { status: "ready" };
+  redirect("/cotizar/antes-de-pagar");
 }

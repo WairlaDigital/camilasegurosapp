@@ -1,6 +1,6 @@
 # Arquitectura por capas
 
-El front consume una API propia que expone los planes de pólizas de La Positiva, sus precios y el flujo de compra. La lógica de negocio vive en esa API. El front solo muestra datos, valida formularios y orquesta la compra. Mantenerlo simple: sin DDD, sin puertos/adaptadores ni contenedores de inyección.
+El front consume una API propia que expone los planes de pólizas de La Positiva, sus precios y el flujo de compra. **El front nunca se conecta a La Positiva ni a otros proveedores directamente**: la API es la que está homologada con La Positiva y la que integra Culqi. La lógica de negocio vive en esa API. El front solo muestra datos, valida formularios y orquesta la compra. Mantenerlo simple: sin DDD, sin puertos/adaptadores ni contenedores de inyección.
 
 ## Capas
 
@@ -68,6 +68,7 @@ ESLint aplica estas reglas (`no-restricted-imports` en `eslint.config.mjs`). No 
 - **El precio nunca viene del cliente.** Al comprar se envía `planId`/`quoteId`; el servidor confirma el precio con la API.
 - Las cotizaciones vencen: respetar `expiresAt` y avisar a la persona si expiró.
 - Toda compra envía una **clave de idempotencia** para evitar cobros duplicados por doble clic o reintentos.
+- **Pagos con Culqi Checkout.** La API crea la orden (`POST /data`, que devuelve los `settings` de Culqi) y cobra (`POST /charge`). En el navegador solo se carga Culqi Checkout con la llave **pública** (`NEXT_PUBLIC_CULQI_PUBLIC_KEY`, la única variable pública permitida); el `token` que devuelve se envía a la API desde una Server Action. La llave secreta de Culqi nunca está en este repo.
 - Datos personales (DNI, correo, teléfono) no van en query strings, logs ni `localStorage`.
 
 ## Configuración y secretos

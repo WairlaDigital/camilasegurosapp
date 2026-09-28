@@ -7,6 +7,7 @@ Lineamientos de diseño del cotizador SOAT de seguroscamila.pe. Aplican a cualqu
 **Fuentes**
 - Figma: [Camila Seguros](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros). No tiene variables ni estilos publicados: los valores se leyeron de las capas.
 - Capturas de referencia (1x): [docs/figma/](docs/figma) — `home`, `titular`, `vehiculo`, `cotizacion`, en `-desktop` y `-mobile`.
+- Pantallas que no están en Figma: la referencia es la captura de la spec en [docs/spec/](docs/spec) (`antes-de-pagar-desktop`, frame de ~1440px con contenido de 1120px; solo desktop).
 - Funcionalidad y reglas de negocio: [docs/flujo.md](docs/flujo.md).
 
 **En el código**
@@ -115,6 +116,7 @@ Nunca usar `<input>`, `<select>` o `<button>` sueltos con estilos propios en pan
 - **Footer:** desktop con 4 columnas; mobile solo logo centrado, datos de la empresa, teléfono y copyright (Figma "Group 86").
 - **Tarjeta de plan** (`features/plans/components/plan-card.tsx`): `Card tone="brand"` con `bg-gradient-plan`, 352px de ancho (`md:w-88`), marca de agua "SOAT" (`text-watermark text-outline`), producto y aseguradora en `subtitle`, precio en `title`, tag "Pago Anual" (`bg-brand-900 text-brand-200`), botón `secondary` a ancho completo ("LO QUIERO" → "Elegido" con `aria-pressed` y anillo `brand-200`) y lista de coberturas con check `success`. Varios planes se centran en una fila que se envuelve; el destacado va primero.
 - **Resumen del vehículo** (`features/quote/components/vehicle-summary.tsx`): `Card tone="outlined"` con tile `brand-500` e ícono de auto, título en `brand-500`, datos "Etiqueta: valor" (`<dl>`; etiqueta `brand-500`, valor `ink-strong`) separados por líneas verticales en desktop y uno por línea en mobile, y link "Editar".
+- **Antes de pagar:** pill de paso arriba a la izquierda y, más abajo, un bloque de 5 columnas desde la columna 5 (448px): título `title` (máx. 400px para que corte en "obtener / tu SOAT!"), subtítulo `subtitle`, lista con check `success` alineado a la primera línea y botón primario (ancho completo en mobile).
 - **Cotización:** encabezado de paso en 5 columnas y resumen del vehículo a la derecha (mín. 544px, crece hacia la izquierda para que "Placa | Tipo | Uso" quepa en una línea); tarjeta(s) de plan centradas; formulario de fecha y celular en 4 columnas (352px) alineado a la izquierda, con cada bloque titulado en `subtitle`.
 - **Coberturas:** grilla de `Card tone="brand-panel"` con ícono lineal blanco, título bold y monto.
 
@@ -165,6 +167,7 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
   - El celular lleva etiqueta inset "Número de celular"; en Figma es solo un placeholder.
   - Figma no define el estado elegido de "LO QUIERO": se usa "Elegido", `aria-pressed` y un anillo `brand-200` en la tarjeta. "Ir a pagar" queda deshabilitado hasta elegir el plan y escribir el celular, con la ayuda "Elige tu plan con «Lo quiero» para continuar.".
   - Estado vacío (sin plan a la venta) no está en Figma: mensaje y acciones "Revisar mis datos" y "Volver al inicio".
+- Antes de pagar (no está en Figma; referencia: captura de la spec): el indicador dice "PASO 3/3" para seguir la numeración de Figma (la cotización es 3/3), aunque la spec muestra "PASO 2/2". "Continuar con el pago" muestra un aviso provisional mientras no exista el checkout.
 - Hero: el velo violeta se reproduce con degradados medidos sobre las capturas (desktop desde la izquierda, mobile desde abajo-izquierda); en mobile los beneficios se ocultan, como en Figma.
 
 ## 8. Recursos
