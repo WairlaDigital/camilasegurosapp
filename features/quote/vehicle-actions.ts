@@ -5,6 +5,7 @@ import { getVehicleTypes } from "@/services/catalog";
 import { ApiError } from "@/services/errors";
 import { queryInfo } from "@/services/quotes";
 import { todayInLima } from "./lib/dates";
+import { limitRequote, sessionKey, TOO_MANY_REQUESTS } from "./lib/limits";
 import { detectCategory } from "./lib/plate";
 import { typesForCategory } from "./lib/use-matrix";
 import { DOCUMENT_TYPES } from "./lib/vehicle-rules";
@@ -42,6 +43,8 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
   });
   if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
   const vehicle = parsed.data;
+
+  if (!limitRequote(sessionKey(session)).ok) return { status: "failed", message: TOO_MANY_REQUESTS };
 
   const manual = {
     brandId: vehicle.brandId,

@@ -32,6 +32,7 @@ Completa `.env.local` (nunca se sube al repo):
 | `LAPOSITIVA_API_URL` | URL de la API, con `/api` al final |
 | `LAPOSITIVA_API_TOKEN` | Token de Sanctum. Solo servidor: nunca con prefijo `NEXT_PUBLIC_` |
 | `SESSION_SECRET` | Clave para cifrar la cookie de la cotización (mínimo 32 caracteres). Genérala con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
+| `RATE_LIMIT_START_PER_10_MIN`, `RATE_LIMIT_REQUOTE_PER_10_MIN`, `RATE_LIMIT_CATALOG_PER_MIN` | Opcionales. Límites de uso del inicio (por IP), de las recotizaciones y de los catálogos (por persona). Por defecto 20, 10 y 60. |
 
 Sin estas variables la app no arranca y muestra cuál falta.
 

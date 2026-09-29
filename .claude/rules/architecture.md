@@ -75,3 +75,7 @@ ESLint aplica estas reglas (`no-restricted-imports` en `eslint.config.mjs`). No 
 
 - Variables en `lib/env.ts`, validadas con Zod al arrancar. `LAPOSITIVA_API_URL` y tokens **sin** prefijo `NEXT_PUBLIC_`.
 - `.env.local` nunca se commitea; mantener `.env.example` actualizado.
+
+## Límites de uso
+
+Toda ruta o Server Action que llama a la API desde algo público lleva límite (`lib/rate-limit.ts`, límites en `features/quote/lib/limits.ts`): por persona (documento + placa de la sesión) cuando hay sesión, y por IP solo antes de tenerla (margen amplio por CGNAT). Las rutas que solo usa el flujo exigen sesión de cotización.

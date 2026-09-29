@@ -1,10 +1,12 @@
 import { z } from "zod";
-import { badRequest, parseQuery, upstreamFailed } from "@/features/quote/lib/catalog-route";
+import { badRequest, guardCatalogRequest, parseQuery, upstreamFailed } from "@/features/quote/lib/catalog-route";
 import { getVersions } from "@/services/catalog";
 
 const querySchema = z.object({ modelId: z.string().regex(/^\d{1,12}$/) });
 
 export async function GET(request: Request) {
+  const denied = await guardCatalogRequest();
+  if (denied) return denied;
   const query = parseQuery(request, querySchema);
   if (!query) return badRequest();
   try {

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { formatMoney } from "@/lib/money";
 import { queryInfo } from "@/services/quotes";
 import { formatDate, todayInLima } from "./lib/dates";
+import { limitRequote, sessionKey, TOO_MANY_REQUESTS } from "./lib/limits";
 import { DOCUMENT_TYPES } from "./lib/vehicle-rules";
 import { parseQuoteForm, type QuoteFieldErrors } from "./quote-schema";
 import { readQuoteSession, writeQuoteSession, type QuoteSession } from "./session";
@@ -51,6 +52,7 @@ export async function confirmQuote(_prev: ConfirmQuoteState, formData: FormData)
   let { request, result } = session;
 
   if (startDate !== request.startDate) {
+    if (!limitRequote(sessionKey(session)).ok) return { status: "failed", message: TOO_MANY_REQUESTS };
     let requoted;
     try {
       requoted = await requote(session, startDate);

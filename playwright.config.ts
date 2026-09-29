@@ -43,6 +43,8 @@ export default defineConfig({
         LAPOSITIVA_API_URL: `http://localhost:${MOCK_API_PORT}/api`,
         LAPOSITIVA_API_TOKEN: "test-token",
         SESSION_SECRET: "e2e-only-session-secret-0123456789abcdef",
+        // Every test submits the home form from the same IP.
+        RATE_LIMIT_START_PER_10_MIN: "10000",
       },
     },
   ],

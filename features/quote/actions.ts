@@ -1,10 +1,13 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { clientIp } from "@/lib/rate-limit";
 import { ApiError } from "@/services/errors";
 import { getVehicleTypes } from "@/services/catalog";
 import { isVehicleComplete, lookupPlate, queryInfo } from "@/services/quotes";
 import { todayInLima } from "./lib/dates";
+import { limitStartQuote, TOO_MANY_REQUESTS } from "./lib/limits";
 import { detectCategory } from "./lib/plate";
 import { CATEGORY_MISMATCH, NOT_ONLINE, quoteRequestFor } from "./lib/quote-request";
 import { DEFAULT_UBIGEO_ID, DOCUMENT_TYPES, defaultQuoteRequest } from "./lib/vehicle-rules";
@@ -30,6 +33,8 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
 
   const category = detectCategory(input.plate);
   if (!category || !defaultQuoteRequest(category, input.use)) return { status: "failed", message: NOT_ONLINE };
+
+  if (!limitStartQuote(clientIp(await headers())).ok) return { status: "failed", message: TOO_MANY_REQUESTS };
 
   // Without the registration or the catalog, the category's default type is used
   // (and the vehicle data form lets the person fix it): never block the quote on them.

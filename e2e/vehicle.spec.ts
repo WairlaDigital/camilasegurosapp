@@ -3,11 +3,13 @@ import { expect, test, type Page } from "@playwright/test";
 // Home → plate lookup → "Datos incompletos" → vehicle data form (Figma 267:24).
 // Runs against the fake API (e2e/mock-api), whose example plates drive each case.
 
-async function startQuote(page: Page, plate: string, { use = "particular", ruc = false } = {}) {
+type StartOptions = { use?: string; ruc?: boolean; documentNumber?: string };
+
+async function startQuote(page: Page, plate: string, { use = "particular", ruc = false, documentNumber }: StartOptions = {}) {
   await page.goto("/");
   await page.getByLabel("Ingresa tu placa:").fill(plate);
   if (ruc) await page.getByLabel("Tipo de documento").selectOption("RUC");
-  await page.getByLabel("Número de documento:").fill(ruc ? "20123456789" : "12345678");
+  await page.getByLabel("Número de documento:").fill(documentNumber ?? (ruc ? "20123456789" : "12345678"));
   await page.getByLabel("Uso:").selectOption(use);
   await page.getByLabel("Correo electrónico:").fill("cliente@correo.pe");
   await page.getByRole("checkbox", { name: /Consentimiento de datos/ }).check();
@@ -15,7 +17,7 @@ async function startQuote(page: Page, plate: string, { use = "particular", ruc =
 }
 
 /** Goes through the real flow so the quote session cookie is set before the form loads. */
-async function openVehicleForm(page: Page, plate: string, options?: { use?: string; ruc?: boolean }) {
+async function openVehicleForm(page: Page, plate: string, options?: StartOptions) {
   await startQuote(page, plate, options);
   await page.waitForURL(/\/cotizar\/datos-incompletos$/);
   await page.getByRole("link", { name: "Completa y cotiza" }).click();
@@ -180,6 +182,25 @@ test("an API failure on the home form shows a retry message", async ({ page }) =
   await startQuote(page, "ERR-500");
   await expect(alertWith(page, "No pudimos consultar tu placa")).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
+});
+
+test("the catalog endpoints need a quote session and are rate limited", async ({ page }, testInfo) => {
+  const anonymous = await page.request.get("/api/vehicles/brands?search=hyu");
+  expect(anonymous.status()).toBe(401);
+
+  // The limit counts per person (document + plate): a document of its own keeps
+  // this test from exhausting the limit of the tests running in parallel.
+  const documentNumber = testInfo.project.name === "mobile" ? "11111111" : "22222222";
+  await openVehicleForm(page, "AEF-710", { documentNumber }); // page.request now carries the session cookie
+  const statuses: number[] = [];
+  for (let i = 0; i < 61; i += 1) {
+    statuses.push((await page.request.get(`/api/vehicles/brands?search=hy${i}`)).status());
+  }
+  expect(statuses.slice(0, 60).every((status) => status === 200)).toBe(true);
+  expect(statuses[60]).toBe(429);
+  const limited = await page.request.get("/api/vehicles/brands?search=hyu");
+  expect(limited.status()).toBe(429);
+  expect(Number(limited.headers()["retry-after"])).toBeGreaterThan(0);
 });
 
 test("the flow screens need a quote session", async ({ page }) => {
