@@ -81,5 +81,5 @@ export async function confirmQuote(_prev: ConfirmQuoteState, formData: FormData)
   }
 
   await writeQuoteSession({ ...session, request, result, selection: { planId, phone } });
-  redirect("/cotizar/antes-de-pagar");
+  redirect("/cotizar/titular");
 }

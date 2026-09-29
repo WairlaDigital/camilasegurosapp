@@ -28,7 +28,13 @@ const documentSchema = z.object({
   names: z.string().nullish(),
   last_name: z.string().nullish(),
   company_name: z.string().nullish(),
+  address: z.string().nullish(),
+  state: z.string().nullish(),
+  district: z.string().nullish(),
 });
+
+/** Blank strings from the lookup count as missing. */
+const text = (value: string | null | undefined) => value?.trim() || undefined;
 
 const planSchema = z.object({
   id: z.number(),
@@ -134,9 +140,12 @@ export function toQuoteResult(
     vehicle,
     holder: data.document
       ? {
-          firstName: optional(data.document.names),
-          lastName: optional(data.document.last_name),
-          companyName: optional(data.document.company_name),
+          firstName: text(data.document.names),
+          lastName: text(data.document.last_name),
+          companyName: text(data.document.company_name),
+          address: text(data.document.address),
+          state: text(data.document.state),
+          district: text(data.document.district),
         }
       : null,
     plans,

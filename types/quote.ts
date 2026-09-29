@@ -31,10 +31,15 @@ export type PlateRegistration = {
   seats?: number;
 };
 
+/** The document holder as the API returns it (RENIEC for DNI/CE, SUNAT for RUC). */
 export type Holder = {
   firstName?: string;
   lastName?: string;
   companyName?: string;
+  /** Only with RUC: the backend does not keep a person's address. */
+  address?: string;
+  state?: string;
+  district?: string;
 };
 
 export type Plan = {

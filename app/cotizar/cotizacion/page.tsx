@@ -48,7 +48,7 @@ export default async function QuotePage() {
     <Container className="grid gap-5 pt-7.5 pb-20 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-0 lg:pt-20 lg:pb-30">
       <div className="lg:col-span-5">
         <StepHeader
-          step={3}
+          step={2}
           total={3}
           backHref={EDIT_VEHICLE_HREF}
           title={`Hola${name ? ` ${name}` : ""}, activa tu SOAT en pocos minutos...`}

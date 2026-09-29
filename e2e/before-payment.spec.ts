@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// "Antes de pagar" (spec section 8): informative screen between the quote and the checkout.
+// "Antes de pagar" (spec section 8): informative screen between the holder data and the checkout.
 
 async function openQuote(page: Page) {
   await page.goto("/");
@@ -13,11 +13,20 @@ async function openQuote(page: Page) {
   await page.waitForURL(/\/cotizar\/cotizacion$/);
 }
 
-test("after 'Ir a pagar' it explains the payment and the checkout is not available yet", async ({ page }) => {
-  await openQuote(page);
+async function choosePlan(page: Page) {
   await page.getByRole("button", { name: /^Lo quiero/ }).click();
   await page.getByLabel("Número de celular").fill("987654321");
   await page.getByRole("button", { name: "Ir a pagar" }).click();
+  await page.waitForURL(/\/cotizar\/titular$/);
+}
+
+test("after the holder data it explains the payment and the checkout is not available yet", async ({ page }) => {
+  await openQuote(page);
+  await choosePlan(page);
+  await page.getByLabel("Domicilio").fill("Av. Primavera 1234");
+  await page.getByLabel("Departamento").selectOption("Lima");
+  await page.getByLabel("Distrito").fill("Santiago de Surco");
+  await page.getByRole("button", { name: "Guardar y continuar" }).click();
 
   await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("¡Estás a un paso de obtener tu SOAT!");
@@ -27,7 +36,7 @@ test("after 'Ir a pagar' it explains the payment and the checkout is not availab
     "Si pagas en un agente, consulta sus horarios de atención antes de acercarte.",
   ]);
 
-  // TODO(checkout): replace once the payment provider is decided.
+  // TODO(checkout): replace once the Culqi checkout exists.
   await page.getByRole("button", { name: "Continuar con el pago" }).click();
   await expect(page.getByRole("status")).toContainText("El pago en línea todavía no está disponible");
 
@@ -39,6 +48,13 @@ test("without a chosen plan it goes back to the quote", async ({ page }) => {
   await openQuote(page);
   await page.goto("/cotizar/antes-de-pagar");
   await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
+});
+
+test("without the holder data it goes to the holder form", async ({ page }) => {
+  await openQuote(page);
+  await choosePlan(page);
+  await page.goto("/cotizar/antes-de-pagar");
+  await expect(page).toHaveURL(/\/cotizar\/titular$/);
 });
 
 test("without a quote session it goes to the home page", async ({ page }) => {

@@ -206,7 +206,12 @@ const server = createServer(async (req, res) => {
 
     const vehicle = vehicleFor(body);
     const response = {
-      document: { names: "MARTÍN JAVIER", last_name: "RODRIGUEZ GONZALES", company_name: null },
+      // Like the backend: a person (DNI/CE) comes with names only; a company (RUC) with
+      // its name and address but no first/last name.
+      document:
+        Number(body.document_type) === 2
+          ? { company_name: "TRANSPORTES LIMA S.A.C.", address: "AV. JAVIER PRADO ESTE 123", state: "LIMA", district: "SAN ISIDRO" }
+          : { names: "MARTÍN JAVIER", last_name: "RODRIGUEZ GONZALES", company_name: null },
       ...(vehicle && { vehicle }),
       plans: plansFor(body),
     };

@@ -57,7 +57,14 @@ const sessionSchema = z.object({
       })
       .nullable(),
     holder: z
-      .object({ firstName: z.string().optional(), lastName: z.string().optional(), companyName: z.string().optional() })
+      .object({
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        companyName: z.string().optional(),
+        address: z.string().optional(),
+        state: z.string().optional(),
+        district: z.string().optional(),
+      })
       .nullable(),
     plans: z.array(
       z.object({
@@ -74,6 +81,16 @@ const sessionSchema = z.object({
   }),
   /** Set by "Ir a pagar" on the quote screen; the price comes from `result`, never from here. */
   selection: z.object({ planId: z.number(), phone: z.string() }).optional(),
+  /** Holder data for the order (POST /data): the API's values plus what the person completed. */
+  holderDetails: z
+    .object({
+      firstName: z.string(),
+      lastName: z.string(),
+      address: z.string(),
+      state: z.string(),
+      district: z.string(),
+    })
+    .optional(),
 });
 
 export type QuoteSession = z.infer<typeof sessionSchema>;

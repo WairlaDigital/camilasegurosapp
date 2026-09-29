@@ -18,7 +18,8 @@ Alcance: SOAT para usos Particular, Taxi, Carga y Comercial (solo moto lineal). 
 | 3 | **Datos incompletos** | Solo si faltan datos del vehículo. Mensaje simple + "Completa y cotiza" | — |
 | 4 | **Datos del vehículo** (Paso 1) | Formulario prellenado y **editable**: uso, tipo, marca, modelo, asientos, año, VIN/serie | `GET /brands`, `/models/{brand}/type/{type}`, `/versions/{model}`, luego `POST /query-info` con los datos manuales |
 | 5 | **Cotización** (`/cotizar/cotizacion`) | "Hola {nombre}", resumen del vehículo con "Editar", tarjeta de precio con coberturas y "LO QUIERO" (sin planes AFOCAT), fecha de inicio, celular, "Ir a pagar" | `POST /query-info` solo al presionar "Ir a pagar" con otra fecha; si el precio cambia, se muestra y se pide confirmar |
-| 6 | **Antes de pagar** (`/cotizar/antes-de-pagar`, Paso 2/2 en la spec) | Informativa: "¡Estás a un paso de obtener tu SOAT!", dos notas con check (instrucciones de pago por correo, horarios si paga en agente) y "Continuar con el pago", que abre el checkout | `POST /data` (crea la orden y la orden de Culqi). Pendiente: necesita los datos personales del titular |
+| 5b | **Datos del titular** (`/cotizar/titular`, Paso 3/3) | Documento y lo que trajo la API, bloqueados; se pide lo que falta para la orden: con DNI/CE domicilio, departamento y distrito; con RUC nombres y apellidos de un contacto. "Guardar y continuar" | — (se guarda en la sesión; se envía en `POST /data`) |
+| 6 | **Antes de pagar** (`/cotizar/antes-de-pagar`, Paso 3/3; 2/2 en la spec) | Informativa: "¡Estás a un paso de obtener tu SOAT!", dos notas con check (instrucciones de pago por correo, horarios si paga en agente) y "Continuar con el pago", que abre el checkout | `POST /data` (crea la orden y la orden de Culqi), con los datos del paso 5b |
 | 7 | **Checkout** | Modal de **Culqi Checkout** (JS en el navegador, con la llave pública). Con tarjeta o Yape devuelve un `token`; con banca móvil, agentes o billeteras (PagoEfectivo) usa la `order` de Culqi que crea la API | `POST /data` (orden + `culqi`), luego `POST /charge` con el token. Los pagos con `order` se confirman por webhook |
 | 8 | Confirmación | Gracias + qué sigue (la póliza llega por correo) | — |
 
@@ -77,7 +78,7 @@ Cómo encaja con el backend:
 
 ## Brechas: spec vs backend (decidir antes de implementar)
 
-1. **Datos personales para la orden.** `POST /data` exige nombres, apellidos, dirección, departamento y distrito. La spec no tiene formulario de datos personales: solo sirve si RENIEC/SUNAT los devuelven. Falta definir qué pasa si la consulta falla o si es RUC (el backend exige `first_name`/`last_name` incluso para empresas).
+1. ~~**Datos personales para la orden.**~~ **Resuelto:** pantalla de titular entre la cotización y "Antes de pagar" (paso 5b). Con DNI/CE la API solo trae nombres; con RUC, razón social y dirección (el backend exige igual nombres y apellidos).
 2. **Zona de circulación (`ubigeo_id`).** El backend la exige y el front actual pregunta Lima/Callao. La spec no tiene ese campo.
 3. **Formulario manual sin placa encontrada.** Si la consulta de placa no devuelve nada, el backend descarta los datos manuales (`QueryVehicleInfo::execute` devuelve `null`). Sin vehículo no hay cotización de La Positiva, solo planes estáticos. Solo funciona cuando la consulta trae datos parciales.
 4. **Placa LN-NNNN.** El backend reescribe `A1-1234` como `A11-234` (formato de auto), porque quita el guion antes de formatear. Además, sin guion `A11234` es ambiguo entre moto y auto.

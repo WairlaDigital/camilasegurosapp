@@ -33,7 +33,7 @@ export default async function VehiclePage() {
   return (
     <Container className="grid gap-10 pt-7.5 pb-20 lg:grid-cols-12 lg:gap-x-8 lg:pt-20">
       <div className="flex flex-col gap-6 lg:col-span-8 lg:gap-12.5">
-        <StepHeader step={2} total={3} backHref="/" title="Ingresa los datos de tu vehículo." plate={vehicle.plate} />
+        <StepHeader step={1} total={3} backHref="/" title="Ingresa los datos de tu vehículo." plate={vehicle.plate} />
         <VehicleForm
           types={types}
           documentType={session.input.documentType}

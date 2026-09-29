@@ -71,7 +71,7 @@ test("'Ir a pagar' needs a plan and a phone, and keeps the choice", async ({ pag
   await f.phone.fill("987 654 321");
   await expect(f.phone).toHaveValue("987654321");
   await f.submit.click();
-  await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
+  await expect(page).toHaveURL(/\/cotizar\/titular$/);
 
   // Going back keeps the choice (quote session).
   await page.getByRole("link", { name: "Volver. Paso 3 de 3" }).click();
@@ -94,7 +94,7 @@ test("another start date quotes again and shows the new price before continuing"
   await expect(f.date).toHaveValue(limaDate(1));
 
   await f.submit.click();
-  await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
+  await expect(page).toHaveURL(/\/cotizar\/titular$/);
 });
 
 test("'Editar' opens the vehicle form and saving it comes back to the quote", async ({ page }) => {
