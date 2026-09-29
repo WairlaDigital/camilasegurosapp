@@ -5,17 +5,20 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 ## Estado actual y siguiente paso
 
-_Actualizado: 2026-09-27. Actualiza esta sección al cerrar cada tarea._
+_Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 
 **Hecho (en `main`):**
 - Reglas del proyecto, sistema de diseño desde Figma ([DESIGN.md](DESIGN.md)) y pruebas (Vitest + Playwright con servidor falso de la API).
 - Flujo: inicio → `POST /query-info` → "Datos incompletos" → "Datos del vehículo" → nueva cotización con datos manuales. El estado viaja en una cookie cifrada.
 - Pantalla de cotización (`/cotizar/cotizacion`): saludo, resumen del vehículo con "Editar", tarjeta del plan sin AFOCAT, fecha de inicio, celular e "Ir a pagar". Si la fecha cambió, vuelve a cotizar una sola vez; si el precio cambió, lo muestra y pide confirmar de nuevo.
 - Pantalla "Antes de pagar" (`/cotizar/antes-de-pagar`, spec sección 8). "Ir a pagar" guarda plan y celular y lleva a ella. "Continuar con el pago" muestra un aviso provisional (buscar `TODO(checkout)`).
+- Reglas de la spec secciones 2, 4.1 y 4.2: tabla tipo → usos propia (`features/quote/lib/use-matrix.ts`), uso único sin selector, categoría fija por la placa, aviso si el registro vehicular la contradice y RUC + moto lineal sin Particular.
+- Tipo real del vehículo: el inicio consulta `POST /query-plate` (sin cotizar) y cotiza una sola vez con el tipo del registro.
+- Límites de uso: `/api/vehicles/*` con sesión y límite por persona; el inicio por IP; recotizar por persona (`lib/rate-limit.ts`, `features/quote/lib/limits.ts`).
 
 **Siguiente: checkout con Culqi.** La API ya integra Culqi; al front le toca: crear la orden (`POST /data`, devuelve `order_id` y los `settings` de Culqi), abrir Culqi Checkout en el navegador, enviar el `token` a `POST /charge` y, si la persona elige un pago diferido (PagoEfectivo con la `order`), mostrar "orden generada". Falta la **llave pública de Culqi** y resolver de dónde salen dirección, departamento y distrito del titular (ver "Datos personales para la orden"). Mientras tanto: configurar las reglas del WAF de Vercel cuando exista el proyecto. La pantalla "Completa los datos del titular" espera la decisión sobre datos personales y orden de pasos.
 
-**Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas).
+**Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas). El `.env.local` real está en la carpeta principal del repo; un worktree nuevo no lo trae: cópialo o, para revisar a mano, usa `npm run dev:mock` con un `SESSION_SECRET` de prueba.
 
 ## Insumos por recibir
 
