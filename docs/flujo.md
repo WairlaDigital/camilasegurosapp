@@ -21,7 +21,7 @@ Alcance: SOAT para usos Particular, Taxi, Carga y Comercial (solo moto lineal). 
 | 5b | **Datos del titular** (`/cotizar/titular`, Paso 3/3) | Documento y lo que trajo la API, bloqueados; se pide lo que falta para la orden: con DNI/CE domicilio, departamento y distrito; con RUC nombres y apellidos de un contacto. "Guardar y continuar" | — (se guarda en la sesión; se envía en `POST /data`) |
 | 6 | **Antes de pagar** (`/cotizar/antes-de-pagar`, Paso 3/3; 2/2 en la spec) | Informativa: "¡Estás a un paso de obtener tu SOAT!", dos notas con check (instrucciones de pago por correo, horarios si paga en agente) y "Continuar con el pago", que abre el checkout | `POST /data` (crea la orden y la orden de Culqi), con los datos del paso 5b |
 | 7 | **Checkout** | Modal de **Culqi Checkout** (JS en el navegador, con la llave pública). Con tarjeta o Yape devuelve un `token`; con banca móvil, agentes o billeteras (PagoEfectivo) usa la `order` de Culqi que crea la API | `POST /data` (orden + `culqi`), luego `POST /charge` con el token. Los pagos con `order` se confirman por webhook |
-| 8 | Confirmación | Gracias + qué sigue (la póliza llega por correo) | — |
+| 8 | **Confirmación** (`/cotizar/confirmacion`) | Pago aprobado: "¡Listo! Recibimos tu pago", resumen (placa, vigencia, total) y "te enviaremos tu SOAT a {correo}". Pago diferido: "Tu código de pago está listo" (24 h para pagar) y opción de pagar con tarjeta o Yape | — (no hay endpoint de estado) |
 
 ## Reglas de negocio
 

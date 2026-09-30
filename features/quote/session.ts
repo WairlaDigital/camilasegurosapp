@@ -91,6 +91,18 @@ const sessionSchema = z.object({
       district: z.string(),
     })
     .optional(),
+  /**
+   * Order created by POST /data. Reused while the order data stays the same
+   * (`fingerprint`), so a retry or a double click never creates a second order.
+   * "pending": a deferred payment code was generated; "paid": the charge succeeded.
+   */
+  order: z
+    .object({
+      id: z.number(),
+      fingerprint: z.string(),
+      status: z.enum(["created", "pending", "paid"]),
+    })
+    .optional(),
 });
 
 export type QuoteSession = z.infer<typeof sessionSchema>;

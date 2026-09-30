@@ -32,6 +32,13 @@ export const limitCatalog = createRateLimiter({
   windowMs: MINUTE,
 });
 
+/** Creating the order (POST /data) and charging it (POST /charge): per quote session. */
+export const limitCheckout = createRateLimiter({
+  name: "checkout",
+  limit: env.RATE_LIMIT_CHECKOUT_PER_10_MIN,
+  windowMs: 10 * MINUTE,
+});
+
 /** Who a quote session belongs to, without keeping the document number in memory. */
 export function sessionKey(session: QuoteSession): string {
   const { documentType, documentNumber, plate } = session.input;

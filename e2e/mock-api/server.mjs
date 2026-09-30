@@ -15,6 +15,9 @@
 //   ERR-500  upstream error (503)
 // Plans: La Positiva at S/ 210 for today (Lima) and S/ 215 for any other start date
 // (to test the re-quote), plus an AFOCAT plan that the front must hide.
+//
+// Checkout: POST /data creates the order (email @sin-dns.pe → 422 on driver.email);
+// POST /charge succeeds unless the Culqi token id starts with "tkn_test_declined".
 import { createServer } from "node:http";
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 3299);
@@ -148,6 +151,9 @@ function plansFor(body) {
   };
 }
 
+/** Orders created by POST /data (policy id → state). */
+const orders = new Map();
+
 const REQUIRED = ["document_type", "document_number", "plate", "type_id", "use_id", "ubigeo_id"];
 
 function send(res, status, body) {
@@ -216,6 +222,52 @@ const server = createServer(async (req, res) => {
       plans: plansFor(body),
     };
     return send(res, 200, response);
+  }
+
+  if (req.method === "POST" && path === "/data") {
+    const body = await readJson(req);
+    // The backend reads these keys directly: a missing one is a PHP error (500).
+    const keys = [
+      [body, ["reseller", "order_id", "driver", "vehicle", "plan", "delivery"]],
+      [body.driver ?? {}, ["id", "company_name"]],
+      [body.vehicle ?? {}, ["color", "vin"]],
+      [body.plan ?? {}, ["token"]],
+    ];
+    if (keys.some(([object, names]) => names.some((name) => !(name in object)))) {
+      return send(res, 500, { message: "Undefined array key" });
+    }
+    const invalid = (field, message) => send(res, 422, { message, errors: { [field]: [message] } });
+    if (!/^[A-Za-z\p{M}\p{L}\s]{2,}$/u.test(body.driver.first_name ?? "")) return invalid("driver.first_name", "first name");
+    if (!/^9\d{8}$/.test(body.driver.phone ?? "")) return invalid("driver.phone", "phone");
+    if (String(body.driver.email).endsWith("@sin-dns.pe")) return invalid("driver.email", "The driver.email must be a valid email address.");
+    if (!/^[A-Za-z0-9]{5,}$/.test(body.vehicle.plate ?? "")) return invalid("vehicle.plate", "The vehicle.plate must only contain letters and numbers.");
+    if (!/^[A-Za-z0-9]{8,}$/.test(body.vehicle.serial ?? "")) return invalid("vehicle.serial", "serial");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(body.delivery?.date ?? "")) return invalid("delivery.date", "date");
+
+    // With order_id the backend reuses the policy and its Culqi order.
+    const existing = body.order_id != null ? orders.get(body.order_id) : undefined;
+    if (body.order_id != null && !existing) return invalid("order_id", "The selected order id is invalid.");
+    const order = existing ?? { id: orders.size + 1001, paid: false };
+    orders.set(order.id, order);
+    // The price comes from the saved quote (its token), not from the request.
+    const price = body.plan.token === `tok-e2e-${todayInLima()}` ? 210 : 215;
+    return send(res, 200, {
+      culqi: { amount: price * 100, title: "SOAT--La Positiva--Automóvil", currency: "PEN", order: `ord_test_e2e${order.id}` },
+      order_id: order.id,
+    });
+  }
+
+  if (req.method === "POST" && path === "/charge") {
+    const body = await readJson(req);
+    const id = String(body.token?.id ?? "");
+    if (id.length < 15 || id.length > 30) return send(res, 422, { message: "token", errors: { "token.id": ["token"] } });
+    const order = orders.get(body.order);
+    if (!order) return send(res, 422, { message: "order", errors: { order: ["The selected order is invalid."] } });
+    if (id.startsWith("tkn_test_declined")) {
+      return send(res, 200, { status: "error", data: { user_message: "Tu tarjeta ha sido rechazada." } });
+    }
+    order.paid = true;
+    return send(res, 200, { status: "success" });
   }
 
   send(res, 404, { message: `The route ${path} could not be found.` });

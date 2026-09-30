@@ -1,25 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { chargePayment, markOrderPending, startPayment } from "../actions";
+import { createCulqiCheckout, loadCulqiCheckout, type CulqiInstance } from "../lib/culqi-checkout";
+
+type ContinueToPaymentProps = {
+  /** Culqi public key (pk_test_… / pk_live_…). */
+  publicKey: string;
+};
 
 /**
- * "Continuar con el pago" (spec section 8). It will create the order through the
- * API (POST /data) and open Culqi Checkout (see PENDIENTES.md).
+ * "Continuar con el pago" (spec section 8): creates the order through the API and
+ * opens Culqi Checkout. Card and Yape return a token that the API charges; the
+ * deferred methods return a payment code that Culqi confirms later.
  */
-export function ContinueToPayment() {
-  const [requested, setRequested] = useState(false);
+export function ContinueToPayment({ publicKey }: ContinueToPaymentProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [charging, setCharging] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  function handleCulqiResult(culqi: CulqiInstance) {
+    if (culqi.token) {
+      const token = { id: culqi.token.id, email: culqi.token.email };
+      culqi.close();
+      setCharging(true);
+      startTransition(async () => {
+        const result = await chargePayment(token);
+        // On success the action redirects to the confirmation.
+        if (result && !result.ok) {
+          setError(result.error);
+          setCharging(false);
+        }
+      });
+    } else if (culqi.order) {
+      // Culqi keeps showing the payment code; the confirmation opens behind it.
+      startTransition(() => markOrderPending());
+    }
+    // Culqi.error: the checkout shows the problem itself and the person can retry there.
+  }
+
+  function handleClick() {
+    setError(null);
+    startTransition(async () => {
+      const script = loadCulqiCheckout().catch(() => null);
+      const result = await startPayment();
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      const CulqiCheckout = await script;
+      if (!CulqiCheckout) {
+        setError("No pudimos abrir la ventana de pago. Revisa tu conexión e inténtalo de nuevo.");
+        return;
+      }
+      const culqi = createCulqiCheckout(CulqiCheckout, publicKey, result.data.settings, result.data.email);
+      culqi.culqi = () => handleCulqiResult(culqi);
+      culqi.open();
+    });
+  }
 
   return (
     <div className="flex flex-col items-start gap-4">
-      {/* TODO(checkout): create the order and open Culqi Checkout. */}
-      <Button className="w-full md:w-auto" onClick={() => setRequested(true)}>
+      <Button className="w-full md:w-auto" pending={pending} onClick={handleClick}>
         Continuar con el pago
       </Button>
       {/* Always rendered so screen readers announce the message when it appears. */}
-      <p role="status" className="empty:hidden rounded-control bg-brand-100 p-4 text-small font-semibold text-brand-900">
-        {requested && "El pago en línea todavía no está disponible. Escríbenos y te ayudamos a completar tu compra."}
+      <p role="status" className="empty:hidden text-small font-semibold text-ink-muted">
+        {charging && "Procesando tu pago…"}
       </p>
+      {error && (
+        <p role="alert" className="rounded-control border border-danger p-4 text-small font-semibold text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

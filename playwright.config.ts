@@ -43,8 +43,12 @@ export default defineConfig({
         LAPOSITIVA_API_URL: `http://localhost:${MOCK_API_PORT}/api`,
         LAPOSITIVA_API_TOKEN: "test-token",
         SESSION_SECRET: "e2e-only-session-secret-0123456789abcdef",
+        // Culqi Checkout is replaced by a fake script in the tests (e2e/fake-culqi.ts).
+        NEXT_PUBLIC_CULQI_PUBLIC_KEY: "pk_test_e2e0000000000000",
         // Every test submits the home form from the same IP.
         RATE_LIMIT_START_PER_10_MIN: "10000",
+        // …and pays for the same document and plate (the checkout limit is per person).
+        RATE_LIMIT_CHECKOUT_PER_10_MIN: "10000",
       },
     },
   ],

@@ -20,7 +20,7 @@ async function choosePlan(page: Page) {
   await page.waitForURL(/\/cotizar\/titular$/);
 }
 
-test("after the holder data it explains the payment and the checkout is not available yet", async ({ page }) => {
+test("after the holder data it explains the payment", async ({ page }) => {
   await openQuote(page);
   await choosePlan(page);
   await page.getByLabel("Domicilio").fill("Av. Primavera 1234");
@@ -35,10 +35,8 @@ test("after the holder data it explains the payment and the checkout is not avai
     "Recibirás en tu correo el código y las indicaciones para efectuar el pago.",
     "Si pagas en un agente, consulta sus horarios de atención antes de acercarte.",
   ]);
-
-  // TODO(checkout): replace once the Culqi checkout exists.
-  await page.getByRole("button", { name: "Continuar con el pago" }).click();
-  await expect(page.getByRole("status")).toContainText("El pago en línea todavía no está disponible");
+  // The payment itself: e2e/checkout.spec.ts.
+  await expect(page.getByRole("button", { name: "Continuar con el pago" })).toBeEnabled();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflow).toBe(false);

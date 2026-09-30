@@ -32,7 +32,8 @@ Completa `.env.local` (nunca se sube al repo):
 | `LAPOSITIVA_API_URL` | URL de la API, con `/api` al final |
 | `LAPOSITIVA_API_TOKEN` | Token de Sanctum. Solo servidor: nunca con prefijo `NEXT_PUBLIC_` |
 | `SESSION_SECRET` | Clave para cifrar la cookie de la cotización (mínimo 32 caracteres). Genérala con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
-| `RATE_LIMIT_START_PER_10_MIN`, `RATE_LIMIT_REQUOTE_PER_10_MIN`, `RATE_LIMIT_CATALOG_PER_MIN` | Opcionales. Límites de uso del inicio (por IP), de las recotizaciones y de los catálogos (por persona). Por defecto 20, 10 y 60. |
+| `NEXT_PUBLIC_CULQI_PUBLIC_KEY` | Llave pública de Culqi Checkout (`pk_test_…` en desarrollo, `pk_live_…` en producción). Es la única variable pública: va al navegador. La llave secreta vive solo en la API |
+| `RATE_LIMIT_START_PER_10_MIN`, `RATE_LIMIT_REQUOTE_PER_10_MIN`, `RATE_LIMIT_CATALOG_PER_MIN`, `RATE_LIMIT_CHECKOUT_PER_10_MIN` | Opcionales. Límites de uso del inicio (por IP), de las recotizaciones, de los catálogos y del pago (por persona). Por defecto 20, 10, 60 y 20. |
 
 Sin estas variables la app no arranca y muestra cuál falta.
 

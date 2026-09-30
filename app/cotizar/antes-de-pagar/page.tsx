@@ -5,6 +5,7 @@ import { Container } from "@/components/layout/container";
 import { ContinueToPayment } from "@/features/checkout/components/continue-to-payment";
 import { StepBackLink } from "@/features/quote/components/step-header";
 import { readQuoteSession } from "@/features/quote/session";
+import { env } from "@/lib/env";
 
 export const metadata: Metadata = { title: "Antes de pagar" };
 
@@ -18,7 +19,8 @@ export default async function BeforePaymentPage() {
   const session = await readQuoteSession();
   if (!session) redirect("/");
   // Only after "Ir a pagar" saved a plan of the current quote and the holder data was completed.
-  const { selection, result, holderDetails } = session;
+  const { selection, result, holderDetails, order } = session;
+  if (order?.status === "paid") redirect("/cotizar/confirmacion");
   if (!selection || !result.plans.some((plan) => plan.id === selection.planId)) redirect("/cotizar/cotizacion");
   if (!holderDetails) redirect("/cotizar/titular");
 
@@ -46,7 +48,7 @@ export default async function BeforePaymentPage() {
           ))}
         </ul>
 
-        <ContinueToPayment />
+        <ContinueToPayment publicKey={env.NEXT_PUBLIC_CULQI_PUBLIC_KEY} />
       </section>
     </Container>
   );
