@@ -16,7 +16,7 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - Tipo real del vehículo: el inicio consulta `POST /query-plate` (sin cotizar) y cotiza una sola vez con el tipo del registro.
 - Límites de uso: `/api/vehicles/*` con sesión y límite por persona; el inicio por IP; recotizar por persona (`lib/rate-limit.ts`, `features/quote/lib/limits.ts`).
 
-**Siguiente: checkout con Culqi.** La API ya integra Culqi; al front le toca: crear la orden (`POST /data` con la sesión: titular, vehículo, plan con `quote_token`, fecha; devuelve `order_id` y los `settings` de Culqi), abrir Culqi Checkout en el navegador, enviar el `token` a `POST /charge` y, si la persona elige un pago diferido (PagoEfectivo con la `order`), mostrar "orden generada". Solo falta la **llave pública de Culqi**. Mientras tanto: configurar las reglas del WAF de Vercel cuando exista el proyecto.
+**Siguiente: checkout con Culqi.** La API ya integra Culqi; al front le toca: crear la orden (`POST /data` con la sesión: titular, vehículo, plan con `quote_token`, fecha; devuelve `order_id` y los `settings` de Culqi), abrir Culqi Checkout en el navegador, enviar el `token` a `POST /charge` y, si la persona elige un pago diferido (PagoEfectivo con la `order`), mostrar "orden generada". Ya no hay insumos que lo bloqueen: la llave pública de pruebas está en `.env.local`. También queda configurar las reglas del WAF de Vercel cuando exista el proyecto.
 
 **Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas). El `.env.local` real está en la carpeta principal del repo; un worktree nuevo no lo trae: cópialo o, para revisar a mano, usa `npm run dev:mock` con un `SESSION_SECRET` de prueba.
 
@@ -28,7 +28,7 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - [x] **Recursos del home** exportados de Figma (2026-09-27): foto del hero, ícono de categoría auto, 4 íconos de beneficios y 5 de coberturas. Integrados y revisados contra Figma.
 - [ ] **Recursos que aún faltan:** ícono de menú mobile ([559:71](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=559-71), hoy es un ícono CSS provisional) y manchas decorativas del fondo ([197:296](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-296), [197:297](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-297)).
 - [ ] **Respuestas de la FAQ.** Figma solo trae la primera; las otras 5 son textos provisionales en `features/home/content.ts`. Validarlas.
-- [ ] **Llave pública de Culqi** (`pk_test_…` para desarrollo y `pk_live_…` para producción). Es pública por diseño (va al navegador como `NEXT_PUBLIC_CULQI_PUBLIC_KEY`); la llave secreta vive solo en la API.
+- [x] **Llave pública de Culqi** de pruebas (`pk_test_…`) en el `.env.local` de la carpeta principal como `NEXT_PUBLIC_CULQI_PUBLIC_KEY` (2026-09-29). Es pública por diseño (va al navegador); la llave secreta vive solo en la API. Falta la de producción (`pk_live_…`) al desplegar, y debe corresponder a la misma cuenta de Culqi que la llave secreta de la API.
 - [x] **Logo, tipografía y colores**. Tomados de Figma (Red Hat Display, violeta `#4740de`).
 - [ ] **URLs del sitio**: menú (Seguros, Beneficios, Testimonios, Blog), Contáctanos, Términos y Condiciones, Facebook. Hoy son `#` en `lib/site.ts`.
 - [ ] **Textos legales**: URL de la Política de Privacidad y del Consentimiento de datos para usos adicionales.
