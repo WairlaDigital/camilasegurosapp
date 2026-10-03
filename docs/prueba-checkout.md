@@ -4,6 +4,10 @@ Prueba de punta a punta del pago contra la **API local** (`app-soat-taxi.test`) 
 
 Qué hay detrás (revisado el 2026-09-29): el backend local cotiza y emite contra los servicios **QA** de La Positiva, cobra con una llave `sk_test_` de Culqi, envía correos **reales** con Resend y tiene un queue worker corriendo (Herd).
 
+## Resultados (2026-10-02/03)
+
+Con La Positiva **simulada** en el backend local (QA se apaga después de las 8 p. m.): placa M5G-340 con 5 asientos, stock disponible y tarifa de S/ 85.00 con token `BYPASS-…`, en un cambio temporal sin commit en `app-soat-taxi` (`PositivaApiClient`, marcado `TEMP BYPASS`). El cobro con Culqi sí es real (modo de pruebas). Detalle por caso en la tabla.
+
 ## Antes de empezar
 
 1. **⚠ Webhook de Culqi en pruebas.** Revisado el 2026-09-30: apunta a una URL de pruebas. En el CulqiPanel, entorno de integración → Desarrollo → Webhooks, revisa a qué URL apunta. Tras un pago, Culqi llama a esa URL con el id de la póliza (`metadata.order`). La base local parece una copia de producción, así que los ids coinciden con pólizas reales: **si el webhook de pruebas apunta al backend de producción, no hagas la prueba** hasta cambiarlo. Una URL local no es un problema: Culqi no llega a `app-soat-taxi.test` y la emisión se simula a mano (ver abajo).
@@ -19,8 +23,8 @@ Tarjetas de [la documentación de Culqi](https://docs.culqi.com/es/documentacion
 
 | # | Medio | Datos | Resultado esperado en el front | Resultado |
 |---|---|---|---|---|
-| 1 | Visa exitosa | 4111 1111 1111 1111 · 09/30 · 123 | El modal se cierra y aparece «¡Listo, {nombre}! Recibimos tu pago» con placa, vigencia y total | |
-| 2 | Fondos insuficientes | 4000 0400 0000 0008 · 03/30 · 295 | Mensaje «No pudimos procesar tu pago…» y se queda en «Antes de pagar». **Si muestra «Recibimos tu pago», se confirma el 🔴 del backend** (pago rechazado reportado como éxito) | |
+| 1 | Visa exitosa | 4111 1111 1111 1111 · 09/30 · 123 | El modal se cierra y aparece «¡Listo, {nombre}! Recibimos tu pago» con placa, vigencia y total | ✅ 2026-10-02: cargo `chr_test_Lwq2CyCrWOSsajbp` (S/ 85.00, póliza 4249) |
+| 2 | Fondos insuficientes | 4000 0400 0000 0008 · 03/30 · 295 | Mensaje «No pudimos procesar tu pago…» y se queda en «Antes de pagar». **Si muestra «Recibimos tu pago», se confirma el 🔴 del backend** (pago rechazado reportado como éxito) | ✅ 2026-10-03: Culqi lo denegó (`chr_test_2fofdAu6hAcsVk2F`, póliza 4252) y el front mostró el mensaje de error |
 | 3 | Tarjeta robada | 4000 0200 0000 0000 · 10/30 · 354 | Igual que el caso 2 | |
 | 4 | Yape | Celular 900 000 001 · código: 6 dígitos cualesquiera | Igual que el caso 1 | |
 | 5 | Banca móvil / agente / billetera | Elegir el método en el modal | Culqi muestra el código de pago; al cerrar el modal se ve «Tu código de pago está listo». Anota si el código **llega al correo** (la pantalla lo promete) | |

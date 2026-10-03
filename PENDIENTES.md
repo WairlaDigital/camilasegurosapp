@@ -17,7 +17,7 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - Límites de uso: `/api/vehicles/*` con sesión y límite por persona; el inicio por IP; recotizar y pagar por persona (`lib/rate-limit.ts`, `features/quote/lib/limits.ts`).
 - Checkout con Culqi (rama `claude/culqi-public-key-b796a9`): "Continuar con el pago" crea la orden (`POST /data`, reutilizada mientras los datos no cambien) y abre Culqi Checkout; el `token` se cobra con `POST /charge` desde una Server Action; el pago diferido (código de pago) y el pago aprobado terminan en `/cotizar/confirmacion`. Probado con el servidor falso y un Culqi falso (`e2e/fake-culqi.ts`).
 
-**Siguiente: probar el checkout de punta a punta** contra la API local con la llave de pruebas de Culqi (tarjetas de prueba aprobada y rechazada, Yape y un código de PagoEfectivo): nunca se probó con el Culqi real. Confirmar ahí el 🔴 del pago rechazado reportado como éxito (sección Backend). También queda configurar las reglas del WAF de Vercel cuando exista el proyecto.
+**Siguiente: terminar la prueba del checkout** ([docs/prueba-checkout.md](docs/prueba-checkout.md)). Casos 1 (Visa aprobada) y 2 (fondos insuficientes) correctos contra la API local con Culqi real en modo de pruebas y La Positiva simulada; faltan 3 a 8 y la emisión, que necesita La Positiva QA encendida. Al terminar, restaurar `PositivaApiClient.php` en `app-soat-taxi` (cambio temporal `TEMP BYPASS`, sin commit). También queda configurar las reglas del WAF de Vercel cuando exista el proyecto.
 
 **Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas). El `.env.local` real está en la carpeta principal del repo; un worktree nuevo no lo trae: cópialo o, para revisar a mano, usa `npm run dev:mock` con un `SESSION_SECRET` de prueba.
 
@@ -58,7 +58,7 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 
 ## Backend (`~/sites/app-soat-taxi`)
 
-- [ ] **🔴 Pago rechazado reportado como éxito.** `PaymentService::createCharge` captura la excepción de Culqi y `/charge` responde `success`. Confirmado en el código; reproducir con tarjeta de prueba rechazada. Afecta también a soatparataxi.pe. **Con el checkout ya integrado, este front mostraría "¡Listo! Recibimos tu pago" ante un rechazo.**
+- [ ] **🔴 Pago rechazado reportado como éxito.** `PaymentService::createCharge` captura la excepción de Culqi y `/charge` responde `success`. Confirmado en el código; reproducir con tarjeta de prueba rechazada. Afecta también a soatparataxi.pe. **Probado (2026-10-03):** con fondos insuficientes el SDK devuelve el rechazo como respuesta, `/charge` responde `error` y el front lo muestra bien. El riesgo queda para los errores que el SDK lanza como excepción (red, timeout, respuestas inesperadas): ahí `/charge` respondería `success` y el front mostraría "¡Listo! Recibimos tu pago".
 - [ ] **3DS (`REVIEW`) no soportado.** Si Culqi pide autenticación 3DS, `createCharge` lo convierte en error y no hay forma de completar la verificación (haría falta Culqi 3DS y reintentar el cargo con `authentication_3DS`). El front muestra el mensaje genérico de pago no procesado.
 - [ ] **`POST /data` responde 500 si falta una clave** (`driver.id`, `vehicle.color`, `vehicle.vin`, `plan.token`, `reseller`): el controlador las lee sin comprobar. El front las envía siempre (con `null`).
 - [ ] **Idempotencia real en `/charge`.** El front reutiliza la orden (`order_id`) y bloquea el segundo cobro con la sesión, pero el backend no rechaza un segundo cargo para una póliza ya pagada.
@@ -101,6 +101,7 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - [x] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.
 - [x] Pruebas: Vitest (reglas de placa, usos y documento) y Playwright (home en desktop y mobile).
 - [x] Servidor falso de la API para las e2e (`e2e/mock-api/server.mjs`).
+- [ ] **"Datos del vehículo" cuando La Positiva no responde.** Las listas de modelos y versiones (`GET /models`, `GET /versions`) consultan a La Positiva; con un 503 la página cae en la pantalla genérica de error (visto el 2026-10-02 con QA apagada). Debería avisar que el catálogo no está disponible y dejar reintentar sin perder lo escrito.
 - [ ] Correr `npm test` y `npm run test:e2e` en CI cuando haya remoto.
 
 ### Diseño
