@@ -38,6 +38,7 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 
 - [x] **Proveedor de checkout.** Decidido (2026-09-27): Culqi, a través de la API. La sección 9 de la spec ("pendiente con La Positiva") era un error del cliente: el front nunca se conecta a La Positiva, solo a la API, que ya integra Culqi (`token` para tarjeta/Yape y `order` para PagoEfectivo). Falta la integración front con Culqi Checkout.
 - [ ] **IdUso de "Comercial"** para moto lineal.
+- [ ] **Vigencia del token de cotización.** ¿Cuánto dura el `Token` que devuelve la cotización? La emisión ocurre después del pago (webhook) con ese token: si venció, se cobra pero no se emite. El backend nunca le asigna `expires_at`. Con la respuesta, el front volverá a cotizar al pagar si la cotización es más vieja que ese límite (avisando si cambió el precio).
 - [ ] **Mecanismo de invalidación del token** de cotización al usar "Editar" (en coordinación con la solución del bug de tokens duplicados). Hoy "Editar" → "Guardar y continuar" crea una cotización nueva que reemplaza a la anterior en la sesión (y borra el plan elegido); la anterior sigue válida en el backend.
 
 ## Decisiones de producto
@@ -101,6 +102,7 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - [x] `lang="es"` y metadata de Camila Seguros en `app/layout.tsx`.
 - [x] Pruebas: Vitest (reglas de placa, usos y documento) y Playwright (home en desktop y mobile).
 - [x] Servidor falso de la API para las e2e (`e2e/mock-api/server.mjs`).
+- [x] **Pagar con la página abierta mucho tiempo.** Si la fecha de inicio ya pasó (por ejemplo, después de medianoche), "Continuar con el pago" no crea la orden ni cobra: avisa y enlaza a la cotización, que propone hoy y vuelve a cotizar. Si la sesión (2 horas desde el último paso) venció, el aviso enlaza al inicio. Falta revisar la antigüedad de la cotización (ver "Vigencia del token de cotización").
 - [ ] **"Datos del vehículo" cuando La Positiva no responde.** Las listas de modelos y versiones (`GET /models`, `GET /versions`) consultan a La Positiva; con un 503 la página cae en la pantalla genérica de error (visto el 2026-10-02 con QA apagada). Debería avisar que el catálogo no está disponible y dejar reintentar sin perder lo escrito.
 - [ ] Correr `npm test` y `npm run test:e2e` en CI cuando haya remoto.
 

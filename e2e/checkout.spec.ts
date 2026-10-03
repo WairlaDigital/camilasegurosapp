@@ -99,10 +99,24 @@ test("an email the API rejects explains what to do", async ({ page }) => {
   await openBeforePayment(page, "cliente@sin-dns.pe");
   await page.getByRole("button", { name: "Continuar con el pago" }).click();
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "No pudimos validar tu correo electrónico. Vuelve al inicio y escribe otro correo.",
-  );
+  const alert = page.getByRole("main").getByRole("alert");
+  await expect(alert).toContainText("No pudimos validar tu correo electrónico. Vuelve al inicio y escribe otro correo.");
   await expect(culqi(page)).toBeHidden();
+  await alert.getByRole("link", { name: "Volver al inicio" }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("an expired session explains it and links back to the start", async ({ page }) => {
+  await openBeforePayment(page);
+  await page.context().clearCookies(); // the 2-hour quote session ran out
+
+  await page.getByRole("button", { name: "Continuar con el pago" }).click();
+  const alert = page.getByRole("main").getByRole("alert");
+  await expect(alert).toContainText("Tu sesión expiró. Vuelve a ingresar tu placa para cotizar.");
+  await expect(culqi(page)).toBeHidden();
+
+  await alert.getByRole("link", { name: "Volver a cotizar" }).click();
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test("without an order the confirmation goes back to the payment", async ({ page }) => {

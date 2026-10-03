@@ -5,33 +5,45 @@ import { z } from "zod";
 import { ApiError } from "@/services/errors";
 import { chargeOrder, createOrder } from "@/services/checkout";
 import type { CulqiSettings } from "@/types/checkout";
+import { todayInLima } from "@/features/quote/lib/dates";
 import { limitCheckout, sessionKey, TOO_MANY_REQUESTS } from "@/features/quote/lib/limits";
-import { readQuoteSession, writeQuoteSession } from "@/features/quote/session";
+import { readQuoteSession, writeQuoteSession, type QuoteSession } from "@/features/quote/session";
 import { buildOrderRequest, orderFingerprint } from "./lib/order-request";
+import { SESSION_EXPIRED, startDateError, type PaymentError } from "./lib/payment-errors";
 
-export type StartPaymentResult =
-  | { ok: true; data: { settings: CulqiSettings; email: string } }
-  | { ok: false; error: string };
+export type StartPaymentResult = { ok: true; data: { settings: CulqiSettings; email: string } } | PaymentError;
 
 /** Only failures come back: a successful charge redirects to the confirmation. */
-export type ChargePaymentResult = { ok: false; error: string };
+export type ChargePaymentResult = PaymentError;
 
-const SESSION_EXPIRED = "Tu sesión expiró. Vuelve a ingresar tu placa para cotizar.";
+const startDatePassed = (session: QuoteSession) => startDateError(session.request.startDate, todayInLima());
 
 /** Fields POST /data may reject (422) with a message the person can act on. */
-function orderErrorMessage(error: unknown): string {
+function orderError(error: unknown): PaymentError {
   if (error instanceof ApiError && error.code === "VALIDATION") {
     const fields = Object.keys(error.fieldErrors ?? {});
     if (fields.includes("driver.email")) {
-      return "No pudimos validar tu correo electrónico. Vuelve al inicio y escribe otro correo.";
+      return {
+        ok: false,
+        error: "No pudimos validar tu correo electrónico. Vuelve al inicio y escribe otro correo.",
+        link: { href: "/", label: "Volver al inicio" },
+      };
     }
     if (fields.includes("driver.phone")) {
-      return "Revisa tu número de celular en la cotización e inténtalo de nuevo.";
+      return {
+        ok: false,
+        error: "Revisa tu número de celular en la cotización e inténtalo de nuevo.",
+        link: { href: "/cotizar/cotizacion", label: "Revisar mi celular" },
+      };
     }
-    return "Revisa tus datos e inténtalo de nuevo. Si el problema sigue, escríbenos y te ayudamos.";
+    return { ok: false, error: "Revisa tus datos e inténtalo de nuevo. Si el problema sigue, escríbenos y te ayudamos." };
   }
   // An expired or invalid quote is a 500 in the backend (PENDIENTES.md).
-  return "No pudimos generar tu orden de pago. Si pasó un rato desde que cotizaste, vuelve a cotizar e inténtalo de nuevo.";
+  return {
+    ok: false,
+    error: "No pudimos generar tu orden de pago. Si pasó un rato desde que cotizaste, vuelve a cotizar e inténtalo de nuevo.",
+    link: { href: "/", label: "Volver a cotizar" },
+  };
 }
 
 /**
@@ -41,8 +53,11 @@ function orderErrorMessage(error: unknown): string {
  */
 export async function startPayment(): Promise<StartPaymentResult> {
   const session = await readQuoteSession();
-  if (!session) return { ok: false, error: SESSION_EXPIRED };
+  if (!session) return SESSION_EXPIRED;
   if (session.order?.status === "paid") redirect("/cotizar/confirmacion");
+
+  const passed = startDatePassed(session);
+  if (passed) return passed;
 
   const request = buildOrderRequest(session);
   if (!request.ok) {
@@ -59,7 +74,7 @@ export async function startPayment(): Promise<StartPaymentResult> {
     order = await createOrder({ ...request.input, orderId: previous?.id });
   } catch (error) {
     console.error("startPayment: POST /data failed", error);
-    return { ok: false, error: orderErrorMessage(error) };
+    return orderError(error);
   }
 
   await writeQuoteSession({
@@ -83,9 +98,12 @@ export async function chargePayment(token: unknown): Promise<ChargePaymentResult
   }
 
   const session = await readQuoteSession();
-  if (!session) return { ok: false, error: SESSION_EXPIRED };
+  if (!session) return SESSION_EXPIRED;
   const { order } = session;
   if (order?.status === "paid") redirect("/cotizar/confirmacion");
+  // The checkout may have stayed open past midnight since the order was created.
+  const passed = startDatePassed(session);
+  if (passed) return passed;
   if (!order) return { ok: false, error: "Tu orden de pago no está lista. Presiona «Continuar con el pago» de nuevo." };
 
   if (!limitCheckout(sessionKey(session)).ok) return { ok: false, error: TOO_MANY_REQUESTS };

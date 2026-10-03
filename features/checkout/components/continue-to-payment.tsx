@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { chargePayment, markOrderPending, startPayment } from "../actions";
 import { createCulqiCheckout, loadCulqiCheckout, type CulqiInstance } from "../lib/culqi-checkout";
+import type { PaymentError } from "../lib/payment-errors";
 
 type ContinueToPaymentProps = {
   /** Culqi public key (pk_test_… / pk_live_…). */
@@ -16,7 +18,7 @@ type ContinueToPaymentProps = {
  * deferred methods return a payment code that Culqi confirms later.
  */
 export function ContinueToPayment({ publicKey }: ContinueToPaymentProps) {
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Omit<PaymentError, "ok"> | null>(null);
   const [charging, setCharging] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -29,7 +31,7 @@ export function ContinueToPayment({ publicKey }: ContinueToPaymentProps) {
         const result = await chargePayment(token);
         // On success the action redirects to the confirmation.
         if (result && !result.ok) {
-          setError(result.error);
+          setError(result);
           setCharging(false);
         }
       });
@@ -46,12 +48,12 @@ export function ContinueToPayment({ publicKey }: ContinueToPaymentProps) {
       const script = loadCulqiCheckout().catch(() => null);
       const result = await startPayment();
       if (!result.ok) {
-        setError(result.error);
+        setError(result);
         return;
       }
       const CulqiCheckout = await script;
       if (!CulqiCheckout) {
-        setError("No pudimos abrir la ventana de pago. Revisa tu conexión e inténtalo de nuevo.");
+        setError({ error: "No pudimos abrir la ventana de pago. Revisa tu conexión e inténtalo de nuevo." });
         return;
       }
       const culqi = createCulqiCheckout(CulqiCheckout, publicKey, result.data.settings, result.data.email);
@@ -70,9 +72,14 @@ export function ContinueToPayment({ publicKey }: ContinueToPaymentProps) {
         {charging && "Procesando tu pago…"}
       </p>
       {error && (
-        <p role="alert" className="rounded-control border border-danger p-4 text-small font-semibold text-danger">
-          {error}
-        </p>
+        <div role="alert" className="flex flex-col items-start gap-3 rounded-control border border-danger p-4">
+          <p className="text-small font-semibold text-danger">{error.error}</p>
+          {error.link && (
+            <Link href={error.link.href} className="text-small font-semibold text-brand-500 underline underline-offset-4">
+              {error.link.label}
+            </Link>
+          )}
+        </div>
       )}
     </div>
   );
