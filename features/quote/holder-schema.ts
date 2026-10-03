@@ -36,6 +36,9 @@ export const DEPARTMENTS = [
 ] as const;
 
 const NAME = /^[\p{L}\p{M}\s]+$/u; // same rule as the backend
+
+/** Shared by the schema and the inputs' maxLength. */
+export const HOLDER_MAX_LENGTH = { firstName: 60, lastName: 60, address: 150, district: 60 } as const;
 const PLACE = /^[\p{L}\p{M}\s'.-]+$/u;
 
 const name = (missing: string) =>
@@ -44,7 +47,7 @@ const name = (missing: string) =>
     .trim()
     .min(1, missing)
     .min(2, "Debe tener al menos 2 letras.")
-    .max(60, "Máximo 60 caracteres.")
+    .max(HOLDER_MAX_LENGTH.firstName, `Máximo ${HOLDER_MAX_LENGTH.firstName} caracteres.`)
     .regex(NAME, "Solo letras y espacios.");
 
 const holderSchema = z.object({
@@ -55,14 +58,14 @@ const holderSchema = z.object({
     .trim()
     .min(1, "Ingresa tu domicilio.")
     .min(5, "Escribe la dirección completa (calle y número).")
-    .max(150, "Máximo 150 caracteres."),
+    .max(HOLDER_MAX_LENGTH.address, `Máximo ${HOLDER_MAX_LENGTH.address} caracteres.`),
   state: z.string({ error: "Selecciona el departamento." }).trim().min(1, "Selecciona el departamento."),
   district: z
     .string({ error: "Ingresa el distrito." })
     .trim()
     .min(1, "Ingresa el distrito.")
     .min(2, "Ingresa el distrito.")
-    .max(60, "Máximo 60 caracteres.")
+    .max(HOLDER_MAX_LENGTH.district, `Máximo ${HOLDER_MAX_LENGTH.district} caracteres.`)
     .regex(PLACE, "Solo letras y espacios."),
 });
 

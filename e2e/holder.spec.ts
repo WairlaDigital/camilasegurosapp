@@ -31,6 +31,8 @@ test("with DNI the names come locked and the address is asked", async ({ page })
   const submit = page.getByRole("button", { name: "Guardar y continuar" });
   await expect(submit).toBeDisabled(); // address, department and district are missing
 
+  await expect(page.getByLabel("Domicilio")).toHaveAttribute("maxlength", "150");
+  await expect(page.getByLabel("Distrito")).toHaveAttribute("maxlength", "60");
   await page.getByLabel("Domicilio").fill("Av 1");
   await page.getByLabel("Domicilio").blur();
   await expect(page.getByText("Escribe la dirección completa (calle y número).")).toBeVisible();

@@ -206,6 +206,7 @@ export function VehicleForm({ types, documentType, initial, initialModels, initi
             void loadModels(option, typeId);
           }}
           loadOptions={searchBrands}
+          maxLength={40} // what /api/vehicles/brands accepts
           error={errorFor("brandId")}
         />
 

@@ -37,14 +37,21 @@ export const DOCUMENT_TYPES = {
 export type DocumentType = keyof typeof DOCUMENT_TYPES;
 export const DOCUMENT_TYPE_KEYS = Object.keys(DOCUMENT_TYPES) as [DocumentType, ...DocumentType[]];
 
-const DOCUMENT_RULES: Record<DocumentType, { pattern: RegExp; message: string; numeric: boolean }> = {
-  DNI: { pattern: /^\d{8}$/, message: "El DNI tiene 8 dígitos.", numeric: true },
-  CE: { pattern: /^[A-Z0-9]{6,12}$/, message: "Ingresa un carné de extranjería válido.", numeric: false },
-  RUC: { pattern: /^(10|20)\d{9}$/, message: "El RUC tiene 11 dígitos y empieza con 10 o 20.", numeric: true },
+const DOCUMENT_RULES: Record<DocumentType, { pattern: RegExp; message: string; numeric: boolean; maxLength: number }> = {
+  DNI: { pattern: /^\d{8}$/, message: "El DNI tiene 8 dígitos.", numeric: true, maxLength: 8 },
+  CE: { pattern: /^[A-Z0-9]{6,12}$/, message: "Ingresa un carné de extranjería válido.", numeric: false, maxLength: 12 },
+  RUC: { pattern: /^(10|20)\d{9}$/, message: "El RUC tiene 11 dígitos y empieza con 10 o 20.", numeric: true, maxLength: 11 },
 };
 
 export function documentRule(type: DocumentType) {
   return DOCUMENT_RULES[type];
+}
+
+/** What the document field keeps while typing: only valid characters, up to the type's length. */
+export function sanitizeDocumentNumber(type: DocumentType, raw: string): string {
+  const { numeric, maxLength } = DOCUMENT_RULES[type];
+  const value = numeric ? raw.replace(/\D/g, "") : raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return value.slice(0, maxLength);
 }
 
 // ── /query-info defaults ────────────────────────────────────────────────────

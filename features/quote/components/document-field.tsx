@@ -1,6 +1,13 @@
+import { useRef } from "react";
 import Image from "next/image";
 import { describedBy, FieldShell } from "@/components/ui/field";
-import { DOCUMENT_TYPE_KEYS, DOCUMENT_TYPES, documentRule, type DocumentType } from "../lib/vehicle-rules";
+import {
+  DOCUMENT_TYPE_KEYS,
+  DOCUMENT_TYPES,
+  documentRule,
+  sanitizeDocumentNumber,
+  type DocumentType,
+} from "../lib/vehicle-rules";
 
 type DocumentFieldProps = {
   documentType: DocumentType;
@@ -12,7 +19,8 @@ type DocumentFieldProps = {
 // Figma: document type selector and number joined in one 55px box with a divider.
 export function DocumentField({ documentType, onDocumentTypeChange, onBlur, error }: DocumentFieldProps) {
   const id = "documentNumber";
-  const numeric = documentRule(documentType).numeric;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { numeric } = documentRule(documentType);
   return (
     <FieldShell id={id} label="Número de documento:" error={error}>
       {/* The focus ring wraps the whole group, not each inner control. */}
@@ -24,7 +32,10 @@ export function DocumentField({ documentType, onDocumentTypeChange, onBlur, erro
             value={documentType}
             onChange={(event) => {
               const type = DOCUMENT_TYPE_KEYS.find((key) => key === event.target.value);
-              if (type) onDocumentTypeChange(type);
+              if (!type) return;
+              // A number typed for another type may not fit this one (e.g. RUC → DNI).
+              if (inputRef.current) inputRef.current.value = sanitizeDocumentNumber(type, inputRef.current.value);
+              onDocumentTypeChange(type);
             }}
             className="h-full w-full cursor-pointer appearance-none rounded-l-control bg-transparent pr-10 pl-7.5 text-body font-bold text-ink focus-visible:outline-none"
           >
@@ -43,11 +54,17 @@ export function DocumentField({ documentType, onDocumentTypeChange, onBlur, erro
           />
         </div>
         <input
+          ref={inputRef}
           id={id}
           name={id}
           inputMode={numeric ? "numeric" : "text"}
           autoComplete="off"
-          maxLength={documentType === "RUC" ? 11 : 12}
+          // No maxLength attribute: it would cut a pasted "20-123456789" before the
+          // hyphen is dropped. The length is enforced here, after cleaning.
+          onChange={(event) => {
+            const value = sanitizeDocumentNumber(documentType, event.currentTarget.value);
+            if (value !== event.currentTarget.value) event.currentTarget.value = value;
+          }}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy(id, error)}
           onBlur={() => onBlur(id)}

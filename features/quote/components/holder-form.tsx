@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/select";
 import { saveHolder, type SaveHolderState } from "../holder-actions";
 import {
   DEPARTMENTS,
+  HOLDER_MAX_LENGTH,
   HOLDER_FIELDS,
   parseHolderForm,
   type HolderField,
@@ -77,7 +78,11 @@ export function HolderForm({ document, companyName, locked, initial }: HolderFor
     <Input name={field} label={label} variant="inset" disabled value={locked[field] ?? ""} readOnly className={className} />
   );
 
-  const textField = (field: HolderField, label: string, props: { autoComplete?: string; className?: string } = {}) =>
+  const textField = (
+    field: keyof typeof HOLDER_MAX_LENGTH,
+    label: string,
+    props: { autoComplete?: string; className?: string } = {},
+  ) =>
     locked[field] ? (
       lockedField(field, label, props.className)
     ) : (
@@ -86,6 +91,7 @@ export function HolderForm({ document, companyName, locked, initial }: HolderFor
         label={label}
         variant="inset"
         autoComplete={props.autoComplete}
+        maxLength={HOLDER_MAX_LENGTH[field]}
         className={props.className}
         value={values[field]}
         onChange={(event) => setValues((prev) => ({ ...prev, [field]: event.target.value }))}

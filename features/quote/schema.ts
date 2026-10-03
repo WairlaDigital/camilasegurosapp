@@ -11,6 +11,9 @@ import {
 
 // Shared by the form (validation on blur/submit) and the Server Action.
 
+/** RFC 5321 limit; also the input's maxLength. */
+export const EMAIL_MAX_LENGTH = 254;
+
 const baseSchema = z.object({
   plate: z
     .string({ error: "Ingresa tu placa." })
@@ -25,7 +28,7 @@ const baseSchema = z.object({
     .toUpperCase()
     .min(1, "Ingresa tu número de documento."),
   use: z.enum(VEHICLE_USE_KEYS, { error: "Selecciona el uso de tu vehículo." }),
-  email: z.email({ error: "Ingresa un correo válido." }),
+  email: z.email({ error: "Ingresa un correo válido." }).max(EMAIL_MAX_LENGTH, "Ingresa un correo válido."),
   consent: z.literal("on", { error: "Debes aceptar el consentimiento para continuar." }),
 });
 

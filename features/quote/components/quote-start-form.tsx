@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/select";
 import { startQuote, type StartQuoteState } from "../actions";
 import { detectCategory, normalizePlate } from "../lib/plate";
 import { USES_BY_CATEGORY, VEHICLE_USES, type DocumentType } from "../lib/vehicle-rules";
-import { parseStartQuote, type FieldErrors, type StartQuoteField } from "../schema";
+import { EMAIL_MAX_LENGTH, parseStartQuote, type FieldErrors, type StartQuoteField } from "../schema";
 import { CategoryTiles } from "./category-tiles";
 import { DocumentField } from "./document-field";
 
@@ -121,6 +121,7 @@ export function QuoteStartForm() {
           label="Correo electrónico:"
           autoComplete="email"
           inputMode="email"
+          maxLength={EMAIL_MAX_LENGTH}
           onBlur={() => handleBlur("email")}
           error={errorFor("email")}
         />

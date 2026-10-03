@@ -68,7 +68,11 @@ test("'Ir a pagar' needs a plan and a phone, and keeps the choice", async ({ pag
   await f.phone.blur();
   await expect(page.getByText("Ingresa un celular de 9 dígitos que empiece con 9.")).toBeVisible();
 
-  await f.phone.fill("987 654 321");
+  // At most 9 digits; a pasted +51 prefix is dropped.
+  await f.phone.fill("");
+  await f.phone.pressSequentially("98765432112");
+  await expect(f.phone).toHaveValue("987654321");
+  await f.phone.fill("+51 987 654 321");
   await expect(f.phone).toHaveValue("987654321");
   await f.submit.click();
   await expect(page).toHaveURL(/\/cotizar\/titular$/);

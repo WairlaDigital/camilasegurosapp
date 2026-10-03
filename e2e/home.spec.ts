@@ -108,6 +108,24 @@ test("validates the document on blur and a valid form goes to the quote", async 
   await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
 });
 
+test("the document number keeps only valid characters, up to the type's length", async ({ page }) => {
+  const f = form(page);
+  await f.documentNumber.pressSequentially("12a34-5678901");
+  await expect(f.documentNumber).toHaveValue("12345678");
+
+  await f.documentType.selectOption("RUC");
+  await f.documentNumber.fill("20-123456789");
+  await expect(f.documentNumber).toHaveValue("20123456789");
+
+  // Back to DNI: what no longer fits is cut.
+  await f.documentType.selectOption("DNI");
+  await expect(f.documentNumber).toHaveValue("20123456");
+
+  await f.documentType.selectOption("CE");
+  await f.documentNumber.fill("ab-12.345 6789");
+  await expect(f.documentNumber).toHaveValue("AB123456789");
+});
+
 test("FAQ opens one answer at a time", async ({ page }) => {
   const faq = page.locator("details");
   const first = faq.filter({ hasText: "¿Recibo mi SOAT al instante?" });

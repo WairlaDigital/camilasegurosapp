@@ -14,6 +14,8 @@ type ComboboxProps = FieldProps & {
   /** Remote search; called after `minChars` characters, debounced. */
   loadOptions: (query: string) => Promise<ComboboxOption[]>;
   minChars?: number;
+  /** Longest query the search accepts. */
+  maxLength?: number;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -35,6 +37,7 @@ export function Combobox({
   onChange,
   loadOptions,
   minChars = 2,
+  maxLength,
   placeholder,
   disabled,
   className,
@@ -114,6 +117,7 @@ export function Combobox({
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy(inputId, error, hint)}
           placeholder={placeholder}
+          maxLength={maxLength}
           disabled={disabled}
           value={query}
           onChange={(event) => {

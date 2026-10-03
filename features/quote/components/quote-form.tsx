@@ -9,7 +9,7 @@ import { addDays } from "../lib/dates";
 import { confirmQuote, type ConfirmQuoteState } from "../quote-actions";
 import {
   MAX_START_DAYS,
-  normalizePhone,
+  limitPhone,
   parseQuoteForm,
   type QuoteField,
   type QuoteFieldErrors,
@@ -142,7 +142,7 @@ export function QuoteForm({ plans, today, initial }: QuoteFormProps) {
             autoComplete="tel-national"
             required
             value={phone}
-            onChange={(event) => setPhone(normalizePhone(event.target.value))}
+            onChange={(event) => setPhone(limitPhone(event.target.value))}
             onBlur={() => handleBlur("phone")}
             error={errorFor("phone")}
           />
