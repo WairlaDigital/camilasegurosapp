@@ -25,10 +25,10 @@ Tarjetas de [la documentación de Culqi](https://docs.culqi.com/es/documentacion
 |---|---|---|---|---|
 | 1 | Visa exitosa | 4111 1111 1111 1111 · 09/30 · 123 | El modal se cierra y aparece «¡Listo, {nombre}! Recibimos tu pago» con placa, vigencia y total | ✅ 2026-10-02: cargo `chr_test_Lwq2CyCrWOSsajbp` (S/ 85.00, póliza 4249) |
 | 2 | Fondos insuficientes | 4000 0400 0000 0008 · 03/30 · 295 | Mensaje «No pudimos procesar tu pago…» y se queda en «Antes de pagar». **Si muestra «Recibimos tu pago», se confirma el 🔴 del backend** (pago rechazado reportado como éxito) | ✅ 2026-10-03: Culqi lo denegó (`chr_test_2fofdAu6hAcsVk2F`, póliza 4252) y el front mostró el mensaje de error |
-| 3 | Tarjeta robada | 4000 0200 0000 0000 · 10/30 · 354 | Igual que el caso 2 | |
+| 3 | Tarjeta robada | 4000 0200 0000 0000 · 10/30 · 354 | Igual que el caso 2 | ✅ 2026-10-03: Culqi lo denegó (`DNGE0031`, `chr_test_3nmIcA8IRVZZrTKy`, póliza 4253) y el front mostró el mensaje de error |
 | 4 | Yape | Celular 900 000 001 · código: 6 dígitos cualesquiera | Igual que el caso 1 | |
 | 5 | Banca móvil / agente / billetera | Elegir el método en el modal | Culqi muestra el código de pago; al cerrar el modal se ve «Tu código de pago está listo». Anota si el código **llega al correo** (la pantalla lo promete) | |
-| 6 | 3DS | 4456 5300 0000 1096 · 07/30 · 111 | El backend no soporta 3DS: se espera el mensaje del caso 2. Anota qué hace el modal | |
+| 6 | 3DS | 4456 5300 0000 1096 · 07/30 · 111 | El backend no soporta 3DS: se espera el mensaje del caso 2. Anota qué hace el modal | ✅ 2026-10-03: sin verificación 3DS; Culqi lo denegó directamente (`DNGE0116`, `chr_test_EEPuJytpPavIwdVX`, póliza 4254) y el front mostró el mensaje de error |
 | 7 | Reintento | Abrir el modal, cerrarlo y volver a presionar «Continuar con el pago» | El monto y la orden son los mismos. En el backend, **una sola** póliza nueva (ver abajo) | |
 | 8 | Ya pagado | Tras el caso 1, volver a `/cotizar/antes-de-pagar` | Redirige a la confirmación; no se puede pagar dos veces | |
 
