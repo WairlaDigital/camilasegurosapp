@@ -5,7 +5,7 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 ## Estado actual y siguiente paso
 
-_Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
+_Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 
 **Hecho (en `main`):**
 - Reglas del proyecto, sistema de diseño desde Figma ([DESIGN.md](DESIGN.md)) y pruebas (Vitest + Playwright con servidor falso de la API).
@@ -16,6 +16,8 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - Tipo real del vehículo: el inicio consulta `POST /query-plate` (sin cotizar) y cotiza una sola vez con el tipo del registro.
 - Límites de uso: `/api/vehicles/*` con sesión y límite por persona; el inicio por IP; recotizar y pagar por persona (`lib/rate-limit.ts`, `features/quote/lib/limits.ts`).
 - Checkout con Culqi: "Continuar con el pago" crea la orden (`POST /data`, reutilizada mientras los datos no cambien) y abre Culqi Checkout; el `token` se cobra con `POST /charge` desde una Server Action; el pago diferido (código de pago) y el pago aprobado terminan en `/cotizar/confirmacion`. Probado con el servidor falso y un Culqi falso (`e2e/fake-culqi.ts`), y a mano con el Culqi real en modo de pruebas.
+- "Antes de pagar" y pago rechazado según Figma ("SOAT al instante 5" y "6"). El rechazo es un estado de "Antes de pagar" con consejos e "Intentar nuevamente"; las demás fallas del pago muestran un aviso con enlace a donde se corrigen (sesión vencida, fecha de inicio pasada, correo rechazado).
+- Límites de los campos: documento por tipo (DNI 8, CE 12, RUC 11; solo caracteres válidos), celular de 9 dígitos, correo, datos del titular y buscador de marcas.
 
 **Siguiente: probar la emisión tras el pago** con La Positiva QA encendida (de día) y el cambio temporal de `app-soat-taxi` ya restaurado: pagar y simular el webhook con el `curl` de [docs/prueba-checkout.md](docs/prueba-checkout.md). El checkout ya pasó la prueba manual (2026-10-03): casos 1, 2, 3, 4, 6, 7 y 8 correctos contra la API local con Culqi real en modo de pruebas y La Positiva simulada; el caso 5 (pago diferido) solo se puede probar en producción. También queda configurar las reglas del WAF de Vercel cuando exista el proyecto.
 
@@ -55,7 +57,7 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - [ ] **Catálogo de vehículos.** Falta Camión/Furgón. ¿Trimoto equivale a "Motocarga" (id 16)? **Provisional:** sí, en la tabla de `use-matrix.ts`.
 - [ ] **Confirmación de compra.** Sin endpoint de estado ni descarga, solo puede decir "te llegará por correo". ¿Es suficiente para la v1? **Provisional:** `/cotizar/confirmacion` con placa, inicio de vigencia, total y "te enviaremos tu SOAT a {correo}". No está en Figma ni en la spec.
 - [ ] **Pagos diferidos** (banca móvil, agentes, billeteras). **Provisional:** Culqi muestra el código en su ventana y detrás se abre la confirmación en modo "Tu código de pago está listo" (24 horas para pagar, el código llega al correo) con la opción "Prefiero pagar con tarjeta o Yape". Validar el texto y si Culqi envía el código por correo. **No se puede probar en desarrollo** (en el entorno de pruebas Culqi muestra un QR genérico): revisarlo con el primer pago diferido en producción, incluido que la confirmación aparezca detrás del modal.
-- [ ] **Mensajes de pago rechazado.** Hoy la UI muestra un texto propio ("No pudimos procesar tu pago…") y no el `user_message` de Culqi, porque el backend a veces pone ahí mensajes de excepción crudos. Si el backend separa el `user_message` de Culqi de sus propios errores, se puede mostrar el motivo real (fondos insuficientes, tarjeta vencida…).
+- [ ] **Mensajes de pago rechazado.** La pantalla de pago rechazado usa textos propios y genéricos ("El pago fue rechazado.") y no el `user_message` de Culqi, porque el backend a veces pone ahí mensajes de excepción crudos. Si el backend separa el `user_message` de Culqi de sus propios errores, se puede mostrar el motivo real (fondos insuficientes, tarjeta vencida…).
 
 ## Backend (`~/sites/app-soat-taxi`)
 
@@ -84,7 +86,8 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - [x] Pantalla "Completa los datos del titular" (`/cotizar/titular`). Revisada contra Figma en 1640 y 430 px.
 - [x] Pantalla "Ingresa los datos de tu vehículo": prellenada y editable, marca con autocompletado remoto, modelo y versión del catálogo, serie y VIN por separado. Revisada contra Figma en desktop y mobile. Al guardar vuelve a cotizar con los datos manuales; falta redirigir a la cotización.
 - [x] Pantalla de cotización: saludo, resumen del vehículo con "Editar", tarjeta de plan, fecha de inicio, celular. Revisada contra Figma en 430, 1100 y 1640 px. Falta redirigir "Ir a pagar" a "Antes de pagar".
-- [x] Pantalla "Antes de pagar" (informativa, spec sección 8). Revisada contra la captura de la spec en 1440 px y en mobile. "Continuar con el pago" espera el checkout.
+- [x] Pantalla "Antes de pagar" (informativa, spec sección 8), rediseñada según Figma "SOAT al instante 5" (2026-10-05). Revisada en 1640 px y en mobile.
+- [x] Pantalla de pago rechazado (Figma "SOAT al instante 6"), como estado de "Antes de pagar". Revisada en 1640 px y en mobile.
 - [x] **Tabla tipo → usos (spec sección 2) y categoría fija (spec 4.1).** Tabla propia en `features/quote/lib/use-matrix.ts`, validada en cliente y servidor. Uso único sin selector. "Datos del vehículo" solo ofrece tipos de la categoría de la placa. Si el registro vehicular contradice la categoría de la placa, el inicio avisa y no sigue.
 - [x] **RUC + moto lineal ⇒ solo "Comercial" (spec 4.2)** en "Datos del vehículo". Como "Comercial" aún no tiene IdUso, esa combinación queda sin uso cotizable y el formulario lo explica.
 - [x] **Tipo real del vehículo en el camino directo.** El inicio consulta `POST /query-plate` (sin cotizar), traduce la clase de La Positiva al tipo del catálogo y cotiza una vez con él. Si el uso no aplica al tipo real (o es RUC + moto lineal), lo marca en el campo "Uso".
@@ -115,4 +118,6 @@ _Actualizado: 2026-09-29. Actualiza esta sección al cerrar cada tarea._
 - [ ] Datos del vehículo, diferencias con Figma a confirmar: campo **Versión** agregado (el backend lo exige), **serie y VIN separados** (el backend exige ambos), la ayuda lateral no se muestra en mobile (como en Figma) y el título usa "tu" en vez de "su".
 - [ ] Ilustración de "Datos incompletos" (auto con alerta) pendiente de exportar. La spec la muestra, pero su imagen es de baja resolución (390px de ancho toda la pantalla) y no sirve como recurso.
 - [ ] Cotización, diferencias con Figma a confirmar: "Editar" visible en mobile, ayuda bajo la fecha, estado "Elegido" de "LO QUIERO", etiqueta del celular y estado vacío sin plan (ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones)).
+- [ ] **Pago rechazado, diferencias con Figma a confirmar:** un solo botón ("Intentar nuevamente"; "Cambiar método de pago" abriría el mismo modal de Culqi), aviso "El pago fue rechazado." (Figma: "…por tu entiedad financiera") y texto del aviso en `danger-strong` para cumplir AA. Ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones).
+- [ ] **Versiones mobile** de "Antes de pagar" y pago rechazado: solo hay capturas desktop; hoy se apilan centradas con el botón a todo el ancho.
 - [ ] Nombre del producto en la tarjeta: se muestra tal como viene del backend ("SOAT" o "SOAT DIGITAL", según el plan). Figma solo muestra "SOAT".
