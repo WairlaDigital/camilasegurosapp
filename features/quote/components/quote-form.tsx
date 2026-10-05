@@ -1,20 +1,29 @@
 "use client";
 
-import { startTransition, useActionState, useRef, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useRef, useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlanCard } from "@/features/plans/components/plan-card";
 import type { PlanSummary } from "@/types/quote";
 import { addDays } from "../lib/dates";
-import { confirmQuote, type ConfirmQuoteState } from "../quote-actions";
-import { MAX_START_DAYS, parseQuoteForm, type QuoteField, type QuoteFieldErrors } from "../quote-schema";
+import { confirmQuote, requoteForDate, type ConfirmQuoteState } from "../quote-actions";
+import { MAX_START_DAYS, parseQuoteForm, startDateError, type QuoteField, type QuoteFieldErrors } from "../quote-schema";
 
 type QuoteFormProps = {
   plans: PlanSummary[];
   /** YYYY-MM-DD in Lima, from the server. */
   today: string;
-  initial: { planId: number | null; startDate: string };
+  initial: {
+    planId: number | null;
+    /** Shown in the date field (today when the quoted date already passed). */
+    startDate: string;
+    /** The date the shown prices were quoted for. */
+    quotedStartDate: string;
+  };
 };
+
+/** Wait after the last date change before quoting, so typing a date quotes it once. */
+const REQUOTE_DELAY_MS = 600;
 
 const FIELDS: QuoteField[] = ["planId", "startDate"];
 
@@ -22,13 +31,20 @@ const FIELDS: QuoteField[] = ["planId", "startDate"];
  * Figma "Cotización" (240:117): plan cards with "LO QUIERO", start date and "IR A
  * PAGAR". The phone Figma shows here is asked once, in the holder data (step 1/3).
  */
-export function QuoteForm({ plans, today, initial }: QuoteFormProps) {
+export function QuoteForm({ plans: initialPlans, today, initial }: QuoteFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const dateTitleRef = useRef<HTMLHeadingElement>(null);
   const [state, formAction, pending] = useActionState<ConfirmQuoteState, FormData>(confirmQuote, { status: "idle" });
   const [planId, setPlanId] = useState(initial.planId);
   const [startDate, setStartDate] = useState(initial.startDate);
   const [clientErrors, setClientErrors] = useState<Partial<Record<QuoteField, string | null>>>({});
+  // A new start date is quoted right away: the cards show the price for it.
+  const [plans, setPlans] = useState(initialPlans);
+  const [quotedDate, setQuotedDate] = useState(initial.quotedStartDate);
+  const [requoteNotice, setRequoteNotice] = useState<{ ok: boolean; text: string } | null>(null);
+  const [requoting, startRequote] = useTransition();
+  const requoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requoteRun = useRef(0);
 
   const planIds = plans.map((plan) => plan.id);
   const filled = planId !== null && startDate !== "";
@@ -48,6 +64,27 @@ export function QuoteForm({ plans, today, initial }: QuoteFormProps) {
   function handleBlur(field: QuoteField) {
     const errors = validate();
     setClientErrors((prev) => ({ ...prev, [field]: errors[field] ?? null }));
+  }
+
+  function changeStartDate(value: string) {
+    setStartDate(value);
+    setRequoteNotice(null);
+    if (requoteTimer.current) clearTimeout(requoteTimer.current);
+    if (startDateError(value, today) || value === quotedDate) return;
+    requoteTimer.current = setTimeout(() => {
+      const run = ++requoteRun.current;
+      startRequote(async () => {
+        const result = await requoteForDate(value);
+        if (run !== requoteRun.current) return; // a newer date is being quoted
+        if (result.ok) {
+          setPlans(result.plans);
+          setQuotedDate(result.startDate);
+          setRequoteNotice(result.message ? { ok: true, text: result.message } : null);
+        } else {
+          setRequoteNotice({ ok: false, text: result.error });
+        }
+      });
+    }, REQUOTE_DELAY_MS);
   }
 
   function choosePlan(id: number) {
@@ -120,10 +157,10 @@ export function QuoteForm({ plans, today, initial }: QuoteFormProps) {
             max={addDays(today, MAX_START_DAYS)}
             required
             value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
+            onChange={(event) => changeStartDate(event.target.value)}
             onBlur={() => handleBlur("startDate")}
             error={errorFor("startDate")}
-            hint="Si cambias la fecha, confirmamos el precio de nuevo."
+            hint="Si cambias la fecha, volvemos a cotizar tu SOAT para ese día."
           />
         </div>
 
@@ -138,13 +175,30 @@ export function QuoteForm({ plans, today, initial }: QuoteFormProps) {
               {state.message}
             </p>
           )}
+          {requoting && (
+            <p role="status" className="text-small font-semibold text-ink-muted">
+              Cotizando para la nueva fecha…
+            </p>
+          )}
+          {!requoting && requoteNotice && (
+            <p
+              role={requoteNotice.ok ? "status" : "alert"}
+              className={
+                requoteNotice.ok
+                  ? "rounded-control bg-brand-100 p-4 text-small font-semibold text-brand-900"
+                  : "rounded-control border border-danger p-4 text-small font-semibold text-danger"
+              }
+            >
+              {requoteNotice.text}
+            </p>
+          )}
           {state.status === "repriced" && (
             <p role="status" className="rounded-control bg-brand-100 p-4 text-small font-semibold text-brand-900">
               {state.message}
             </p>
           )}
 
-          <Button type="submit" fullWidth pending={pending} disabled={!filled && !pending}>
+          <Button type="submit" fullWidth pending={pending || requoting} disabled={!filled && !pending}>
             Ir a pagar
           </Button>
           {planId === null && <p className="text-small text-ink-muted">Elige tu plan con «Lo quiero» para continuar.</p>}

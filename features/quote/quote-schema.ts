@@ -26,6 +26,14 @@ type QuoteRules = {
   planIds: number[];
 };
 
+/** Why a start date cannot be quoted, or undefined when it can. */
+export function startDateError(startDate: string, today: string): string | undefined {
+  if (!z.iso.date().safeParse(startDate).success) return "Selecciona una fecha válida.";
+  if (startDate < today) return "La fecha no puede ser anterior a hoy.";
+  if (startDate > addDays(today, MAX_START_DAYS)) return "Elige una fecha dentro de los próximos 12 meses.";
+  return undefined;
+}
+
 export function parseQuoteForm(input: Record<string, unknown>, { today, planIds }: QuoteRules): QuoteParseResult {
   // Empty inputs arrive as "" and would coerce to 0: treat them as missing.
   const values = Object.fromEntries(Object.entries(input).filter(([, value]) => value !== ""));
@@ -40,8 +48,8 @@ export function parseQuoteForm(input: Record<string, unknown>, { today, planIds 
   if (result.success) {
     const { planId, startDate } = result.data;
     if (!planIds.includes(planId)) errors.planId = CHOOSE_PLAN;
-    if (startDate < today) errors.startDate = "La fecha no puede ser anterior a hoy.";
-    if (startDate > addDays(today, MAX_START_DAYS)) errors.startDate = "Elige una fecha dentro de los próximos 12 meses.";
+    const dateError = startDateError(startDate, today);
+    if (dateError) errors.startDate = dateError;
   }
 
   if (result.success && Object.keys(errors).length === 0) return { ok: true, data: result.data };

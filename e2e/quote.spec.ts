@@ -60,20 +60,27 @@ test("'Ir a pagar' needs a plan, goes to 'Antes de pagar' and keeps the choice",
   await expect(f.choose).toHaveAttribute("aria-pressed", "true");
 });
 
-test("another start date quotes again and shows the new price before continuing", async ({ page }) => {
+test("changing the start date quotes again right away and shows the new price", async ({ page }) => {
   await openQuote(page, "ABC-123");
   const f = quoteForm(page);
 
   await f.choose.click();
+  await expect(page.getByText("S/ 210.00", { exact: true })).toBeVisible();
+
+  // The fake API prices any other day at S/ 215: the card updates without pressing "Ir a pagar".
   await f.date.fill(limaDate(1));
-  await f.submit.click();
+  await expect(page.getByRole("main").getByRole("status")).toContainText("El precio cambió");
+  await expect(page.getByText("S/ 215.00", { exact: true })).toBeVisible();
+  await expect(f.choose).toHaveAttribute("aria-pressed", "true"); // the choice stays
 
-  await expect(page.getByRole("status")).toContainText("el precio es S/ 215.00");
-  await expect(page.getByText("S/ 215.00", { exact: true })).toBeVisible();
-  await expect(f.date).toHaveValue(limaDate(1));
-
+  // Already quoted for that date: "Ir a pagar" goes straight on.
   await f.submit.click();
   await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
+
+  // Back on the quote screen the date and its price are kept.
+  await page.getByRole("link", { name: "Volver. Paso 3 de 3" }).click();
+  await expect(f.date).toHaveValue(limaDate(1));
+  await expect(page.getByText("S/ 215.00", { exact: true })).toBeVisible();
 });
 
 test("'Editar' opens the vehicle form and saving it unchanged comes back to the same quote", async ({ page }) => {

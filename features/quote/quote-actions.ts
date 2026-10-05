@@ -2,11 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { formatMoney } from "@/lib/money";
+import type { PlanSummary } from "@/types/quote";
 import { queryInfo } from "@/services/quotes";
 import { formatDate, todayInLima } from "./lib/dates";
 import { limitRequote, sessionKey, TOO_MANY_REQUESTS } from "./lib/limits";
 import { DOCUMENT_TYPES } from "./lib/vehicle-rules";
-import { parseQuoteForm, type QuoteFieldErrors } from "./quote-schema";
+import { planSummaries } from "./lib/plans";
+import { parseQuoteForm, startDateError, type QuoteFieldErrors } from "./quote-schema";
 import { readQuoteSession, writeQuoteSession, type QuoteSession } from "./session";
 
 export type ConfirmQuoteState =
@@ -31,10 +33,62 @@ async function requote(session: QuoteSession, startDate: string) {
   });
 }
 
+export type RequoteResult =
+  | { ok: true; startDate: string; plans: PlanSummary[]; message: string }
+  | { ok: false; error: string };
+
 /**
- * "Ir a pagar" (step 3/3): validates the plan and start date. A start date other
- * than the quoted one means a new quote (new token and maybe a new price), made
- * here once instead of on every date change. The price always comes from the API.
+ * Another start date on the quote screen: a new quote right away (the quote
+ * token and maybe the price depend on it), so the card shows the price for that
+ * date before paying. The price always comes from the API.
+ */
+export async function requoteForDate(startDate: string): Promise<RequoteResult> {
+  const session = await readQuoteSession();
+  if (!session) return { ok: false, error: "Tu sesión expiró. Vuelve a ingresar tu placa para cotizar." };
+  const invalid = startDateError(startDate, todayInLima());
+  if (invalid) return { ok: false, error: invalid };
+
+  const { request, result, selection } = session;
+  const chosen = (plans: { id: number; priceCents: number }[]) =>
+    plans.find((plan) => plan.id === selection?.planId) ?? plans[0];
+  const before = chosen(result.plans);
+  if (startDate === request.startDate) {
+    return { ok: true, startDate, plans: planSummaries(result), message: "" };
+  }
+
+  if (!limitRequote(sessionKey(session)).ok) return { ok: false, error: TOO_MANY_REQUESTS };
+  let requoted;
+  try {
+    requoted = await requote(session, startDate);
+  } catch (error) {
+    console.error("requoteForDate: /query-info failed", error);
+    return { ok: false, error: "No pudimos cotizar para esa fecha. Inténtalo de nuevo en unos minutos." };
+  }
+  const after = chosen(requoted.plans);
+  if (!requoted.vehicle || !after) {
+    return { ok: false, error: "No tenemos un SOAT disponible para esa fecha. Prueba con otra fecha." };
+  }
+
+  // Same as saveVehicle: the session keeps the vehicle as the user confirmed it.
+  await writeQuoteSession({
+    ...session,
+    request: { ...request, startDate },
+    result: { ...requoted, vehicle: result.vehicle },
+    selection: selection && requoted.plans.some((plan) => plan.id === selection.planId) ? selection : undefined,
+  });
+
+  const date = formatDate(startDate);
+  const message =
+    before && after.priceCents !== before.priceCents
+      ? `El precio cambió: para el ${date} es ${formatMoney(after.priceCents)}.`
+      : `Cotizamos tu SOAT para el ${date}: ${formatMoney(after.priceCents)}.`;
+  return { ok: true, startDate, plans: planSummaries(requoted), message };
+}
+
+/**
+ * "Ir a pagar" (step 3/3): validates the plan and start date. The date is quoted
+ * as soon as it changes (`requoteForDate`); if it still differs from the quoted
+ * one (e.g. the page was submitted before that finished), it is quoted here.
  */
 export async function confirmQuote(_prev: ConfirmQuoteState, formData: FormData): Promise<ConfirmQuoteState> {
   const session = await readQuoteSession();

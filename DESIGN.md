@@ -165,7 +165,7 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 - Cotización:
   - El título ocupa 5 columnas para que corte como en Figma ("…SOAT en / pocos minutos..."), y el resumen del vehículo crece hacia la izquierda cuando los datos no caben en una línea (Figma usa "VAN"; el catálogo real trae nombres más largos como "Automóvil").
   - "Editar" también se muestra en mobile (Figma mobile no lo tiene, pero es la única forma de corregir el vehículo desde esta pantalla).
-  - Fecha con el selector nativo del navegador (Figma dibuja un ícono de calendario propio) y una ayuda que no está en Figma: "Si cambias la fecha, confirmamos el precio de nuevo." El formulario queda unos 25px más abajo por esa línea.
+  - Fecha con el selector nativo del navegador (Figma dibuja un ícono de calendario propio) y una ayuda que no está en Figma: "Si cambias la fecha, volvemos a cotizar tu SOAT para ese día." Al cambiarla se cotiza en el momento: "Cotizando para la nueva fecha…" y luego un aviso con el precio de ese día (o "El precio cambió…") El formulario queda unos 25px más abajo por esa línea.
   - Sin el campo de celular de Figma ("Información del contacto"): se pide una sola vez, en el titular (paso 1/3).
   - Figma no define el estado elegido de "LO QUIERO": se usa "Elegido", `aria-pressed` y un anillo `brand-200` en la tarjeta. "Ir a pagar" queda deshabilitado hasta elegir el plan, con la ayuda "Elige tu plan con «Lo quiero» para continuar.".
   - Estado vacío (sin plan a la venta) no está en Figma: mensaje y acciones "Revisar mis datos" y "Volver al inicio".

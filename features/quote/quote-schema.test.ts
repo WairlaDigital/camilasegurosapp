@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseQuoteForm } from "./quote-schema";
+import { parseQuoteForm, startDateError } from "./quote-schema";
 
 const rules = { today: "2026-09-27", planIds: [1, 2] };
 const valid = { planId: "1", startDate: "2026-09-27" };
@@ -27,5 +27,14 @@ describe("parseQuoteForm", () => {
 
   it("reports every field at once", () => {
     expect(Object.keys(errorsFor({}))).toEqual(["planId", "startDate"]);
+  });
+});
+
+describe("startDateError", () => {
+  it("allows today up to 12 months ahead", () => {
+    expect(startDateError("2026-09-27", "2026-09-27")).toBeUndefined();
+    expect(startDateError("2026-09-26", "2026-09-27")).toBe("La fecha no puede ser anterior a hoy.");
+    expect(startDateError("2027-09-28", "2026-09-27")).toMatch(/próximos 12 meses/);
+    expect(startDateError("", "2026-09-27")).toBe("Selecciona una fecha válida.");
   });
 });

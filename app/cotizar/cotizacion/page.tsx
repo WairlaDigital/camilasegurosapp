@@ -8,6 +8,7 @@ import { StepHeader } from "@/features/quote/components/step-header";
 import { VehicleSummary } from "@/features/quote/components/vehicle-summary";
 import { todayInLima } from "@/features/quote/lib/dates";
 import { greetingName } from "@/features/quote/lib/greeting";
+import { planSummaries } from "@/features/quote/lib/plans";
 import { VEHICLE_USES } from "@/features/quote/lib/vehicle-rules";
 import { readQuoteSession } from "@/features/quote/session";
 import { getVehicleTypes } from "@/services/catalog";
@@ -35,15 +36,7 @@ export default async function QuotePage() {
 
   const name = greetingName(result.holder);
   const today = todayInLima();
-  const plans = result.plans.map(({ id, product, insurer, priceCents, features }) => ({
-    id,
-    product,
-    insurer,
-    priceCents,
-    features,
-  }));
-  const featured = plans.findIndex((plan) => plan.id === result.featuredPlanId);
-  if (featured > 0) plans.unshift(...plans.splice(featured, 1));
+  const plans = planSummaries(result);
 
   return (
     <Container className="grid gap-5 pt-7.5 pb-20 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-0 lg:pt-20 lg:pb-30">
@@ -76,6 +69,7 @@ export default async function QuotePage() {
             initial={{
               planId: plans.some((plan) => plan.id === selection?.planId) ? (selection?.planId ?? null) : null,
               startDate: request.startDate < today ? today : request.startDate,
+              quotedStartDate: request.startDate,
             }}
           />
         </div>
