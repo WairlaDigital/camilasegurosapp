@@ -9,8 +9,9 @@ _Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 
 **Hecho (en `main`):**
 - Reglas del proyecto, sistema de diseño desde Figma ([DESIGN.md](DESIGN.md)) y pruebas (Vitest + Playwright con servidor falso de la API).
-- Flujo (orden de Figma, 2026-10-05): inicio → `POST /query-info` → titular (1/3) → vehículo (2/3, siempre; bloquea lo que trajo la consulta de placa) → cotización (3/3) → antes de pagar. El estado viaja en una cookie cifrada.
-- Pantalla de cotización (`/cotizar/cotizacion`): saludo, resumen del vehículo con "Editar", tarjeta del plan sin AFOCAT, fecha de inicio e "Ir a pagar". Cambiar la fecha genera otra cotización en el momento y la tarjeta muestra el precio de ese día.
+- Flujo (orden de Figma, 2026-10-05): inicio → `POST /query-info` → titular (1/3) → vehículo (2/3, siempre) → cotización (3/3) → antes de pagar. El estado viaja en una cookie cifrada.
+- Paso del vehículo (2/3): lo que trajo la consulta de placa, el tipo de vehículo y el uso quedan bloqueados (también en el servidor); solo vuelve a cotizar si la persona completó datos que faltaban. Si La Positiva no responde las listas de modelos o versiones, el paso abre igual y lo avisa.
+- Pantalla de cotización (`/cotizar/cotizacion`): saludo, resumen del vehículo con "Editar", tarjeta del plan sin AFOCAT, fecha de inicio e "Ir a pagar". Cambiar la fecha genera otra cotización en el momento (todos los planes y tokens se reemplazan); mientras llega, las tarjetas ocultan el precio anterior y muestran "Cotizando para el {fecha}…".
 - Pantallas "Completa los datos del titular" (`/cotizar/titular`, paso 1/3: nombres de `/query-info`, dirección de Lima o Callao con referencia y provincia, correo y celular) y "Antes de pagar" (`/cotizar/antes-de-pagar`, spec sección 8). "Continuar con el pago" abre el checkout.
 - Reglas de la spec secciones 2, 4.1 y 4.2: tabla tipo → usos propia (`features/quote/lib/use-matrix.ts`), uso único sin selector, categoría fija por la placa, aviso si el registro vehicular la contradice y RUC + moto lineal sin Particular.
 - Tipo real del vehículo: el inicio consulta `POST /query-plate` (sin cotizar) y cotiza una sola vez con el tipo del registro.
@@ -19,9 +20,14 @@ _Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 - "Antes de pagar" y pago rechazado según Figma ("SOAT al instante 5" y "6"). El rechazo es un estado de "Antes de pagar" con consejos e "Intentar nuevamente"; las demás fallas del pago muestran un aviso con enlace a donde se corrigen (sesión vencida, fecha de inicio pasada, correo rechazado).
 - Límites de los campos: documento por tipo (DNI 8, CE 12, RUC 11; solo caracteres válidos), celular de 9 dígitos, correo, datos del titular y buscador de marcas.
 
-**Siguiente: probar la emisión tras el pago** con La Positiva QA encendida (de día) y el cambio temporal de `app-soat-taxi` ya restaurado: pagar y simular el webhook con el `curl` de [docs/prueba-checkout.md](docs/prueba-checkout.md). El checkout ya pasó la prueba manual (2026-10-03): casos 1, 2, 3, 4, 6, 7 y 8 correctos contra la API local con Culqi real en modo de pruebas y La Positiva simulada; el caso 5 (pago diferido) solo se puede probar en producción. También queda configurar las reglas del WAF de Vercel cuando exista el proyecto.
+**Siguiente:**
+1. **Probar a mano el flujo nuevo con La Positiva QA encendida** (de día; se apaga después de las 8 p. m.): titular → vehículo bloqueado → cotización con cambio de fecha (la cotización real tarda 5-10 s) → pago con Culqi de pruebas. El checkout ya pasó la prueba manual del 2026-10-03 con el flujo anterior (casos 1, 2, 3, 4, 6, 7 y 8; el 5, pago diferido, solo en producción).
+2. **Probar la emisión tras el pago:** pagar y simular el webhook con el `curl` de [docs/prueba-checkout.md](docs/prueba-checkout.md).
+3. **Antes de esas pruebas, restaurar el backend local.** `~/sites/app-soat-taxi/app/Services/PositivaApiClient.php` tiene un cambio temporal **sin commit** (marcado `TEMP BYPASS`) que simula La Positiva: consulta de placa (siempre el Nissan Versa M5G-340, con 5 asientos), stock disponible y tarifa de S/ 85.00 con token `BYPASS-…`. Esos tokens no sirven para emitir. Restaurar con `git -C ~/sites/app-soat-taxi checkout app/Services/PositivaApiClient.php`, cuidando de no perder otros cambios de ese archivo, y nunca hacer commit del bypass.
+4. Confirmar con diseño las diferencias con Figma (sección Diseño) y con La Positiva la vigencia del token de cotización y el IdUso de "Comercial".
+5. Configurar las reglas del WAF de Vercel cuando exista el proyecto.
 
-**Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas). El `.env.local` real está en la carpeta principal del repo; un worktree nuevo no lo trae: cópialo o, para revisar a mano, usa `npm run dev:mock` con un `SESSION_SECRET` de prueba.
+**Para arrancar:** ver [README.md](README.md) (instalación, `.env.local`, `npm run dev:mock`, pruebas) y [AGENTS.md](AGENTS.md) (reglas). El `.env.local` real está en la carpeta principal del repo; un worktree nuevo no lo trae: cópialo o, para revisar a mano, usa `npm run dev:mock` con un `SESSION_SECRET` de prueba. Para probar contra la API local sin chocar con otros servidores: `npx next dev --port 3101` (el 3000 suele usarlo otra carpeta).
 
 ## Insumos por recibir
 
