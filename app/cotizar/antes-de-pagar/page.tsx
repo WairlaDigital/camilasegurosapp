@@ -10,11 +10,11 @@ import { env } from "@/lib/env";
 export const metadata: Metadata = { title: "Antes de pagar" };
 
 const NOTES = [
-  "Recibirás en tu correo el código y las indicaciones para efectuar el pago.",
-  "Si pagas en un agente, consulta sus horarios de atención antes de acercarte.",
+  "Tu póliza se emite apenas se confirme el pago.",
+  "Te la enviamos en PDF al correo que registraste. Si no la ves, revisa tu bandeja de spam o promociones.",
 ];
 
-// Spec section 8 "Antes de pagar": informative, no fields. Not in Figma.
+// Spec section 8 "Antes de pagar", as in Figma "SOAT al instante 5": informative, no fields.
 export default async function BeforePaymentPage() {
   const session = await readQuoteSession();
   if (!session) redirect("/");
@@ -25,31 +25,34 @@ export default async function BeforePaymentPage() {
   if (!holderDetails) redirect("/cotizar/titular");
 
   return (
-    <Container className="grid gap-12 pt-7.5 pb-24 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-29 lg:pt-20 lg:pb-60">
+    <Container className="flex flex-col gap-12 pt-7.5 pb-24 lg:gap-10 lg:pt-20 lg:pb-60">
       {/* Same step as the holder data (vehicle 1/3 → quote 2/3 → holder 3/3); the spec shows "PASO 2/2". */}
-      <div className="lg:col-span-12">
+      <div>
         <StepBackLink step={3} total={3} href="/cotizar/titular" />
       </div>
 
-      <section className="flex flex-col gap-9 md:max-w-112 lg:col-span-5 lg:col-start-5 lg:max-w-none">
-        <div className="flex flex-col gap-4">
-          <h1 className="max-w-100 text-subtitle font-medium text-ink-strong lg:text-title">
-            ¡Estás a un paso de obtener tu SOAT!
-          </h1>
-          <p className="text-body text-ink-strong lg:text-subtitle">Completa el pago y recibe tu SOAT en pocos minutos.</p>
-        </div>
-
-        <ul className="flex flex-col gap-3">
-          {NOTES.map((note) => (
-            <li key={note} className="flex gap-2">
-              <Image src="/icons/check-circle.svg" alt="" width={19} height={20} className="mt-0.5 shrink-0 self-start" />
-              {note}
-            </li>
-          ))}
-        </ul>
-
-        <ContinueToPayment publicKey={env.NEXT_PUBLIC_CULQI_PUBLIC_KEY} />
-      </section>
+      <ContinueToPayment
+        publicKey={env.NEXT_PUBLIC_CULQI_PUBLIC_KEY}
+        intro={
+          <>
+            <Image src="/illustrations/hand-shield.svg" alt="" width={102} height={101} />
+            <div className="flex max-w-112 flex-col gap-4">
+              <h1 className="text-subtitle font-semibold text-ink-strong lg:text-title">¡Tu SOAT está casi listo!</h1>
+              <p className="text-body text-ink-strong lg:text-subtitle">
+                Completa el pago de forma segura y recibe tu póliza en tu correo en pocos minutos.
+              </p>
+            </div>
+            <ul className="flex max-w-80 flex-col gap-4 text-left">
+              {NOTES.map((note) => (
+                <li key={note} className="flex gap-2">
+                  <Image src="/icons/check-circle.svg" alt="" width={19} height={20} className="mt-0.5 shrink-0 self-start" />
+                  {note}
+                </li>
+              ))}
+            </ul>
+          </>
+        }
+      />
     </Container>
   );
 }

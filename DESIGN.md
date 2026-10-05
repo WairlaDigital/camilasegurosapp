@@ -52,6 +52,8 @@ Lineamientos de diseño del cotizador SOAT de seguroscamila.pe. Aplican a cualqu
 | `success` | `#46cc15` | Checks de coberturas |
 | `info` | `#0052a1` | Azul complementario (reservado) |
 | `danger` | `#d92d20` | Errores de formulario. **No está en Figma** |
+| `danger-soft` | `#fce4e4` | Fondo del aviso de pago rechazado |
+| `danger-strong` | `#b42318` | Texto sobre `danger-soft` (5.4:1; `danger` no llega a AA sobre ese fondo) |
 
 Degradados: `bg-gradient-primary` (botón principal), `bg-gradient-secondary` ("LO QUIERO"), `bg-gradient-plan` (brillo `brand-400` arriba al centro de la tarjeta de plan), `bg-gradient-page` (fondo de página: `brand-50` → `sand`, un solo degradado para toda la página; va en `<body>` con `<html>` en `bg-sand`; ponerlo en `<html>` o quitarle el fondo a `<html>` hace que se repita cada alto de ventana).
 
@@ -169,7 +171,8 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
   - Estado vacío (sin plan a la venta) no está en Figma: mensaje y acciones "Revisar mis datos" y "Volver al inicio".
 - Completa los datos del titular: va después de la cotización (en Figma es el paso 1) y solo con los campos que acepta la API: se quitaron tipo de persona, apellido materno separado (el backend guarda los apellidos juntos), referencia, provincia, correo y celular (ya se pidieron) y "¿Comprobante a nombre del contratante?". Con RUC se agrega "Razón social" y se piden nombres y apellidos de un contacto. El botón mide 352px (`md:w-88`) alineado a la derecha, con una línea de ayuda a la izquierda.
 - Numeración de pasos: vehículo 1/3, cotización 2/3, titular 3/3 y antes de pagar 3/3 (Figma: titular 1/3, vehículo 2/3, cotización 3/3).
-- Antes de pagar (no está en Figma; referencia: captura de la spec): el indicador dice "PASO 3/3" para seguir la numeración de Figma (la cotización es 3/3), aunque la spec muestra "PASO 2/2". "Continuar con el pago" muestra un aviso provisional mientras no exista el checkout.
+- Antes de pagar (Figma "SOAT al instante 5", solo desktop): el indicador dice "PASO 3/3", aunque la spec muestra "PASO 2/2". En mobile se apila centrado con el botón a todo el ancho. Los avisos de error que no son un rechazo (sesión vencida, fecha pasada, correo rechazado, sin conexión) van bajo el botón con un enlace a donde se corrigen; Figma no los define.
+- Pago rechazado (Figma "SOAT al instante 6", solo desktop): es un estado de "Antes de pagar", no una ruta (al recargar vuelve a "Antes de pagar"). Solo se muestra cuando Culqi rechaza el cargo; si la conexión falla durante el cobro no se sabe si se cobró y se mantiene el aviso "No pudimos confirmar tu pago…". Diferencias: un solo botón, "Intentar nuevamente" (Figma tiene además "Cambiar método de pago", que abriría el mismo modal de Culqi); el aviso dice "El pago fue rechazado." en vez de "…rechazado por tu entiedad financiera." (errata y no siempre es el banco: también el antifraude de Culqi o la falta de 3DS); el texto del aviso usa `danger-strong` para cumplir AA. Los íconos de los consejos traen `#3E3EDB` (no es exactamente `brand-500`).
 - Datos del vehículo: cuando el tipo tiene un solo uso posible (spec sección 2), "Tipo de uso" se muestra como campo deshabilitado con la ayuda "Es el único uso posible para este tipo de vehículo."; si no hay uso cotizable en línea (RUC + moto lineal, spec 4.2), el selector queda deshabilitado ("No disponible en línea") con la explicación debajo. Figma no define estos estados.
 - Hero: el velo violeta se reproduce con degradados medidos sobre las capturas (desktop desde la izquierda, mobile desde abajo-izquierda); en mobile los beneficios se ocultan, como en Figma.
 
@@ -177,6 +180,7 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 
 - `public/brand/`: símbolo, wordmark (oscuro y blanco), patrón del footer.
 - `public/icons/`: chevrons, check, calendario, editar, auto (tarjeta de resumen), paso atrás, teléfono, Facebook, categorías (`category-auto`, `moto-part-a/b`), beneficios (`benefit-*`) y coberturas (`coverage-*`). Se usan con `next/image` en su tamaño natural, sin alterar el SVG. El ancho y alto del `<Image>` deben ser enteros o coincidir con el tamaño renderizado (si no, Next avisa en consola).
+- `public/illustrations/`: ilustraciones de pantallas de estado (`hand-shield` en "Antes de pagar", `card-error` en pago rechazado). Igual que los íconos: `next/image` en su tamaño natural. Los íconos de los consejos de pago rechazado están en `public/icons/payment-*`.
 - `public/images/hero-banner.jpg`: foto del hero a 2x (2840×1200). Se sirve optimizada con `next/image` y `preload`; el velo violeta se aplica con CSS (no está en la foto).
 - `preload` solo en imágenes visibles al cargar (logo del header, foto del hero). En Next 16 `priority` está deprecado.
 - Pendientes de exportar: ícono de menú mobile y manchas decorativas del fondo. Ver [PENDIENTES.md](PENDIENTES.md).
@@ -188,3 +192,5 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 | Completa los datos del titular | `433:174` | `563:546` |
 | Ingresa los datos de su vehículo | `267:24` | `564:818` |
 | Cotización | `240:117` | `565:921` |
+| Antes de pagar ("SOAT al instante 5") | captura | — |
+| Pago rechazado ("SOAT al instante 6") | captura | — |

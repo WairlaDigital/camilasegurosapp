@@ -1,6 +1,12 @@
 // Payment failures the person fixes elsewhere: they come with a link there.
 
-export type PaymentError = { ok: false; error: string; link?: { href: string; label: string } };
+export type PaymentError = {
+  ok: false;
+  error: string;
+  link?: { href: string; label: string };
+  /** Culqi declined the charge: nothing was charged and the page shows the declined screen. */
+  reason?: "declined";
+};
 
 export const SESSION_EXPIRED: PaymentError = {
   ok: false,

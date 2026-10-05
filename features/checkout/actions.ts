@@ -126,6 +126,7 @@ export async function chargePayment(token: unknown): Promise<ChargePaymentResult
     return {
       ok: false,
       error: "No pudimos procesar tu pago. Revisa los datos de tu tarjeta o prueba con otro medio de pago.",
+      reason: "declined",
     };
   }
 

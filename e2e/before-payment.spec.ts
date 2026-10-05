@@ -29,11 +29,13 @@ test("after the holder data it explains the payment", async ({ page }) => {
   await page.getByRole("button", { name: "Guardar y continuar" }).click();
 
   await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("¡Estás a un paso de obtener tu SOAT!");
-  await expect(page.getByText("Completa el pago y recibe tu SOAT en pocos minutos.")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("¡Tu SOAT está casi listo!");
+  await expect(
+    page.getByText("Completa el pago de forma segura y recibe tu póliza en tu correo en pocos minutos."),
+  ).toBeVisible();
   await expect(page.getByRole("main").getByRole("listitem")).toHaveText([
-    "Recibirás en tu correo el código y las indicaciones para efectuar el pago.",
-    "Si pagas en un agente, consulta sus horarios de atención antes de acercarte.",
+    "Tu póliza se emite apenas se confirme el pago.",
+    "Te la enviamos en PDF al correo que registraste. Si no la ves, revisa tu bandeja de spam o promociones.",
   ]);
   // The payment itself: e2e/checkout.spec.ts.
   await expect(page.getByRole("button", { name: "Continuar con el pago" })).toBeEnabled();

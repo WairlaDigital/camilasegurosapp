@@ -55,16 +55,27 @@ test("paying by card shows the confirmation", async ({ page }) => {
   expect(overflow).toBe(false);
 });
 
-test("a declined card keeps the person on the page with a message", async ({ page }) => {
+test("a declined card shows what to do and lets the person try again", async ({ page }) => {
   await openBeforePayment(page);
   await page.getByRole("button", { name: "Continuar con el pago" }).click();
   await culqi(page).getByRole("button", { name: "Pagar con tarjeta rechazada" }).click();
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "No pudimos procesar tu pago. Revisa los datos de tu tarjeta o prueba con otro medio de pago.",
-  );
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toHaveText("No se pudo procesar tu pago");
+  await expect(heading).toBeFocused();
   await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
-  await expect(page.getByRole("button", { name: "Continuar con el pago" })).toBeEnabled();
+  await expect(page.getByText("Tu pago fue rechazado. No se ha realizado ningún cobro en tu tarjeta o cuenta.")).toBeVisible();
+  await expect(page.getByText("El pago fue rechazado.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "¿Qué puedes hacer?" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(4);
+
+  // "Intentar nuevamente" opens Culqi again (same order), where any method can be chosen.
+  await page.getByRole("button", { name: "Intentar nuevamente" }).click();
+  await culqi(page).getByRole("button", { name: "Pagar con tarjeta", exact: true }).click();
+  await expect(page).toHaveURL(/\/cotizar\/confirmacion$/);
+
+  const configs = await culqiConfigs(page);
+  expect(configs[1].settings.order).toBe(configs[0].settings.order);
 });
 
 test("trying again reuses the same order", async ({ page }) => {

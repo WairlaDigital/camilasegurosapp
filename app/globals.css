@@ -32,6 +32,8 @@
   --color-success: #46cc15;
   --color-info: #0052a1; /* "Colores Complementarios/Azul" (date field label only) */
   --color-danger: #d92d20; /* not in Figma: needed for form errors (AA on white) */
+  --color-danger-soft: #fce4e4; /* payment declined notice background */
+  --color-danger-strong: #b42318; /* text on danger-soft (AA: 5.4:1) */
 
   /* Typography — Red Hat Display, loaded with next/font in app/layout.tsx */
   --font-sans: var(--font-red-hat-display), ui-sans-serif, system-ui, sans-serif;
