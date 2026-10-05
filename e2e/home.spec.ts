@@ -87,7 +87,7 @@ test("a use that no longer applies is cleared when the category changes", async 
   await expect(f.use).toHaveValue("");
 });
 
-test("validates the document on blur and a valid form goes to the quote", async ({ page }) => {
+test("validates the document on blur and a valid form goes to the holder step", async ({ page }) => {
   const f = form(page);
   await f.plate.fill("ABC-123");
   await f.documentType.selectOption("RUC");
@@ -104,8 +104,8 @@ test("validates the document on blur and a valid form goes to the quote", async 
   await f.consent.check();
   await f.submit.click();
 
-  // ABC-123 is a complete vehicle in the fake API.
-  await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
+  // Figma order: the holder data (1/3) comes before the vehicle and the plans.
+  await expect(page).toHaveURL(/\/cotizar\/titular$/);
 });
 
 test("the document number keeps only valid characters, up to the type's length", async ({ page }) => {

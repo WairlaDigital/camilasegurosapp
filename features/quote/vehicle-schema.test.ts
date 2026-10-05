@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { VehicleTypeOption } from "@/types/quote";
 import { defaultQuoteRequest } from "./lib/vehicle-rules";
-import { parseVehicleForm } from "./vehicle-schema";
+import { lockedVehicleFields, parseVehicleForm } from "./vehicle-schema";
 
 const types: VehicleTypeOption[] = [
   { id: 1, name: "Automóvil", uses: [{ id: 1, name: "Taxi" }, { id: 5, name: "Particular" }] },
@@ -111,5 +111,37 @@ describe("defaultQuoteRequest (provisional defaults)", () => {
   it("returns null when the combination cannot be quoted online yet", () => {
     expect(defaultQuoteRequest("auto", "carga")).toBeNull(); // no Camión/Furgón type
     expect(defaultQuoteRequest("moto", "comercial")).toBeNull(); // no use id yet
+  });
+});
+
+describe("locked fields from the plate lookup", () => {
+  const lookup = {
+    plate: "M5G-340",
+    typeId: 1,
+    useId: 5,
+    brand: { id: 1738, name: "NISSAN" },
+    model: { id: "1000754", name: "VERSA" },
+    year: 2020,
+    vin: "3N1CN7AD2MK390044",
+  };
+
+  it("locks only what the lookup returned", () => {
+    expect(lockedVehicleFields(lookup)).toEqual({
+      brandId: "1738",
+      brandName: "NISSAN",
+      modelId: "1000754",
+      modelName: "VERSA",
+      year: "2020",
+      vin: "3N1CN7AD2MK390044",
+    });
+    expect(lockedVehicleFields(null)).toEqual({});
+  });
+
+  it("keeps the lookup's values even if the form sends others", () => {
+    const result = parseVehicleForm(
+      { ...valid, brandId: "1", brandName: "OTRA", year: "1999" },
+      { ...rules, locked: lockedVehicleFields(lookup) },
+    );
+    expect(result.ok && result.data).toMatchObject({ brandId: 1738, brandName: "NISSAN", year: 2020 });
   });
 });

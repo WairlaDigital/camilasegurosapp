@@ -1,30 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 import { culqiConfigs, mockCulqi } from "./fake-culqi";
+import { openBeforePayment as openPaymentStep } from "./flow";
 
 // Checkout: "Continuar con el pago" creates the order (POST /data on the fake API)
 // and opens Culqi Checkout (a fake script, see e2e/fake-culqi.ts).
 
 async function openBeforePayment(page: Page, email = "cliente@correo.pe") {
   await mockCulqi(page);
-  await page.goto("/");
-  await page.getByLabel("Ingresa tu placa:").fill("ABC-123");
-  await page.getByLabel("Número de documento:").fill("12345678");
-  await page.getByLabel("Uso:").selectOption("particular");
-  await page.getByLabel("Correo electrónico:").fill(email);
-  await page.getByRole("checkbox", { name: /Consentimiento de datos/ }).check();
-  await page.getByRole("button", { name: "Comprar SOAT virtual" }).click();
-  await page.waitForURL(/\/cotizar\/cotizacion$/);
-
-  await page.getByRole("button", { name: /^Lo quiero/ }).click();
-  await page.getByLabel("Número de celular").fill("987654321");
-  await page.getByRole("button", { name: "Ir a pagar" }).click();
-  await page.waitForURL(/\/cotizar\/titular$/);
-
-  await page.getByLabel("Domicilio").fill("Av. Primavera 1234");
-  await page.getByLabel("Departamento").selectOption("Lima");
-  await page.getByLabel("Distrito").fill("Santiago de Surco");
-  await page.getByRole("button", { name: "Guardar y continuar" }).click();
-  await page.waitForURL(/\/cotizar\/antes-de-pagar$/);
+  await openPaymentStep(page, { email });
 }
 
 const culqi = (page: Page) => page.getByRole("dialog", { name: "Culqi Checkout" });

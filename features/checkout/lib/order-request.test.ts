@@ -32,13 +32,17 @@ const session: QuoteSession = {
     ],
     featuredPlanId: 1,
   },
-  selection: { planId: 1, phone: "987654321" },
+  vehicleLookup: null,
+  selection: { planId: 1 },
   holderDetails: {
     firstName: "MARTÍN JAVIER",
     lastName: "RODRIGUEZ",
     address: "Av. Primavera 1234",
+    reference: "Urb. Los Álamos",
     state: "Lima",
-    district: "Surco",
+    district: "Santiago de Surco",
+    email: "otro@correo.pe",
+    phone: "987654321",
   },
 };
 
@@ -48,7 +52,14 @@ describe("buildOrderRequest", () => {
     expect(request).toMatchObject({
       ok: true,
       input: {
-        driver: { documentTypeId: 1, documentNumber: "12345678", phone: "987654321", email: "a@correo.pe" },
+        // Contact and address from the holder step; reference and province go in the address text.
+        driver: {
+          documentTypeId: 1,
+          documentNumber: "12345678",
+          address: "Av. Primavera 1234, Urb. Los Álamos, Lima",
+          phone: "987654321",
+          email: "otro@correo.pe",
+        },
         vehicle: { plate: "ABC123", brandId: 1035, modelId: "1003272", versionId: "10006180", ubigeoId: "150101" },
         plan: { id: 1, priceCents: 21000, quoteToken: "tok" },
         startDate: "2026-09-29",
@@ -67,7 +78,7 @@ describe("buildOrderRequest", () => {
 
   it("says what is missing", () => {
     expect(buildOrderRequest({ ...session, selection: undefined })).toEqual({ ok: false, missing: "selection" });
-    expect(buildOrderRequest({ ...session, selection: { planId: 99, phone: "987654321" } })).toEqual({
+    expect(buildOrderRequest({ ...session, selection: { planId: 99 } })).toEqual({
       ok: false,
       missing: "selection",
     });
@@ -84,7 +95,10 @@ describe("orderFingerprint", () => {
   it("changes only when the order data changes", () => {
     const first = buildOrderRequest(session);
     const same = buildOrderRequest({ ...session, order: { id: 7, fingerprint: "x", status: "created" } });
-    const otherPhone = buildOrderRequest({ ...session, selection: { planId: 1, phone: "912345678" } });
+    const otherPhone = buildOrderRequest({
+      ...session,
+      holderDetails: session.holderDetails && { ...session.holderDetails, phone: "912345678" },
+    });
     if (!first.ok || !same.ok || !otherPhone.ok) throw new Error("expected complete sessions");
 
     expect(orderFingerprint(same.input)).toBe(orderFingerprint(first.input));

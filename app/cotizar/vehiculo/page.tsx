@@ -6,14 +6,17 @@ import { detectCategory } from "@/features/quote/lib/plate";
 import { typesForCategory } from "@/features/quote/lib/use-matrix";
 import { VehicleForm } from "@/features/quote/components/vehicle-form";
 import { readQuoteSession } from "@/features/quote/session";
+import { lockedVehicleFields } from "@/features/quote/vehicle-schema";
 import { getModels, getVehicleTypes, getVersions } from "@/services/catalog";
 
 export const metadata: Metadata = { title: "Datos de tu vehículo" };
 
-// Figma "Ingresa los datos de su vehículo" (267:24, mobile 564:818).
+// Figma "Ingresa los datos de su vehículo" (267:24, mobile 564:818): step 2/3, always
+// shown after the holder data. What the plate lookup gave is locked.
 export default async function VehiclePage() {
   const session = await readQuoteSession();
   if (!session) redirect("/");
+  if (!session.holderDetails) redirect("/cotizar/titular");
 
   const vehicle = session.result.vehicle ?? {
     plate: session.input.plate,
@@ -33,11 +36,18 @@ export default async function VehiclePage() {
   return (
     <Container className="grid gap-10 pt-7.5 pb-20 lg:grid-cols-12 lg:gap-x-8 lg:pt-20">
       <div className="flex flex-col gap-6 lg:col-span-8 lg:gap-12.5">
-        <StepHeader step={1} total={3} backHref="/" title="Ingresa los datos de tu vehículo." plate={vehicle.plate} />
+        <StepHeader
+          step={2}
+          total={3}
+          backHref="/cotizar/titular"
+          title="Ingresa los datos de tu vehículo."
+          plate={vehicle.plate}
+        />
         <VehicleForm
           types={types}
           documentType={session.input.documentType}
           initial={vehicle}
+          locked={lockedVehicleFields(session.vehicleLookup)}
           initialModels={models}
           initialVersions={versions}
         />

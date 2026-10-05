@@ -6,46 +6,61 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { saveHolder, type SaveHolderState } from "../holder-actions";
 import {
-  DEPARTMENTS,
-  HOLDER_MAX_LENGTH,
   HOLDER_FIELDS,
+  HOLDER_MAX_LENGTH,
   parseHolderForm,
   type HolderField,
   type HolderFieldErrors,
   type HolderFormValues,
+  type LockableHolderField,
 } from "../holder-schema";
+import { DISTRICTS, HOLDER_STATES, holderState, provinceFor } from "../lib/locations";
+import { limitPhone } from "../lib/phone";
+import { EMAIL_MAX_LENGTH } from "../schema";
 
 type HolderFormProps = {
   document: { type: string; number: string };
+  personType: "Natural" | "Jurídica";
   /** Razón social (RUC): the names asked are then those of a contact person. */
   companyName?: string;
   /** Values the API returned: shown disabled, never sent. */
-  locked: Partial<HolderFormValues>;
-  /** What the person completed before (back from "Antes de pagar"). */
+  locked: Partial<Pick<HolderFormValues, LockableHolderField>>;
+  /** What the person completed before (back from a later step), or the email of the home form. */
   initial: Partial<HolderFormValues>;
 };
 
-/** Figma "Completa los datos del titular" (433:174), only with the fields the API accepts. */
-export function HolderForm({ document, companyName, locked, initial }: HolderFormProps) {
+/** Figma "Completa los datos del titular" (433:174), step 1/3. */
+export function HolderForm({ document, personType, companyName, locked, initial }: HolderFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState<SaveHolderState, FormData>(saveHolder, { status: "idle" });
   const [values, setValues] = useState<Record<HolderField, string>>({
     firstName: initial.firstName ?? "",
     lastName: initial.lastName ?? "",
     address: initial.address ?? "",
+    reference: initial.reference ?? "",
     state: initial.state ?? "",
     district: initial.district ?? "",
+    email: initial.email ?? "",
+    phone: initial.phone ?? "",
   });
   const [clientErrors, setClientErrors] = useState<Partial<Record<HolderField, string | null>>>({});
 
   const isCompany = Boolean(companyName);
-  const filled = HOLDER_FIELDS.every((field) => locked[field] || values[field].trim() !== "");
+  const currentState = locked.state ?? values.state;
+  const knownState = holderState(currentState);
+  const province = provinceFor(currentState);
+  // The reference is optional; everything else needs a value.
+  const filled = HOLDER_FIELDS.every(
+    (field) => field === "reference" || (field in locked && locked[field as LockableHolderField]) || values[field].trim() !== "",
+  );
 
   const serverErrors: HolderFieldErrors = state.status === "invalid" ? state.errors : {};
   const errorFor = (field: HolderField) => {
     const clientError = clientErrors[field];
     return clientError === null ? undefined : (clientError ?? serverErrors[field]);
   };
+
+  const setValue = (field: HolderField, value: string) => setValues((prev) => ({ ...prev, [field]: value }));
 
   function validate(): HolderFieldErrors {
     if (!formRef.current) return {};
@@ -73,18 +88,19 @@ export function HolderForm({ document, companyName, locked, initial }: HolderFor
     startTransition(() => formAction(formData));
   }
 
-  /** A field the API already filled: read-only, not submitted (the server keeps the API's value). */
-  const lockedField = (field: HolderField, label: string, className?: string) => (
-    <Input name={field} label={label} variant="inset" disabled value={locked[field] ?? ""} readOnly className={className} />
+  /** A value the form shows but does not edit: read-only and not submitted. */
+  const fixedField = (name: string, label: string, value: string, className?: string) => (
+    <Input name={name} label={label} variant="inset" disabled value={value} readOnly className={className} />
   );
 
   const textField = (
-    field: keyof typeof HOLDER_MAX_LENGTH,
+    field: "firstName" | "lastName" | "address" | "reference",
     label: string,
     props: { autoComplete?: string; className?: string } = {},
-  ) =>
-    locked[field] ? (
-      lockedField(field, label, props.className)
+  ) => {
+    const lockedValue = field === "reference" ? undefined : locked[field];
+    return lockedValue ? (
+      fixedField(field, label, lockedValue, props.className)
     ) : (
       <Input
         name={field}
@@ -94,22 +110,23 @@ export function HolderForm({ document, companyName, locked, initial }: HolderFor
         maxLength={HOLDER_MAX_LENGTH[field]}
         className={props.className}
         value={values[field]}
-        onChange={(event) => setValues((prev) => ({ ...prev, [field]: event.target.value }))}
+        onChange={(event) => setValue(field, event.target.value)}
         onBlur={() => handleBlur(field)}
         error={errorFor(field)}
       />
     );
+  };
 
   return (
     <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-10">
+      {/* Rows as in Figma: person and document · names · address · reference · location · contact. */}
       <div className="grid gap-5 md:grid-cols-2 md:gap-x-8 lg:grid-cols-3">
-        <Input name="documentTypeFixed" label="Tipo de documento" variant="inset" disabled value={document.type} readOnly />
-        <Input name="documentNumberFixed" label="Nro. de documento" variant="inset" disabled value={document.number} readOnly />
-        {companyName && (
-          <Input name="companyNameFixed" label="Razón social" variant="inset" disabled value={companyName} readOnly />
-        )}
+        {fixedField("personTypeFixed", "Tipo de persona", personType)}
+        {fixedField("documentTypeFixed", "Tipo de documento", document.type)}
+        {fixedField("documentNumberFixed", "Nro. de documento", document.number)}
+        {companyName && fixedField("companyNameFixed", "Razón social", companyName, "md:col-span-2 lg:col-start-1")}
 
-        {/* Rows as in Figma: document · names · address · department and district. */}
+        {/* The backend returns the surnames together ("RODRIGUEZ GONZALES"): one field, as it comes. */}
         {textField("lastName", isCompany ? "Apellidos del contacto" : "Apellidos", {
           autoComplete: "family-name",
           className: "lg:col-start-1",
@@ -120,9 +137,10 @@ export function HolderForm({ document, companyName, locked, initial }: HolderFor
           autoComplete: "street-address",
           className: "md:col-span-2 lg:col-start-1",
         })}
+        {textField("reference", "Referencia (Urb, Av.) (opcional)", { className: "md:col-span-2 lg:col-start-1" })}
 
         {locked.state ? (
-          lockedField("state", "Departamento", "md:col-start-1")
+          fixedField("state", "Departamento", locked.state, "md:col-start-1")
         ) : (
           <Select
             name="state"
@@ -131,18 +149,101 @@ export function HolderForm({ document, companyName, locked, initial }: HolderFor
             className="md:col-start-1"
             placeholder="Selecciona el departamento"
             value={values.state}
-            onChange={(event) => setValues((prev) => ({ ...prev, state: event.target.value }))}
+            onChange={(event) => {
+              const next = event.target.value;
+              setValues((prev) => {
+                const nextState = holderState(next);
+                // A district of the other department no longer applies.
+                const keepDistrict = nextState !== null && DISTRICTS[nextState].includes(prev.district);
+                return { ...prev, state: next, district: keepDistrict ? prev.district : "" };
+              });
+            }}
             onBlur={() => handleBlur("state")}
             error={errorFor("state")}
           >
-            {DEPARTMENTS.map((department) => (
-              <option key={department} value={department}>
-                {department}
+            {HOLDER_STATES.map((option) => (
+              <option key={option} value={option}>
+                {option}
               </option>
             ))}
           </Select>
         )}
-        {textField("district", "Distrito", { autoComplete: "address-level3" })}
+
+        {/* Each department offers a single province: it follows the department. */}
+        <Select
+          name="provinceFixed"
+          label="Provincia"
+          variant="inset"
+          disabled
+          placeholder="Primero elige el departamento"
+          value={province ?? ""}
+          onChange={() => {}}
+        >
+          {province && <option value={province}>{province}</option>}
+        </Select>
+
+        {locked.district ? (
+          fixedField("district", "Distrito", locked.district)
+        ) : knownState || !currentState ? (
+          <Select
+            name="district"
+            label="Distrito"
+            variant="inset"
+            disabled={!knownState}
+            placeholder={knownState ? "Selecciona el distrito" : "Primero elige el departamento"}
+            value={values.district}
+            onChange={(event) => setValue("district", event.target.value)}
+            onBlur={() => handleBlur("district")}
+            error={errorFor("district")}
+          >
+            {knownState &&
+              DISTRICTS[knownState].map((district) => (
+                <option key={district} value={district}>
+                  {district}
+                </option>
+              ))}
+          </Select>
+        ) : (
+          // A department outside Lima/Callao returned by SUNAT (RUC): the district is typed.
+          <Input
+            name="district"
+            label="Distrito"
+            variant="inset"
+            autoComplete="address-level3"
+            maxLength={60}
+            value={values.district}
+            onChange={(event) => setValue("district", event.target.value)}
+            onBlur={() => handleBlur("district")}
+            error={errorFor("district")}
+          />
+        )}
+
+        <Input
+          name="email"
+          type="email"
+          label="Correo electrónico"
+          variant="inset"
+          autoComplete="email"
+          inputMode="email"
+          maxLength={EMAIL_MAX_LENGTH}
+          className="md:col-start-1"
+          value={values.email}
+          onChange={(event) => setValue("email", event.target.value)}
+          onBlur={() => handleBlur("email")}
+          error={errorFor("email")}
+        />
+        <Input
+          name="phone"
+          type="tel"
+          label="Teléfono celular"
+          variant="inset"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          value={values.phone}
+          onChange={(event) => setValue("phone", limitPhone(event.target.value))}
+          onBlur={() => handleBlur("phone")}
+          error={errorFor("phone")}
+        />
       </div>
 
       {state.status === "failed" && (

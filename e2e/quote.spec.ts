@@ -1,29 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
+import { openQuote as openQuoteStep, submitHome, type StartOptions } from "./flow";
 
-// Quote screen (Figma 240:117): greeting, vehicle summary, plan card, start date,
-// phone and "Ir a pagar". The fake API (e2e/mock-api) drives each case by plate.
+// Quote screen (Figma 240:117): step 3/3 after the holder and vehicle data. Greeting,
+// vehicle summary, plan card, start date and "Ir a pagar". The fake API
+// (e2e/mock-api) drives each case by plate.
 
-async function submitHome(page: Page, plate: string, { use = "particular", ruc = false } = {}) {
-  await page.goto("/");
-  await page.getByLabel("Ingresa tu placa:").fill(plate);
-  if (ruc) await page.getByLabel("Tipo de documento").selectOption("RUC");
-  await page.getByLabel("Número de documento:").fill(ruc ? "20123456789" : "12345678");
-  await page.getByLabel("Uso:").selectOption(use);
-  await page.getByLabel("Correo electrónico:").fill("cliente@correo.pe");
-  await page.getByRole("checkbox", { name: /Consentimiento de datos/ }).check();
-  await page.getByRole("button", { name: "Comprar SOAT virtual" }).click();
-}
-
-async function openQuote(page: Page, plate: string, options?: { use?: string; ruc?: boolean }) {
-  await submitHome(page, plate, options);
-  await page.waitForURL(/\/cotizar\/cotizacion$/);
-}
+const openQuote = (page: Page, plate: string, options?: StartOptions) => openQuoteStep(page, plate, options);
 
 function quoteForm(page: Page) {
   return {
     choose: page.getByRole("button", { name: /^(Lo quiero|Elegido)/ }),
     date: page.getByLabel("Selecciona una fecha"),
-    phone: page.getByLabel("Número de celular"),
     submit: page.getByRole("button", { name: "Ir a pagar" }),
   };
 }
@@ -33,7 +20,7 @@ const limaDate = (offsetDays = 0) =>
     new Date(Date.now() + offsetDays * 86_400_000),
   );
 
-test("a complete vehicle goes straight to the quote with the La Positiva plan only", async ({ page }) => {
+test("the quote shows the La Positiva plan only, without asking the phone again", async ({ page }) => {
   await openQuote(page, "ABC-123");
 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hola Martín, activa tu SOAT en pocos minutos...");
@@ -47,12 +34,13 @@ test("a complete vehicle goes straight to the quote with the La Positiva plan on
   await expect(page.getByText("S/ 210.00")).toBeVisible();
   await expect(page.getByRole("list", { name: "Coberturas del plan" }).getByRole("listitem")).toHaveCount(5);
   await expect(quoteForm(page).date).toHaveValue(limaDate());
+  await expect(page.getByLabel("Número de celular")).toHaveCount(0); // asked in the holder step
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflow).toBe(false);
 });
 
-test("'Ir a pagar' needs a plan and a phone, and keeps the choice", async ({ page }) => {
+test("'Ir a pagar' needs a plan, goes to 'Antes de pagar' and keeps the choice", async ({ page }) => {
   await openQuote(page, "ABC-123");
   const f = quoteForm(page);
 
@@ -63,25 +51,13 @@ test("'Ir a pagar' needs a plan and a phone, and keeps the choice", async ({ pag
   await expect(f.choose).toHaveAttribute("aria-pressed", "true");
   await expect(f.choose).toHaveText("Elegido");
   await expect(page.getByRole("heading", { name: "¿Cuándo iniciamos tu protección?" })).toBeFocused();
-
-  await f.phone.fill("12345");
-  await f.phone.blur();
-  await expect(page.getByText("Ingresa un celular de 9 dígitos que empiece con 9.")).toBeVisible();
-
-  // At most 9 digits; a pasted +51 prefix is dropped.
-  await f.phone.fill("");
-  await f.phone.pressSequentially("98765432112");
-  await expect(f.phone).toHaveValue("987654321");
-  await f.phone.fill("+51 987 654 321");
-  await expect(f.phone).toHaveValue("987654321");
   await f.submit.click();
-  await expect(page).toHaveURL(/\/cotizar\/titular$/);
+  await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
 
   // Going back keeps the choice (quote session).
   await page.getByRole("link", { name: "Volver. Paso 3 de 3" }).click();
   await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
   await expect(f.choose).toHaveAttribute("aria-pressed", "true");
-  await expect(f.phone).toHaveValue("987654321");
 });
 
 test("another start date quotes again and shows the new price before continuing", async ({ page }) => {
@@ -90,7 +66,6 @@ test("another start date quotes again and shows the new price before continuing"
 
   await f.choose.click();
   await f.date.fill(limaDate(1));
-  await f.phone.fill("987654321");
   await f.submit.click();
 
   await expect(page.getByRole("status")).toContainText("el precio es S/ 215.00");
@@ -98,19 +73,21 @@ test("another start date quotes again and shows the new price before continuing"
   await expect(f.date).toHaveValue(limaDate(1));
 
   await f.submit.click();
-  await expect(page).toHaveURL(/\/cotizar\/titular$/);
+  await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
 });
 
-test("'Editar' opens the vehicle form and saving it comes back to the quote", async ({ page }) => {
+test("'Editar' opens the vehicle form; another use quotes again and comes back to the quote", async ({ page }) => {
   await openQuote(page, "ABC-123");
 
   await page.getByRole("link", { name: "Editar datos del vehículo" }).click();
   await expect(page).toHaveURL(/\/cotizar\/vehiculo$/);
-  await page.getByLabel("Nro. de asientos").fill("7");
+  await expect(page.getByLabel("Nro. de asientos")).toBeDisabled(); // from the plate lookup
+  await page.getByLabel("Tipo de uso").selectOption("1"); // Taxi
   await page.getByRole("button", { name: "Guardar y continuar" }).click();
 
   await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
-  await expect(page.getByText("S/ 210.00")).toBeVisible();
+  await expect(page.getByText("Taxi", { exact: true })).toBeVisible();
+  await expect(page.getByText("S/ 210.00")).toBeVisible();
 });
 
 test("without a plan for sale it explains it and offers to review the data", async ({ page }) => {

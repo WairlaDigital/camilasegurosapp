@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { CreateOrderInput } from "@/types/checkout";
+import { composeAddress, provinceFor } from "@/features/quote/lib/locations";
 import { DOCUMENT_TYPES } from "@/features/quote/lib/vehicle-rules";
 import type { QuoteSession } from "@/features/quote/session";
 
@@ -32,11 +33,16 @@ export function buildOrderRequest(session: QuoteSession): OrderRequest {
         firstName: holderDetails.firstName,
         lastName: holderDetails.lastName,
         companyName: result.holder?.companyName,
-        address: holderDetails.address,
+        // POST /data has no field for the reference or the province: they go in the address text.
+        address: composeAddress({
+          address: holderDetails.address,
+          reference: holderDetails.reference,
+          province: provinceFor(holderDetails.state),
+        }),
         state: holderDetails.state,
         district: holderDetails.district,
-        phone: selection.phone,
-        email: input.email,
+        phone: holderDetails.phone,
+        email: holderDetails.email,
       },
       vehicle: {
         plate: input.plate.replace(/[^A-Z0-9]/gi, "").toUpperCase(), // the API only accepts letters and digits

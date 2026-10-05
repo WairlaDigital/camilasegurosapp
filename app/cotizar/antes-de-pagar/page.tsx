@@ -18,17 +18,18 @@ const NOTES = [
 export default async function BeforePaymentPage() {
   const session = await readQuoteSession();
   if (!session) redirect("/");
-  // Only after "Ir a pagar" saved a plan of the current quote and the holder data was completed.
-  const { selection, result, holderDetails, order } = session;
+  // Only after the holder (1/3) and vehicle (2/3) steps and "Ir a pagar" saved a plan of the current quote.
+  const { selection, result, holderDetails, vehicleConfirmed, order } = session;
   if (order?.status === "paid") redirect("/cotizar/confirmacion");
-  if (!selection || !result.plans.some((plan) => plan.id === selection.planId)) redirect("/cotizar/cotizacion");
   if (!holderDetails) redirect("/cotizar/titular");
+  if (!vehicleConfirmed) redirect("/cotizar/vehiculo");
+  if (!selection || !result.plans.some((plan) => plan.id === selection.planId)) redirect("/cotizar/cotizacion");
 
   return (
     <Container className="flex flex-col gap-12 pt-7.5 pb-24 lg:gap-10 lg:pt-20 lg:pb-60">
-      {/* Same step as the holder data (vehicle 1/3 → quote 2/3 → holder 3/3); the spec shows "PASO 2/2". */}
+      {/* Same step as the quote (holder 1/3 → vehicle 2/3 → quote 3/3); the spec shows "PASO 2/2". */}
       <div>
-        <StepBackLink step={3} total={3} href="/cotizar/titular" />
+        <StepBackLink step={3} total={3} href="/cotizar/cotizacion" />
       </div>
 
       <ContinueToPayment

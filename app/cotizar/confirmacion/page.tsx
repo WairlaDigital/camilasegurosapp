@@ -23,6 +23,7 @@ export default async function ConfirmationPage() {
   const paid = order.status === "paid";
   const name = greetingName(holderDetails ? { firstName: holderDetails.firstName } : result.holder);
   const plan = result.plans.find((candidate) => candidate.id === selection?.planId);
+  const email = holderDetails?.email ?? input.email;
 
   const summary = [
     { label: "Placa", value: input.plate },
@@ -32,11 +33,11 @@ export default async function ConfirmationPage() {
 
   const notes = paid
     ? [
-        `Te enviaremos tu SOAT a ${input.email} en los próximos minutos.`,
+        `Te enviaremos tu SOAT a ${email} en los próximos minutos.`,
         "Si no lo encuentras, revisa tu carpeta de correo no deseado.",
       ]
     : [
-        `Recibirás en ${input.email} el código y las indicaciones para efectuar el pago.`,
+        `Recibirás en ${email} el código y las indicaciones para efectuar el pago.`,
         "Págalo en tu banca móvil, un agente o una billetera dentro de las próximas 24 horas.",
         "Cuando se confirme el pago, te enviaremos tu SOAT por correo.",
       ];

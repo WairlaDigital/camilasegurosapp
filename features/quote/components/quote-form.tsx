@@ -7,35 +7,31 @@ import { PlanCard } from "@/features/plans/components/plan-card";
 import type { PlanSummary } from "@/types/quote";
 import { addDays } from "../lib/dates";
 import { confirmQuote, type ConfirmQuoteState } from "../quote-actions";
-import {
-  MAX_START_DAYS,
-  limitPhone,
-  parseQuoteForm,
-  type QuoteField,
-  type QuoteFieldErrors,
-} from "../quote-schema";
+import { MAX_START_DAYS, parseQuoteForm, type QuoteField, type QuoteFieldErrors } from "../quote-schema";
 
 type QuoteFormProps = {
   plans: PlanSummary[];
   /** YYYY-MM-DD in Lima, from the server. */
   today: string;
-  initial: { planId: number | null; startDate: string; phone: string };
+  initial: { planId: number | null; startDate: string };
 };
 
-const FIELDS: QuoteField[] = ["planId", "startDate", "phone"];
+const FIELDS: QuoteField[] = ["planId", "startDate"];
 
-/** Figma "Cotización" (240:117): plan cards with "LO QUIERO", start date, phone and "IR A PAGAR". */
+/**
+ * Figma "Cotización" (240:117): plan cards with "LO QUIERO", start date and "IR A
+ * PAGAR". The phone Figma shows here is asked once, in the holder data (step 1/3).
+ */
 export function QuoteForm({ plans, today, initial }: QuoteFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const dateTitleRef = useRef<HTMLHeadingElement>(null);
   const [state, formAction, pending] = useActionState<ConfirmQuoteState, FormData>(confirmQuote, { status: "idle" });
   const [planId, setPlanId] = useState(initial.planId);
   const [startDate, setStartDate] = useState(initial.startDate);
-  const [phone, setPhone] = useState(initial.phone);
   const [clientErrors, setClientErrors] = useState<Partial<Record<QuoteField, string | null>>>({});
 
   const planIds = plans.map((plan) => plan.id);
-  const filled = planId !== null && startDate !== "" && phone !== "";
+  const filled = planId !== null && startDate !== "";
 
   const serverErrors: QuoteFieldErrors = state.status === "invalid" ? state.errors : {};
   const errorFor = (field: QuoteField) => {
@@ -128,23 +124,6 @@ export function QuoteForm({ plans, today, initial }: QuoteFormProps) {
             onBlur={() => handleBlur("startDate")}
             error={errorFor("startDate")}
             hint="Si cambias la fecha, confirmamos el precio de nuevo."
-          />
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <h2 className="text-subtitle font-medium text-ink-strong">Información del contacto</h2>
-          <Input
-            type="tel"
-            name="phone"
-            label="Número de celular"
-            variant="inset"
-            inputMode="numeric"
-            autoComplete="tel-national"
-            required
-            value={phone}
-            onChange={(event) => setPhone(limitPhone(event.target.value))}
-            onBlur={() => handleBlur("phone")}
-            error={errorFor("phone")}
           />
         </div>
 

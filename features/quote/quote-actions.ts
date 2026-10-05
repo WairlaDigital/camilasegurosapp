@@ -32,7 +32,7 @@ async function requote(session: QuoteSession, startDate: string) {
 }
 
 /**
- * "Ir a pagar": validates the plan, start date and phone. A start date other
+ * "Ir a pagar" (step 3/3): validates the plan and start date. A start date other
  * than the quoted one means a new quote (new token and maybe a new price), made
  * here once instead of on every date change. The price always comes from the API.
  */
@@ -47,7 +47,7 @@ export async function confirmQuote(_prev: ConfirmQuoteState, formData: FormData)
     planIds: session.result.plans.map((plan) => plan.id),
   });
   if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
-  const { planId, startDate, phone } = parsed.data;
+  const { planId, startDate } = parsed.data;
 
   let { request, result } = session;
 
@@ -80,6 +80,6 @@ export async function confirmQuote(_prev: ConfirmQuoteState, formData: FormData)
     }
   }
 
-  await writeQuoteSession({ ...session, request, result, selection: { planId, phone } });
-  redirect("/cotizar/titular");
+  await writeQuoteSession({ ...session, request, result, selection: { planId } });
+  redirect("/cotizar/antes-de-pagar");
 }

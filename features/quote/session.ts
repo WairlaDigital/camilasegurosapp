@@ -14,6 +14,20 @@ const MAX_AGE_SECONDS = 60 * 60 * 2;
 
 const option = <T extends z.ZodType>(id: T) => z.object({ id, name: z.string() });
 
+const vehicleSchema = z.object({
+  plate: z.string(),
+  typeId: z.number(),
+  useId: z.number(),
+  brand: option(z.number()).optional(),
+  model: option(z.string()).optional(),
+  version: option(z.string()).optional(),
+  year: z.number().optional(),
+  seats: z.number().optional(),
+  serial: z.string().optional(),
+  vin: z.string().optional(),
+  registeredCategory: z.enum(["auto", "moto"]).optional(),
+});
+
 const sessionSchema = z.object({
   input: z.object({
     plate: z.string(),
@@ -40,22 +54,13 @@ const sessionSchema = z.object({
       })
       .optional(),
   }),
+  /**
+   * The vehicle as the plate lookup returned it on the home form. Its fields are
+   * locked on the vehicle step; `result.vehicle` may later hold what the person completed.
+   */
+  vehicleLookup: vehicleSchema.nullable(),
   result: z.object({
-    vehicle: z
-      .object({
-        plate: z.string(),
-        typeId: z.number(),
-        useId: z.number(),
-        brand: option(z.number()).optional(),
-        model: option(z.string()).optional(),
-        version: option(z.string()).optional(),
-        year: z.number().optional(),
-        seats: z.number().optional(),
-        serial: z.string().optional(),
-        vin: z.string().optional(),
-        registeredCategory: z.enum(["auto", "moto"]).optional(),
-      })
-      .nullable(),
+    vehicle: vehicleSchema.nullable(),
     holder: z
       .object({
         firstName: z.string().optional(),
@@ -79,18 +84,23 @@ const sessionSchema = z.object({
     ),
     featuredPlanId: z.number().nullable(),
   }),
-  /** Set by "Ir a pagar" on the quote screen; the price comes from `result`, never from here. */
-  selection: z.object({ planId: z.number(), phone: z.string() }).optional(),
-  /** Holder data for the order (POST /data): the API's values plus what the person completed. */
+  /** Step 1/3: holder data for the order (POST /data), the API's values plus what the person completed. */
   holderDetails: z
     .object({
       firstName: z.string(),
       lastName: z.string(),
       address: z.string(),
+      reference: z.string().optional(),
       state: z.string(),
       district: z.string(),
+      email: z.string(),
+      phone: z.string(),
     })
     .optional(),
+  /** Step 2/3 was saved: the vehicle data is confirmed (and re-quoted if it changed). */
+  vehicleConfirmed: z.boolean().optional(),
+  /** Set by "Ir a pagar" on the quote screen; the price comes from `result`, never from here. */
+  selection: z.object({ planId: z.number() }).optional(),
   /**
    * Order created by POST /data. Reused while the order data stays the same
    * (`fingerprint`), so a retry or a double click never creates a second order.

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { VehicleTypeOption } from "@/types/quote";
+import type { VehicleData, VehicleTypeOption } from "@/types/quote";
 import { allowedUses, isRucMotoLineal } from "./lib/use-matrix";
 import type { DocumentType } from "./lib/vehicle-rules";
 
@@ -53,15 +53,35 @@ function withoutEmpty(input: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== ""));
 }
 
+/** Form values the plate lookup already gave: shown locked and always win over the form. */
+export type LockedVehicleFields = Partial<Record<Exclude<VehicleField, "useId" | "typeId">, string>>;
+
+export function lockedVehicleFields(lookup: VehicleData | null): LockedVehicleFields {
+  const locked: LockedVehicleFields = {};
+  if (!lookup) return locked;
+  if (lookup.brand) Object.assign(locked, { brandId: String(lookup.brand.id), brandName: lookup.brand.name });
+  if (lookup.model) Object.assign(locked, { modelId: lookup.model.id, modelName: lookup.model.name });
+  if (lookup.version) Object.assign(locked, { versionId: lookup.version.id, versionName: lookup.version.name });
+  if (lookup.seats) locked.seats = String(lookup.seats);
+  if (lookup.year) locked.year = String(lookup.year);
+  if (lookup.serial) locked.serial = lookup.serial;
+  if (lookup.vin) locked.vin = lookup.vin;
+  return locked;
+}
+
 type VehicleRules = {
   /** Catalog types of the category fixed by the plate (`typesForCategory`). */
   types: VehicleTypeOption[];
   /** The holder's document: RUC changes the uses of a moto lineal (spec 4.2). */
   documentType: DocumentType;
+  locked?: LockedVehicleFields;
 };
 
-export function parseVehicleForm(input: Record<string, unknown>, { types, documentType }: VehicleRules): VehicleParseResult {
-  const result = vehicleSchema.safeParse(withoutEmpty(input));
+export function parseVehicleForm(
+  input: Record<string, unknown>,
+  { types, documentType, locked = {} }: VehicleRules,
+): VehicleParseResult {
+  const result = vehicleSchema.safeParse({ ...withoutEmpty(input), ...locked });
   const errors: VehicleFieldErrors = {};
 
   if (!result.success) {

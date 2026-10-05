@@ -9,13 +9,21 @@ import type { Option, VehicleData, VehicleTypeOption } from "@/types/quote";
 import { allowedUses } from "../lib/use-matrix";
 import type { DocumentType } from "../lib/vehicle-rules";
 import { saveVehicle, type SaveVehicleState } from "../vehicle-actions";
-import { noUseMessage, parseVehicleForm, type VehicleField, type VehicleFieldErrors } from "../vehicle-schema";
+import {
+  noUseMessage,
+  parseVehicleForm,
+  type LockedVehicleFields,
+  type VehicleField,
+  type VehicleFieldErrors,
+} from "../vehicle-schema";
 
 type VehicleFormProps = {
   /** Only the types of the category fixed by the plate (spec 4.1). */
   types: VehicleTypeOption[];
   documentType: DocumentType;
   initial: VehicleData;
+  /** What the plate lookup gave: shown locked; the person completes the rest. */
+  locked: LockedVehicleFields;
   initialModels: Option<string>[];
   initialVersions: Option<string>[];
 };
@@ -34,8 +42,11 @@ const searchBrands = async (query: string): Promise<ComboboxOption[]> =>
 
 const FIELDS: VehicleField[] = ["useId", "typeId", "brandId", "modelId", "versionId", "seats", "year", "serial", "vin"];
 
-/** Figma "Ingresa los datos de su vehículo" (267:24). Prefilled and editable (spec section 6). */
-export function VehicleForm({ types, documentType, initial, initialModels, initialVersions }: VehicleFormProps) {
+/**
+ * Figma "Ingresa los datos de su vehículo" (267:24), step 2/3, always shown: what
+ * the plate lookup gave is locked and the person completes what is missing.
+ */
+export function VehicleForm({ types, documentType, initial, locked, initialModels, initialVersions }: VehicleFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState<SaveVehicleState, FormData>(saveVehicle, { status: "idle" });
 
@@ -67,6 +78,11 @@ export function VehicleForm({ types, documentType, initial, initialModels, initi
     typeof value === "string" ? value.trim() !== "" : value !== null,
   );
 
+  /** A locked value: read-only, not submitted (the server keeps the lookup's value). */
+  const fixedField = (name: string, label: string, value: string, className?: string) => (
+    <Input name={name} label={label} variant="inset" disabled value={value} readOnly className={className} />
+  );
+
   const serverErrors: VehicleFieldErrors = state.status === "invalid" ? state.errors : {};
   const errorFor = (field: VehicleField) => {
     const clientError = clientErrors[field];
@@ -75,6 +91,7 @@ export function VehicleForm({ types, documentType, initial, initialModels, initi
 
   // Models depend on brand + type; versions on the model. Loaded from event handlers.
   async function loadModels(nextBrand: ComboboxOption | null, nextTypeId: string) {
+    if (locked.modelId) return; // the lookup's model stays
     setModelId("");
     setVersionId("");
     setModels([]);
@@ -90,6 +107,7 @@ export function VehicleForm({ types, documentType, initial, initialModels, initi
   }
 
   async function loadVersions(nextModelId: string) {
+    if (locked.versionId) return;
     setVersionId("");
     setVersions([]);
     if (!nextModelId) return;
@@ -104,7 +122,7 @@ export function VehicleForm({ types, documentType, initial, initialModels, initi
 
   function validate(): VehicleFieldErrors {
     if (!formRef.current) return {};
-    const result = parseVehicleForm(Object.fromEntries(new FormData(formRef.current)), { types, documentType });
+    const result = parseVehicleForm(Object.fromEntries(new FormData(formRef.current)), { types, documentType, locked });
     return result.ok ? {} : result.errors;
   }
 
@@ -195,108 +213,136 @@ export function VehicleForm({ types, documentType, initial, initialModels, initi
           ))}
         </Select>
 
-        <Combobox
-          name="brandId"
-          label="Marca"
-          variant="inset"
-          placeholder="Escribe la marca"
-          value={brand}
-          onChange={(option) => {
-            setBrand(option);
-            void loadModels(option, typeId);
-          }}
-          loadOptions={searchBrands}
-          maxLength={40} // what /api/vehicles/brands accepts
-          error={errorFor("brandId")}
-        />
+        {locked.brandName ? (
+          fixedField("brandIdFixed", "Marca", locked.brandName)
+        ) : (
+          <Combobox
+            name="brandId"
+            label="Marca"
+            variant="inset"
+            placeholder="Escribe la marca"
+            value={brand}
+            onChange={(option) => {
+              setBrand(option);
+              void loadModels(option, typeId);
+            }}
+            loadOptions={searchBrands}
+            maxLength={40} // what /api/vehicles/brands accepts
+            error={errorFor("brandId")}
+          />
+        )}
 
-        <Select
-          name="modelId"
-          label="Modelo"
-          variant="inset"
-          placeholder={listPlaceholder(modelsStatus, brand ? "" : "Primero elige la marca", "Selecciona el modelo")}
-          disabled={models.length === 0}
-          value={modelId}
-          onChange={(event) => {
-            setModelId(event.target.value);
-            void loadVersions(event.target.value);
-          }}
-          onBlur={() => handleBlur("modelId")}
-          error={errorFor("modelId")}
-        >
-          {models.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.name}
-            </option>
-          ))}
-        </Select>
+        {locked.modelId ? (
+          fixedField("modelIdFixed", "Modelo", locked.modelName ?? "")
+        ) : (
+          <Select
+            name="modelId"
+            label="Modelo"
+            variant="inset"
+            placeholder={listPlaceholder(modelsStatus, brand ? "" : "Primero elige la marca", "Selecciona el modelo")}
+            disabled={models.length === 0}
+            value={modelId}
+            onChange={(event) => {
+              setModelId(event.target.value);
+              void loadVersions(event.target.value);
+            }}
+            onBlur={() => handleBlur("modelId")}
+            error={errorFor("modelId")}
+          >
+            {models.map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.name}
+              </option>
+            ))}
+          </Select>
+        )}
 
-        <Select
-          name="versionId"
-          label="Versión"
-          variant="inset"
-          placeholder={listPlaceholder(versionsStatus, modelId ? "" : "Primero elige el modelo", "Selecciona la versión")}
-          disabled={versions.length === 0}
-          value={versionId}
-          onChange={(event) => setVersionId(event.target.value)}
-          onBlur={() => handleBlur("versionId")}
-          error={errorFor("versionId")}
-        >
-          {versions.map((version) => (
-            <option key={version.id} value={version.id}>
-              {version.name}
-            </option>
-          ))}
-        </Select>
+        {locked.versionId ? (
+          fixedField("versionIdFixed", "Versión", locked.versionName ?? "")
+        ) : (
+          <Select
+            name="versionId"
+            label="Versión"
+            variant="inset"
+            placeholder={listPlaceholder(versionsStatus, modelId ? "" : "Primero elige el modelo", "Selecciona la versión")}
+            disabled={versions.length === 0}
+            value={versionId}
+            onChange={(event) => setVersionId(event.target.value)}
+            onBlur={() => handleBlur("versionId")}
+            error={errorFor("versionId")}
+          >
+            {versions.map((version) => (
+              <option key={version.id} value={version.id}>
+                {version.name}
+              </option>
+            ))}
+          </Select>
+        )}
 
-        <Input
-          name="seats"
-          label="Nro. de asientos"
-          variant="inset"
-          inputMode="numeric"
-          maxLength={2}
-          value={seats}
-          onChange={(event) => setSeats(event.target.value)}
-          onBlur={() => handleBlur("seats")}
-          error={errorFor("seats")}
-        />
+        {locked.seats ? (
+          fixedField("seatsFixed", "Nro. de asientos", locked.seats)
+        ) : (
+          <Input
+            name="seats"
+            label="Nro. de asientos"
+            variant="inset"
+            inputMode="numeric"
+            maxLength={2}
+            value={seats}
+            onChange={(event) => setSeats(event.target.value)}
+            onBlur={() => handleBlur("seats")}
+            error={errorFor("seats")}
+          />
+        )}
 
-        <Input
-          name="year"
-          label="Año de fabricación"
-          variant="inset"
-          inputMode="numeric"
-          maxLength={4}
-          value={year}
-          onChange={(event) => setYear(event.target.value)}
-          onBlur={() => handleBlur("year")}
-          error={errorFor("year")}
-        />
+        {locked.year ? (
+          fixedField("yearFixed", "Año de fabricación", locked.year)
+        ) : (
+          <Input
+            name="year"
+            label="Año de fabricación"
+            variant="inset"
+            inputMode="numeric"
+            maxLength={4}
+            value={year}
+            onChange={(event) => setYear(event.target.value)}
+            onBlur={() => handleBlur("year")}
+            error={errorFor("year")}
+          />
+        )}
 
-        <Input
-          name="serial"
-          label="Nro. de serie"
-          variant="inset"
-          autoCapitalize="characters"
-          maxLength={20}
-          value={serial}
-          onChange={(event) => setSerial(event.target.value.toUpperCase())}
-          onBlur={() => handleBlur("serial")}
-          error={errorFor("serial")}
-        />
+        {locked.serial ? (
+          fixedField("serialFixed", "Nro. de serie", locked.serial)
+        ) : (
+          <Input
+            name="serial"
+            label="Nro. de serie"
+            variant="inset"
+            autoCapitalize="characters"
+            maxLength={20}
+            value={serial}
+            onChange={(event) => setSerial(event.target.value.toUpperCase())}
+            onBlur={() => handleBlur("serial")}
+            error={errorFor("serial")}
+          />
+        )}
 
-        <Input
-          name="vin"
-          label="VIN"
-          variant="inset"
-          autoCapitalize="characters"
-          maxLength={20}
-          value={vin}
-          onChange={(event) => setVin(event.target.value.toUpperCase())}
-          onBlur={() => handleBlur("vin")}
-          error={errorFor("vin")}
-          className="md:col-span-2"
-        />
+        {locked.vin ? (
+          fixedField("vinFixed", "VIN", locked.vin, "md:col-span-2")
+        ) : (
+          <Input
+            name="vin"
+            label="VIN"
+            variant="inset"
+            autoCapitalize="characters"
+            maxLength={20}
+            value={vin}
+            onChange={(event) => setVin(event.target.value.toUpperCase())}
+            onBlur={() => handleBlur("vin")}
+            error={errorFor("vin")}
+            className="md:col-span-2"
+          />
+        )}
       </div>
 
       {state.status === "failed" && (

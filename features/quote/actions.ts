@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { clientIp } from "@/lib/rate-limit";
 import { ApiError } from "@/services/errors";
 import { getVehicleTypes } from "@/services/catalog";
-import { isVehicleComplete, lookupPlate, queryInfo } from "@/services/quotes";
+import { lookupPlate, queryInfo } from "@/services/quotes";
 import { todayInLima } from "./lib/dates";
 import { limitStartQuote, TOO_MANY_REQUESTS } from "./lib/limits";
 import { detectCategory } from "./lib/plate";
@@ -91,7 +91,13 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
     return { status: "failed", message: CATEGORY_MISMATCH[category] };
   }
 
-  await writeQuoteSession({ input, request: { ...request, ubigeoId: DEFAULT_UBIGEO_ID, startDate }, result });
+  await writeQuoteSession({
+    input,
+    request: { ...request, ubigeoId: DEFAULT_UBIGEO_ID, startDate },
+    vehicleLookup: result.vehicle,
+    result,
+  });
 
-  redirect(isVehicleComplete(result.vehicle) ? "/cotizar/cotizacion" : "/cotizar/datos-incompletos");
+  // Figma order: holder (1/3) → vehicle (2/3, always) → quote (3/3).
+  redirect("/cotizar/titular");
 }

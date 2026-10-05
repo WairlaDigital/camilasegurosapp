@@ -1,28 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
+import { openVehicleStep, submitHome } from "./flow";
 
-// Home → plate lookup → "Datos incompletos" → vehicle data form (Figma 267:24).
-// Runs against the fake API (e2e/mock-api), whose example plates drive each case.
+// Vehicle data (Figma 267:24): step 2/3, always shown after the holder data. What
+// the plate lookup returned is locked; the person completes the rest. Runs against
+// the fake API (e2e/mock-api), whose example plates drive each case.
 
-type StartOptions = { use?: string; ruc?: boolean; documentNumber?: string };
-
-async function startQuote(page: Page, plate: string, { use = "particular", ruc = false, documentNumber }: StartOptions = {}) {
-  await page.goto("/");
-  await page.getByLabel("Ingresa tu placa:").fill(plate);
-  if (ruc) await page.getByLabel("Tipo de documento").selectOption("RUC");
-  await page.getByLabel("Número de documento:").fill(documentNumber ?? (ruc ? "20123456789" : "12345678"));
-  await page.getByLabel("Uso:").selectOption(use);
-  await page.getByLabel("Correo electrónico:").fill("cliente@correo.pe");
-  await page.getByRole("checkbox", { name: /Consentimiento de datos/ }).check();
-  await page.getByRole("button", { name: "Comprar SOAT virtual" }).click();
-}
-
-/** Goes through the real flow so the quote session cookie is set before the form loads. */
-async function openVehicleForm(page: Page, plate: string, options?: StartOptions) {
-  await startQuote(page, plate, options);
-  await page.waitForURL(/\/cotizar\/datos-incompletos$/);
-  await page.getByRole("link", { name: "Completa y cotiza" }).click();
-  await page.waitForURL(/\/cotizar\/vehiculo$/);
-}
+const openVehicleForm = openVehicleStep;
+const startQuote = submitHome;
 
 /** Next.js adds an empty route announcer with role="alert": match ours by text. */
 const alertWith = (page: Page, text: string) => page.getByRole("alert").filter({ hasText: text });
@@ -42,20 +26,36 @@ function vehicleForm(page: Page) {
   };
 }
 
-test("an incomplete vehicle goes through 'Datos incompletos' to a prefilled form", async ({ page }) => {
-  await startQuote(page, "AEF-710");
+test("a complete vehicle is shown locked and continues to the quote without quoting again", async ({ page }) => {
+  await openVehicleForm(page, "ABC-123");
 
-  await expect(page).toHaveURL(/\/cotizar\/datos-incompletos$/);
-  await expect(page.getByRole("heading", { name: "¡Los datos de tu vehículo están incompletos!" })).toBeVisible();
-  await page.getByRole("link", { name: "Completa y cotiza" }).click();
+  await expect(page.getByRole("link", { name: "Volver. Paso 2 de 3" })).toBeVisible();
+  await expect(page.getByLabel("Marca")).toBeDisabled();
+  await expect(page.getByLabel("Marca")).toHaveValue("HYUNDAI");
+  await expect(page.getByLabel("Modelo")).toHaveValue("ACCENT");
+  await expect(page.getByLabel("Versión")).toHaveValue("1.3");
+  await expect(page.getByLabel("Nro. de serie")).toBeDisabled();
+  await expect(page.getByLabel("VIN")).toHaveValue("VIN1234567890");
 
-  await expect(page).toHaveURL(/\/cotizar\/vehiculo$/);
+  const submit = page.getByRole("button", { name: "Guardar y continuar" });
+  await expect(submit).toBeEnabled();
+  await submit.click();
+  await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
+  await expect(page.getByRole("link", { name: "Volver. Paso 3 de 3" })).toBeVisible();
+});
+
+test("an incomplete vehicle locks what the lookup returned and asks for the rest", async ({ page }) => {
+  await openVehicleForm(page, "AEF-710");
+
   await expect(page.getByText("Placa: AEF-710")).toBeVisible();
   const f = vehicleForm(page);
   await expect(f.type).toHaveValue("1");
   await expect(f.use).toHaveValue("5");
-  await expect(f.brand).toHaveValue("HYUNDAI");
-  await expect(f.model).toHaveValue("1003280");
+  await expect(page.getByLabel("Marca")).toBeDisabled();
+  await expect(page.getByLabel("Marca")).toHaveValue("HYUNDAI");
+  await expect(f.model).toBeDisabled();
+  await expect(f.model).toHaveValue("H1");
+  await expect(f.year).toBeDisabled();
   await expect(f.year).toHaveValue("2016");
   await expect(f.submit).toBeDisabled(); // version, seats, serial and VIN are missing
 
@@ -72,7 +72,7 @@ test("an incomplete vehicle goes through 'Datos incompletos' to a prefilled form
 });
 
 test("choosing another brand loads its models and clears model and version", async ({ page }) => {
-  await openVehicleForm(page, "AEF-710");
+  await openVehicleForm(page, "ZZZ-999"); // no lookup data: nothing is locked
   const f = vehicleForm(page);
 
   await f.brand.fill("toy");
@@ -87,7 +87,7 @@ test("choosing another brand loads its models and clears model and version", asy
 });
 
 test("the brand autocomplete works with the keyboard", async ({ page }) => {
-  await openVehicleForm(page, "AEF-710");
+  await openVehicleForm(page, "ZZZ-999");
   const f = vehicleForm(page);
 
   await f.brand.fill("ho");
@@ -156,9 +156,9 @@ test("invalid values show an error when leaving the field", async ({ page }) => 
   await f.serial.fill("abc");
   await f.serial.blur();
   await expect(page.getByText("Ingresa el número de serie (8 a 20 letras o números).")).toBeVisible();
-  await f.year.fill("1970");
-  await f.year.blur();
-  await expect(page.getByText(/Debe ser entre 1980/)).toBeVisible();
+  await f.seats.fill("0"); // the year comes locked from the plate lookup
+  await f.seats.blur();
+  await expect(page.getByText("Debe ser entre 1 y 99.")).toBeVisible();
 });
 
 test("when the plate lookup fails, the manual data cannot be quoted (backend limitation)", async ({ page }) => {
@@ -203,9 +203,15 @@ test("the catalog endpoints need a quote session and are rate limited", async ({
   expect(Number(limited.headers()["retry-after"])).toBeGreaterThan(0);
 });
 
-test("the flow screens need a quote session", async ({ page }) => {
+test("the flow screens need a quote session and the previous steps", async ({ page }) => {
   await page.goto("/cotizar/vehiculo");
   await expect(page).toHaveURL(/\/$/);
-  await page.goto("/cotizar/datos-incompletos");
-  await expect(page).toHaveURL(/\/$/);
+
+  // With a session but without the holder data, the vehicle and quote steps send back to it.
+  await submitHome(page, "ABC-123");
+  await page.waitForURL(/\/cotizar\/titular$/);
+  await page.goto("/cotizar/vehiculo");
+  await expect(page).toHaveURL(/\/cotizar\/titular$/);
+  await page.goto("/cotizar/cotizacion");
+  await expect(page).toHaveURL(/\/cotizar\/titular$/);
 });

@@ -81,7 +81,7 @@ export async function startPayment(): Promise<StartPaymentResult> {
     ...session,
     order: { id: order.orderId, fingerprint, status: previous?.status ?? "created" },
   });
-  return { ok: true, data: { settings: order.culqi, email: session.input.email } };
+  return { ok: true, data: { settings: order.culqi, email: request.input.driver.email } };
 }
 
 // Culqi.token as the browser receives it: only what POST /charge reads.

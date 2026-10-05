@@ -17,13 +17,14 @@ export const metadata: Metadata = { title: "Tu cotización" };
 
 const EDIT_VEHICLE_HREF = "/cotizar/vehiculo";
 
-// Figma "Cotización" (240:117, mobile 565:921).
+// Figma "Cotización" (240:117, mobile 565:921): step 3/3, after the holder and vehicle data.
 export default async function QuotePage() {
   const session = await readQuoteSession();
   if (!session) redirect("/");
-  const { request, result, selection } = session;
+  const { request, result, selection, holderDetails, vehicleConfirmed } = session;
+  if (!holderDetails) redirect("/cotizar/titular");
   const vehicle = result.vehicle;
-  if (!vehicle || !isVehicleComplete(vehicle)) redirect("/cotizar/datos-incompletos");
+  if (!vehicleConfirmed || !vehicle || !isVehicleComplete(vehicle)) redirect(EDIT_VEHICLE_HREF);
 
   // The catalog only names the type and use: without it the summary shows the rest.
   const types = await getVehicleTypes().catch(() => []);
@@ -48,7 +49,7 @@ export default async function QuotePage() {
     <Container className="grid gap-5 pt-7.5 pb-20 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-0 lg:pt-20 lg:pb-30">
       <div className="lg:col-span-5">
         <StepHeader
-          step={2}
+          step={3}
           total={3}
           backHref={EDIT_VEHICLE_HREF}
           title={`Hola${name ? ` ${name}` : ""}, activa tu SOAT en pocos minutos...`}
@@ -75,7 +76,6 @@ export default async function QuotePage() {
             initial={{
               planId: plans.some((plan) => plan.id === selection?.planId) ? (selection?.planId ?? null) : null,
               startDate: request.startDate < today ? today : request.startDate,
-              phone: selection?.phone ?? "",
             }}
           />
         </div>
