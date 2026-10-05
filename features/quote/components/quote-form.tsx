@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlanCard } from "@/features/plans/components/plan-card";
 import type { PlanSummary } from "@/types/quote";
-import { addDays } from "../lib/dates";
+import { addDays, formatDate } from "../lib/dates";
 import { confirmQuote, requoteForDate, type ConfirmQuoteState } from "../quote-actions";
 import { MAX_START_DAYS, parseQuoteForm, startDateError, type QuoteField, type QuoteFieldErrors } from "../quote-schema";
 
@@ -43,6 +43,9 @@ export function QuoteForm({ plans: initialPlans, today, initial }: QuoteFormProp
   const [quotedDate, setQuotedDate] = useState(initial.quotedStartDate);
   const [requoteNotice, setRequoteNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [requoting, startRequote] = useTransition();
+  /** From the date change (including the short wait) until the new quote arrives. */
+  const [awaitingQuote, setAwaitingQuote] = useState(false);
+  const quoting = awaitingQuote || requoting;
   const requoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requoteRun = useRef(0);
 
@@ -70,12 +73,18 @@ export function QuoteForm({ plans: initialPlans, today, initial }: QuoteFormProp
     setStartDate(value);
     setRequoteNotice(null);
     if (requoteTimer.current) clearTimeout(requoteTimer.current);
-    if (startDateError(value, today) || value === quotedDate) return;
+    if (startDateError(value, today) || value === quotedDate) {
+      requoteRun.current += 1; // a quote still running is no longer wanted
+      setAwaitingQuote(false);
+      return;
+    }
+    setAwaitingQuote(true);
     requoteTimer.current = setTimeout(() => {
       const run = ++requoteRun.current;
       startRequote(async () => {
         const result = await requoteForDate(value);
         if (run !== requoteRun.current) return; // a newer date is being quoted
+        setAwaitingQuote(false);
         if (result.ok) {
           setPlans(result.plans);
           // A plan the new quote no longer offers is not chosen anymore (the server drops it too).
@@ -116,21 +125,31 @@ export function QuoteForm({ plans: initialPlans, today, initial }: QuoteFormProp
 
   return (
     <>
-      <section aria-labelledby="plans-title" className="w-full">
+      <section aria-labelledby="plans-title" aria-busy={quoting} className="w-full">
         <h2 id="plans-title" className="sr-only">
           {plans.length > 1 ? "Elige tu plan" : "Tu plan"}
         </h2>
+        {/* Always rendered so screen readers announce it when the new quote starts. */}
+        <p role="status" className="sr-only">
+          {quoting ? `Cotizando tu SOAT para el ${formatDate(startDate)}…` : ""}
+        </p>
         <ul className="flex flex-wrap justify-center gap-8">
           {plans.map((plan) => {
             const selected = plan.id === planId;
             return (
               <li key={plan.id} className="w-full md:w-88">
-                <PlanCard plan={plan} selected={selected} className="h-full">
+                <PlanCard
+                  plan={plan}
+                  selected={selected}
+                  quotingLabel={quoting ? `Cotizando para el ${formatDate(startDate)}…` : undefined}
+                  className="h-full"
+                >
                   <Button
                     variant="secondary"
                     size="md"
                     fullWidth
                     aria-pressed={selected}
+                    disabled={quoting}
                     aria-label={`${selected ? "Elegido" : "Lo quiero"}: ${plan.product} ${plan.insurer}`.trim()}
                     onClick={() => choosePlan(plan.id)}
                   >
@@ -177,12 +196,7 @@ export function QuoteForm({ plans: initialPlans, today, initial }: QuoteFormProp
               {state.message}
             </p>
           )}
-          {requoting && (
-            <p role="status" className="text-small font-semibold text-ink-muted">
-              Cotizando para la nueva fecha…
-            </p>
-          )}
-          {!requoting && requoteNotice && (
+          {!quoting && requoteNotice && (
             <p
               role={requoteNotice.ok ? "status" : "alert"}
               className={
@@ -200,7 +214,7 @@ export function QuoteForm({ plans: initialPlans, today, initial }: QuoteFormProp
             </p>
           )}
 
-          <Button type="submit" fullWidth pending={pending || requoting} disabled={!filled && !pending}>
+          <Button type="submit" fullWidth pending={pending || quoting} disabled={!filled && !pending}>
             Ir a pagar
           </Button>
           {planId === null && <p className="text-small text-ink-muted">Elige tu plan con «Lo quiero» para continuar.</p>}

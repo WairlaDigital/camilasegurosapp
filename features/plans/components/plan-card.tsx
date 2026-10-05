@@ -10,11 +10,16 @@ type PlanCardProps = {
   /** The "LO QUIERO" action. */
   children: ReactNode;
   selected?: boolean;
+  /**
+   * Set while the plan is being quoted again (e.g. another start date, 5-10 s at
+   * La Positiva): the old price is hidden and this text is shown instead.
+   */
+  quotingLabel?: string;
   className?: string;
 };
 
 /** Figma "Tarjeta de plan" (240:117): insurer, yearly price, action and features. */
-export function PlanCard({ plan, children, selected = false, className }: PlanCardProps) {
+export function PlanCard({ plan, children, selected = false, quotingLabel, className }: PlanCardProps) {
   return (
     <Card
       tone="brand"
@@ -36,13 +41,29 @@ export function PlanCard({ plan, children, selected = false, className }: PlanCa
         <span className="font-bold">{plan.product}</span>
         {plan.insurer && <span className="font-medium">{plan.insurer}</span>}
       </h3>
-      <p className="mt-2 text-title">{formatMoney(plan.priceCents)}</p>
+      {quotingLabel ? (
+        <div className="mt-2 flex flex-col gap-2">
+          <span aria-hidden className="block h-10 w-40 rounded-control bg-brand-400 motion-safe:animate-pulse" />
+          <p className="flex items-center gap-2 text-small font-semibold">
+            <span
+              aria-hidden
+              className="size-4 shrink-0 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin"
+            />
+            {quotingLabel}
+          </p>
+        </div>
+      ) : (
+        <p className="mt-2 text-title">{formatMoney(plan.priceCents)}</p>
+      )}
       <p className="mt-3 w-fit bg-brand-900 px-2 py-1 text-body font-medium text-brand-200">Pago Anual</p>
 
       <div className="mt-7">{children}</div>
 
       {plan.features.length > 0 && (
-        <ul className="mt-8 flex flex-col gap-1.5" aria-label="Coberturas del plan">
+        <ul
+          className={cn("mt-8 flex flex-col gap-1.5 transition-opacity", quotingLabel && "opacity-50")}
+          aria-label="Coberturas del plan"
+        >
           {plan.features.map((feature) => (
             <li key={feature.name} className="flex items-center justify-between gap-3 pl-2.5">
               <span className={cn("flex gap-2.5", !feature.included && "text-brand-200 line-through")}>

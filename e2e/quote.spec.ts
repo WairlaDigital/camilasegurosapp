@@ -69,7 +69,7 @@ test("changing the start date quotes again right away and shows the new price", 
 
   // The fake API prices any other day at S/ 215: the card updates without pressing "Ir a pagar".
   await f.date.fill(limaDate(1));
-  await expect(page.getByRole("main").getByRole("status")).toContainText("El precio cambió");
+  await expect(page.getByRole("status").filter({ hasText: "El precio cambió" })).toBeVisible();
   await expect(page.getByText("S/ 215.00", { exact: true })).toBeVisible();
   await expect(f.choose).toHaveAttribute("aria-pressed", "true"); // the choice stays
 
@@ -95,6 +95,24 @@ test("a new start date replaces every plan, and a plan no longer offered is not 
   await expect(page.getByRole("list", { name: "Coberturas del plan" }).getByRole("listitem")).toHaveCount(1);
   await expect(f.choose).toHaveAttribute("aria-pressed", "false");
   await expect(f.submit).toBeDisabled();
+});
+
+test("while the new date is being quoted the card hides the old price and blocks the actions", async ({ page }) => {
+  await openQuote(page, "ABC-123");
+  const f = quoteForm(page);
+  await f.choose.click();
+
+  await f.date.fill(limaDate(320)); // the fake API takes 2 s for this date
+  const card = page.getByRole("main").getByRole("listitem").filter({ hasText: "La Positiva" });
+  await expect(card.getByText(/^Cotizando para el /)).toBeVisible();
+  await expect(card.getByText("S/ 210.00", { exact: true })).toBeHidden();
+  await expect(f.choose).toBeDisabled();
+  await expect(f.submit).toBeDisabled();
+  await expect(page.getByRole("region", { name: /tu plan/i })).toHaveAttribute("aria-busy", "true");
+
+  await expect(card.getByText("S/ 230.00", { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(card.getByText(/^Cotizando para el /)).toBeHidden();
+  await expect(page.getByRole("region", { name: /tu plan/i })).toHaveAttribute("aria-busy", "false");
 });
 
 test("'Editar' opens the vehicle form and saving it unchanged comes back to the same quote", async ({ page }) => {

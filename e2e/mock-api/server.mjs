@@ -16,7 +16,8 @@
 //   ERR-500  upstream error (503)
 // Plans: La Positiva at S/ 210 for today (Lima) and S/ 215 for any other start date
 // (to test the re-quote), plus an AFOCAT plan that the front must hide. More than
-// 200 days ahead the plan is another one (id 2, "SOAT DIGITAL", S/ 230).
+// 200 days ahead the plan is another one (id 2, "SOAT DIGITAL", S/ 230); more than 300
+// days ahead the quote takes 2 s (to see the quoting state).
 //
 // Checkout: POST /data creates the order (email @sin-dns.pe → 422 on driver.email);
 // POST /charge succeeds unless the Culqi token id starts with "tkn_test_declined".
@@ -243,6 +244,8 @@ const server = createServer(async (req, res) => {
       return send(res, 422, { message: "Invalid data.", errors: Object.fromEntries(missing.map((f) => [f, [`${f} is required`]])) });
     }
     if (plate(body.plate) === "ERR500") return send(res, 503, { error: "La Positiva no responde" });
+    // La Positiva takes 5-10 s to quote: more than 300 days ahead, wait 2 s to show the quoting state.
+    if (body.start_date && body.start_date > addDays(todayInLima(), 300)) await new Promise((r) => setTimeout(r, 2000));
 
     const vehicle = vehicleFor(body);
     const response = {
