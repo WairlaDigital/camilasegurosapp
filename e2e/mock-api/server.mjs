@@ -15,7 +15,8 @@
 //   MOD-503  incomplete vehicle with a brand but no model, and La Positiva's model list is down (503)
 //   ERR-500  upstream error (503)
 // Plans: La Positiva at S/ 210 for today (Lima) and S/ 215 for any other start date
-// (to test the re-quote), plus an AFOCAT plan that the front must hide.
+// (to test the re-quote), plus an AFOCAT plan that the front must hide. More than
+// 200 days ahead the plan is another one (id 2, "SOAT DIGITAL", S/ 230).
 //
 // Checkout: POST /data creates the order (email @sin-dns.pe → 422 on driver.email);
 // POST /charge succeeds unless the Culqi token id starts with "tkn_test_declined".
@@ -127,6 +128,12 @@ function vehicleFor(body) {
 const todayInLima = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
+const addDays = (isoDate, days) => {
+  const date = new Date(`${isoDate}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
 const afocatPlan = {
   id: 89,
   name: "AFOCAT--Lider--Automóvil",
@@ -139,6 +146,22 @@ function plansFor(body) {
   if (plate(body.plate) === "AFO123") return { featured: 89, plans: [afocatPlan] };
   const startDate = body.start_date ?? todayInLima();
   const today = startDate === todayInLima();
+  // More than 200 days ahead the dynamic plan changes (another id, name and coverages).
+  if (startDate > addDays(todayInLima(), 200)) {
+    return {
+      featured: 2,
+      plans: [
+        {
+          id: 2,
+          name: "SOAT DIGITAL--La Positiva--Automóvil",
+          price: 230,
+          quote_token: `tok-e2e-${startDate}`,
+          features: [{ name: "Coberturas por ley", status: true }],
+        },
+        afocatPlan,
+      ],
+    };
+  }
   return {
     featured: 1,
     plans: [

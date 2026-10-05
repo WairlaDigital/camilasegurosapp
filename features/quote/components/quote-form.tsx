@@ -78,6 +78,8 @@ export function QuoteForm({ plans: initialPlans, today, initial }: QuoteFormProp
         if (run !== requoteRun.current) return; // a newer date is being quoted
         if (result.ok) {
           setPlans(result.plans);
+          // A plan the new quote no longer offers is not chosen anymore (the server drops it too).
+          setPlanId((current) => (result.plans.some((plan) => plan.id === current) ? current : null));
           setQuotedDate(result.startDate);
           setRequoteNotice(result.message ? { ok: true, text: result.message } : null);
         } else {

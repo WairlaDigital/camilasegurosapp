@@ -83,6 +83,20 @@ test("changing the start date quotes again right away and shows the new price", 
   await expect(page.getByText("S/ 215.00", { exact: true })).toBeVisible();
 });
 
+test("a new start date replaces every plan, and a plan no longer offered is not chosen anymore", async ({ page }) => {
+  await openQuote(page, "ABC-123");
+  const f = quoteForm(page);
+  await f.choose.click();
+
+  // More than 200 days ahead the fake API offers another plan, with other coverages.
+  await f.date.fill(limaDate(250));
+  await expect(page.getByText("S/ 230.00", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3 })).toHaveText(["SOAT DIGITALLa Positiva"]);
+  await expect(page.getByRole("list", { name: "Coberturas del plan" }).getByRole("listitem")).toHaveCount(1);
+  await expect(f.choose).toHaveAttribute("aria-pressed", "false");
+  await expect(f.submit).toBeDisabled();
+});
+
 test("'Editar' opens the vehicle form and saving it unchanged comes back to the same quote", async ({ page }) => {
   await openQuote(page, "ABC-123");
 
