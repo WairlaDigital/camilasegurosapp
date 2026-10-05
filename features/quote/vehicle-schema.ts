@@ -53,11 +53,18 @@ function withoutEmpty(input: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== ""));
 }
 
-/** Form values the plate lookup already gave: shown locked and always win over the form. */
-export type LockedVehicleFields = Partial<Record<Exclude<VehicleField, "useId" | "typeId">, string>>;
+/** Form values that are not edited: shown locked and always win over the form. */
+export type LockedVehicleFields = Partial<Record<VehicleField, string>>;
 
-export function lockedVehicleFields(lookup: VehicleData | null): LockedVehicleFields {
-  const locked: LockedVehicleFields = {};
+/**
+ * Type and use are those of the quote (changing them needs another quote); the
+ * rest is what the plate lookup gave.
+ */
+export function lockedVehicleFields(
+  lookup: VehicleData | null,
+  quoted: { typeId: number; useId: number },
+): LockedVehicleFields {
+  const locked: LockedVehicleFields = { typeId: String(quoted.typeId), useId: String(quoted.useId) };
   if (!lookup) return locked;
   if (lookup.brand) Object.assign(locked, { brandId: String(lookup.brand.id), brandName: lookup.brand.name });
   if (lookup.model) Object.assign(locked, { modelId: lookup.model.id, modelName: lookup.model.name });
@@ -81,7 +88,8 @@ export function parseVehicleForm(
   input: Record<string, unknown>,
   { types, documentType, locked = {} }: VehicleRules,
 ): VehicleParseResult {
-  const result = vehicleSchema.safeParse({ ...withoutEmpty(input), ...locked });
+  const values: Record<string, unknown> = { ...withoutEmpty(input), ...locked };
+  const result = vehicleSchema.safeParse(values);
   const errors: VehicleFieldErrors = {};
 
   if (!result.success) {
@@ -91,11 +99,11 @@ export function parseVehicleForm(
 
   // The type must match the plate's category and the use must be in the table
   // of spec section 2 and in the catalog (see use-matrix.ts).
-  const type = types.find((option) => option.id === Number(input.typeId));
-  if (input.typeId && !type) errors.typeId = "Selecciona el tipo de vehículo.";
+  const type = types.find((option) => option.id === Number(values.typeId));
+  if (values.typeId && !type) errors.typeId = "Selecciona el tipo de vehículo.";
   if (type && allowedUses(type, documentType).length === 0) {
     errors.useId = noUseMessage(type.id, documentType);
-  } else if (type && input.useId && !allowedUses(type, documentType).some((use) => use.id === Number(input.useId))) {
+  } else if (type && values.useId && !allowedUses(type, documentType).some((use) => use.id === Number(values.useId))) {
     errors.useId = "Ese uso no aplica para este tipo de vehículo.";
   }
   if (errors.brandName && !errors.brandId) errors.brandId = errors.brandName;

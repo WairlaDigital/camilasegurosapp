@@ -49,8 +49,8 @@ test("an incomplete vehicle locks what the lookup returned and asks for the rest
 
   await expect(page.getByText("Placa: AEF-710")).toBeVisible();
   const f = vehicleForm(page);
-  await expect(f.type).toHaveValue("1");
-  await expect(f.use).toHaveValue("5");
+  await expect(f.type).toHaveValue("AUTOMÓVIL");
+  await expect(f.use).toHaveValue("PARTICULAR");
   await expect(page.getByLabel("Marca")).toBeDisabled();
   await expect(page.getByLabel("Marca")).toHaveValue("HYUNDAI");
   await expect(f.model).toBeDisabled();
@@ -109,49 +109,33 @@ test("the brand autocomplete works with the keyboard", async ({ page }) => {
   await expect(page.getByRole("listbox")).toBeHidden();
 });
 
-test("an auto plate only offers auto types, and a single use has no selector", async ({ page }) => {
+test("type and use come from the quote and cannot be changed here", async ({ page }) => {
   await openVehicleForm(page, "AEF-710");
   const f = vehicleForm(page);
 
-  // Spec 4.1: the category is fixed by the plate (no Mototaxi, Motocicleta or Motocarga).
-  await expect(f.type.locator("option")).toHaveText([
-    "Selecciona el tipo",
-    "AUTOMÓVIL",
-    "CAMIONETA HASTA 7 ASIENTOS",
-    "MINIVAN (9 A 16 ASIENTOS)",
-  ]);
-  await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "TAXI", "PARTICULAR"]);
-
-  await f.type.selectOption("8"); // Minivan: only Particular in the catalog
+  // Changing them would need another quote: they are fixed, with a way back.
+  await expect(f.type).toBeDisabled();
+  await expect(f.type).toHaveValue("AUTOMÓVIL");
   await expect(f.use).toBeDisabled();
   await expect(f.use).toHaveValue("PARTICULAR");
-  await expect(page.getByText("Es el único uso posible para este tipo de vehículo.")).toBeVisible();
+  await expect(page.getByText("Para cambiar el uso o el tipo de vehículo, vuelve a cotizar desde el inicio.")).toBeVisible();
 });
 
-test("a moto plate only offers moto types; Motocarga is Carga only (spec section 2)", async ({ page }) => {
+test("a moto plate keeps the type and use of its quote (Motocarga is Carga only, spec section 2)", async ({ page }) => {
   await openVehicleForm(page, "1234-AB", { use: "carga" });
   const f = vehicleForm(page);
 
-  await expect(f.type.locator("option")).toHaveText(["Selecciona el tipo", "MOTOTAXI", "MOTOCICLETA", "MOTOCARGA"]);
-  await expect(f.type).toHaveValue("16");
-  await expect(f.use).toBeDisabled();
+  await expect(f.type).toHaveValue("MOTOCARGA");
   await expect(f.use).toHaveValue("CARGA");
-
-  await f.type.selectOption("2"); // Mototaxi: Particular or Taxi
-  await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "PARTICULAR", "TAXI"]);
 });
 
 test("with RUC, a moto lineal cannot be Particular (spec 4.2)", async ({ page }) => {
   await openVehicleForm(page, "1234-AB", { ruc: true });
   const f = vehicleForm(page);
 
-  await expect(f.type).toHaveValue("10"); // Motocicleta
-  await expect(f.use).toBeDisabled();
+  await expect(f.type).toHaveValue("MOTOCICLETA");
   await expect(page.getByText(/Con RUC, una moto lineal solo puede tener uso Comercial/)).toBeVisible();
   await expect(f.submit).toBeDisabled();
-
-  await f.type.selectOption("2"); // the rule is only for moto lineal
-  await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "PARTICULAR", "TAXI"]);
 });
 
 test("a registration that contradicts the plate format stops with a clear message (spec 4.1)", async ({ page }) => {

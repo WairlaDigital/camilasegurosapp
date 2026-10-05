@@ -125,8 +125,12 @@ describe("locked fields from the plate lookup", () => {
     vin: "3N1CN7AD2MK390044",
   };
 
-  it("locks only what the lookup returned", () => {
-    expect(lockedVehicleFields(lookup)).toEqual({
+  const quoted = { typeId: 1, useId: 5 };
+
+  it("locks the quoted type and use, and only what the lookup returned", () => {
+    expect(lockedVehicleFields(lookup, quoted)).toEqual({
+      typeId: "1",
+      useId: "5",
       brandId: "1738",
       brandName: "NISSAN",
       modelId: "1000754",
@@ -134,14 +138,14 @@ describe("locked fields from the plate lookup", () => {
       year: "2020",
       vin: "3N1CN7AD2MK390044",
     });
-    expect(lockedVehicleFields(null)).toEqual({});
+    expect(lockedVehicleFields(null, quoted)).toEqual({ typeId: "1", useId: "5" });
   });
 
-  it("keeps the lookup's values even if the form sends others", () => {
+  it("keeps the quoted type and use and the lookup's values even if the form sends others", () => {
     const result = parseVehicleForm(
-      { ...valid, brandId: "1", brandName: "OTRA", year: "1999" },
-      { ...rules, locked: lockedVehicleFields(lookup) },
+      { ...valid, typeId: "8", useId: "1", brandId: "1", brandName: "OTRA", year: "1999" },
+      { ...rules, locked: lockedVehicleFields(lookup, quoted) },
     );
-    expect(result.ok && result.data).toMatchObject({ brandId: 1738, brandName: "NISSAN", year: 2020 });
+    expect(result.ok && result.data).toMatchObject({ typeId: 1, useId: 5, brandId: 1738, brandName: "NISSAN", year: 2020 });
   });
 });

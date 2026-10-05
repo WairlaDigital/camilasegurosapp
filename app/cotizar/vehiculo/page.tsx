@@ -24,7 +24,7 @@ export default async function VehiclePage() {
     useId: session.request.useId,
   };
 
-  const locked = lockedVehicleFields(session.vehicleLookup);
+  const locked = lockedVehicleFields(session.vehicleLookup, session.request);
   // Lists only for what the person can still choose: a locked model or version needs
   // none. They come from La Positiva: if it does not answer, the form says so (null)
   // instead of the whole step failing.

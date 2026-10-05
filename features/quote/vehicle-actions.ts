@@ -17,7 +17,7 @@ export type SaveVehicleState =
   | { status: "invalid"; errors: VehicleFieldErrors }
   | { status: "failed"; message: string };
 
-/** Same vehicle, type and use as the current quote: nothing to quote again. */
+/** Same vehicle as the current quote (type and use are locked to it): nothing to quote again. */
 function sameAsQuoted(vehicle: VehicleFormValues, session: QuoteSession): boolean {
   const quoted = session.result.vehicle;
   return Boolean(
@@ -35,8 +35,9 @@ function sameAsQuoted(vehicle: VehicleFormValues, session: QuoteSession): boolea
 }
 
 /**
- * Vehicle data form submit (step 2/3). When the person completed data or changed
- * the type or use, it quotes again with the manual data (POST /query-info);
+ * Vehicle data form submit (step 2/3). Type and use stay those of the quote. When
+ * the person completed data the plate lookup lacked, it quotes again with the
+ * manual data (POST /query-info), since La Positiva cannot quote without it;
  * otherwise the current quote stays. Then it moves to the quote screen.
  */
 export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): Promise<SaveVehicleState> {
@@ -58,7 +59,7 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
   const parsed = parseVehicleForm(Object.fromEntries(formData), {
     types: typesForCategory(types, category),
     documentType: session.input.documentType,
-    locked: lockedVehicleFields(session.vehicleLookup),
+    locked: lockedVehicleFields(session.vehicleLookup, session.request),
   });
   if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
   const vehicle = parsed.data;

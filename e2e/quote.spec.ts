@@ -76,17 +76,16 @@ test("another start date quotes again and shows the new price before continuing"
   await expect(page).toHaveURL(/\/cotizar\/antes-de-pagar$/);
 });
 
-test("'Editar' opens the vehicle form; another use quotes again and comes back to the quote", async ({ page }) => {
+test("'Editar' opens the vehicle form and saving it unchanged comes back to the same quote", async ({ page }) => {
   await openQuote(page, "ABC-123");
 
   await page.getByRole("link", { name: "Editar datos del vehículo" }).click();
   await expect(page).toHaveURL(/\/cotizar\/vehiculo$/);
+  await expect(page.getByLabel("Tipo de uso")).toBeDisabled(); // another use would need another quote
   await expect(page.getByLabel("Nro. de asientos")).toBeDisabled(); // from the plate lookup
-  await page.getByLabel("Tipo de uso").selectOption("1"); // Taxi
   await page.getByRole("button", { name: "Guardar y continuar" }).click();
 
   await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
-  await expect(page.getByText("Taxi", { exact: true })).toBeVisible();
   await expect(page.getByText("S/ 210.00")).toBeVisible();
 });
 

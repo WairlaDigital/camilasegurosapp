@@ -51,8 +51,6 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState<SaveVehicleState, FormData>(saveVehicle, { status: "idle" });
 
-  const [typeId, setTypeId] = useState(initial.typeId ? String(initial.typeId) : "");
-  const [useId, setUseId] = useState(initial.useId ? String(initial.useId) : "");
   const [brand, setBrand] = useState<ComboboxOption | null>(initial.brand ?? null);
   const [models, setModels] = useState(initialModels ?? []);
   const [modelsStatus, setModelsStatus] = useState<ListStatus>(initialModels ? "idle" : "error");
@@ -66,22 +64,25 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
   const [vin, setVin] = useState(initial.vin ?? "");
   const [clientErrors, setClientErrors] = useState<Partial<Record<VehicleField, string | null>>>({});
 
+  // Type and use are those of the quote: changing them would need another quote.
+  const typeId = locked.typeId ?? String(initial.typeId);
+  const useId = locked.useId ?? String(initial.useId);
   const type = types.find((option) => String(option.id) === typeId);
-  // Spec section 2: uses allowed by the table and the catalog for this type.
-  const uses = type ? allowedUses(type, documentType) : [];
-  // Derived: a single possible use is fixed (no selector); one the type does not allow is dropped.
-  const onlyUse = uses.length === 1 ? uses[0] : null;
-  const selectedUse = onlyUse ? String(onlyUse.id) : uses.some((use) => String(use.id) === useId) ? useId : "";
+  const useName = type?.uses.find((use) => String(use.id) === useId)?.name ?? "";
+  // Spec section 2 and 4.2: the quoted use may not apply (e.g. RUC + moto lineal without a registration).
+  const useAllowed = type ? allowedUses(type, documentType).some((use) => String(use.id) === useId) : false;
   const modelName = models.find((model) => model.id === modelId)?.name ?? "";
   const versionName = versions.find((version) => version.id === versionId)?.name ?? "";
   // Spec: "Continuar" is enabled only when every required field has a value.
-  const filled = [typeId, selectedUse, brand, modelId, versionId, seats, year, serial, vin].every((value) =>
-    typeof value === "string" ? value.trim() !== "" : value !== null,
-  );
+  const filled =
+    useAllowed &&
+    [brand, modelId, versionId, seats, year, serial, vin].every((value) =>
+      typeof value === "string" ? value.trim() !== "" : value !== null,
+    );
 
   /** A locked value: read-only, not submitted (the server keeps the lookup's value). */
-  const fixedField = (name: string, label: string, value: string, className?: string) => (
-    <Input name={name} label={label} variant="inset" disabled value={value} readOnly className={className} />
+  const fixedField = (name: string, label: string, value: string, className?: string, hint?: string) => (
+    <Input name={name} label={label} variant="inset" disabled value={value} readOnly className={className} hint={hint} />
   );
 
   const serverErrors: VehicleFieldErrors = state.status === "invalid" ? state.errors : {};
@@ -160,62 +161,18 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
       <input type="hidden" name="versionName" value={versionName} />
 
       <div className="grid gap-5 md:grid-cols-2 md:gap-x-8">
-        {onlyUse ? (
-          // Spec section 2: with a single possible use there is no selector.
-          <>
-            <input type="hidden" name="useId" value={onlyUse.id} />
-            <Input
-              name="useIdFixed"
-              label="Tipo de uso"
-              variant="inset"
-              disabled
-              value={onlyUse.name.toUpperCase()}
-              readOnly
-              hint="Es el único uso posible para este tipo de vehículo."
-            />
-          </>
-        ) : (
-          <Select
-            name="useId"
-            label="Tipo de uso"
-            variant="inset"
-            placeholder={
-              !type ? "Primero elige el tipo de vehículo" : uses.length === 0 ? "No disponible en línea" : "Selecciona el uso"
-            }
-            disabled={uses.length === 0}
-            value={selectedUse}
-            onChange={(event) => setUseId(event.target.value)}
-            onBlur={() => handleBlur("useId")}
-            error={type && uses.length === 0 ? undefined : errorFor("useId")}
-            hint={type && uses.length === 0 ? noUseMessage(type.id, documentType) : undefined}
-          >
-            {uses.map((use) => (
-              <option key={use.id} value={use.id}>
-                {use.name.toUpperCase()}
-              </option>
-            ))}
-          </Select>
+        <input type="hidden" name="useId" value={useId} />
+        <input type="hidden" name="typeId" value={typeId} />
+        {fixedField(
+          "useIdFixed",
+          "Tipo de uso",
+          useName.toUpperCase(),
+          undefined,
+          type && !useAllowed
+            ? noUseMessage(type.id, documentType)
+            : "Para cambiar el uso o el tipo de vehículo, vuelve a cotizar desde el inicio.",
         )}
-
-        <Select
-          name="typeId"
-          label="Tipo de vehículo"
-          variant="inset"
-          placeholder="Selecciona el tipo"
-          value={typeId}
-          onChange={(event) => {
-            setTypeId(event.target.value);
-            void loadModels(brand, event.target.value);
-          }}
-          onBlur={() => handleBlur("typeId")}
-          error={errorFor("typeId")}
-        >
-          {types.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.name.toUpperCase()}
-            </option>
-          ))}
-        </Select>
+        {fixedField("typeIdFixed", "Tipo de vehículo", type?.name.toUpperCase() ?? "")}
 
         {locked.brandName ? (
           fixedField("brandIdFixed", "Marca", locked.brandName)
