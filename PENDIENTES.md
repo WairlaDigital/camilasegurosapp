@@ -105,7 +105,7 @@ _Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 - [x] Pruebas: Vitest (reglas de placa, usos y documento) y Playwright (home en desktop y mobile).
 - [x] Servidor falso de la API para las e2e (`e2e/mock-api/server.mjs`).
 - [x] **Pagar con la página abierta mucho tiempo.** Si la fecha de inicio ya pasó (por ejemplo, después de medianoche), "Continuar con el pago" no crea la orden ni cobra: avisa y enlaza a la cotización, que propone hoy y vuelve a cotizar. Si la sesión (2 horas desde el último paso) venció, el aviso enlaza al inicio. Falta revisar la antigüedad de la cotización (ver "Vigencia del token de cotización").
-- [ ] **"Datos del vehículo" cuando La Positiva no responde.** Las listas de modelos y versiones (`GET /models`, `GET /versions`) consultan a La Positiva; con un 503 la página cae en la pantalla genérica de error (visto el 2026-10-02 con QA apagada). Debería avisar que el catálogo no está disponible y dejar reintentar sin perder lo escrito.
+- [x] **"Datos del vehículo" cuando La Positiva no responde.** Las listas de modelos y versiones consultan a La Positiva. Ahora solo se piden si el modelo o la versión no vinieron de la consulta de placa, y si fallan el paso abre igual: el selector dice "No pudimos cargar la lista" con la ayuda "El catálogo no respondió. Inténtalo de nuevo en unos minutos." (antes la página caía en el error genérico, visto el 2026-10-02 y el 2026-10-05).
 - [ ] Correr `npm test` y `npm run test:e2e` en CI cuando haya remoto.
 
 ### Diseño

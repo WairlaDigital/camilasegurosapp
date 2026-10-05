@@ -24,8 +24,9 @@ type VehicleFormProps = {
   initial: VehicleData;
   /** What the plate lookup gave: shown locked; the person completes the rest. */
   locked: LockedVehicleFields;
-  initialModels: Option<string>[];
-  initialVersions: Option<string>[];
+  /** Null when the list could not be loaded (La Positiva did not answer). */
+  initialModels: Option<string>[] | null;
+  initialVersions: Option<string>[] | null;
 };
 
 type ListStatus = "idle" | "loading" | "error";
@@ -53,11 +54,11 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
   const [typeId, setTypeId] = useState(initial.typeId ? String(initial.typeId) : "");
   const [useId, setUseId] = useState(initial.useId ? String(initial.useId) : "");
   const [brand, setBrand] = useState<ComboboxOption | null>(initial.brand ?? null);
-  const [models, setModels] = useState(initialModels);
-  const [modelsStatus, setModelsStatus] = useState<ListStatus>("idle");
+  const [models, setModels] = useState(initialModels ?? []);
+  const [modelsStatus, setModelsStatus] = useState<ListStatus>(initialModels ? "idle" : "error");
   const [modelId, setModelId] = useState(initial.model?.id ?? "");
-  const [versions, setVersions] = useState(initialVersions);
-  const [versionsStatus, setVersionsStatus] = useState<ListStatus>("idle");
+  const [versions, setVersions] = useState(initialVersions ?? []);
+  const [versionsStatus, setVersionsStatus] = useState<ListStatus>(initialVersions ? "idle" : "error");
   const [versionId, setVersionId] = useState(initial.version?.id ?? "");
   const [seats, setSeats] = useState(initial.seats ? String(initial.seats) : "");
   const [year, setYear] = useState(initial.year ? String(initial.year) : "");
@@ -148,6 +149,9 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
 
   const listPlaceholder = (status: ListStatus, empty: string, ready: string) =>
     status === "loading" ? "Cargando…" : status === "error" ? "No pudimos cargar la lista" : empty || ready;
+  // The model and version lists come from La Positiva, which is sometimes down.
+  const listHint = (status: ListStatus) =>
+    status === "error" ? "El catálogo no respondió. Inténtalo de nuevo en unos minutos." : undefined;
 
   return (
     <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-10">
@@ -248,6 +252,7 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
             }}
             onBlur={() => handleBlur("modelId")}
             error={errorFor("modelId")}
+            hint={listHint(modelsStatus)}
           >
             {models.map((model) => (
               <option key={model.id} value={model.id}>
@@ -270,6 +275,7 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
             onChange={(event) => setVersionId(event.target.value)}
             onBlur={() => handleBlur("versionId")}
             error={errorFor("versionId")}
+            hint={listHint(versionsStatus)}
           >
             {versions.map((version) => (
               <option key={version.id} value={version.id}>

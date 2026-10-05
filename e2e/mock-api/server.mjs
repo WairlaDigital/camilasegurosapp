@@ -12,6 +12,7 @@
 //   CAM-777  complete camioneta (class 33, 5 seats) → quoted as "Camioneta hasta 7 asientos"
 //   4321-AB  complete mototaxi (class 25) → quoted as Mototaxi, not the default Motocicleta
 //   5555-AB  complete motocicleta (class 10) → Taxi does not apply; with RUC nothing applies (spec 4.2)
+//   MOD-503  incomplete vehicle with a brand but no model, and La Positiva's model list is down (503)
 //   ERR-500  upstream error (503)
 // Plans: La Positiva at S/ 210 for today (Lima) and S/ 215 for any other start date
 // (to test the re-quote), plus an AFOCAT plan that the front must hide.
@@ -66,6 +67,7 @@ const REGISTRY = {
   ABC123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: 5 },
   AFO123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: 5 },
   AEF710: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: null },
+  MOD503: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: null },
   MOT123: { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, seats: 2 },
   CAM777: { category: CAR, class: { id: 33, name: "CAMIONETA" }, seats: 5 },
   "4321AB": { category: { id: 5, name: "L5" }, class: { id: 25, name: "MOTOTAXI" }, seats: 3 },
@@ -106,6 +108,13 @@ function vehicleFor(body) {
             model: merged(null, { id: 1003280, name: "H1" }),
             version: null,
           };
+    case "MOD503":
+      return {
+        plate: "MOD-503",
+        category: categoryOf("MOD503"),
+        year: 2019,
+        brand: merged({ id: 3001, name: "KIA" }, { id: 9, name: "KIA" }),
+      };
     case "ZZZ999":
       return null; // lookup failed: the backend also drops manual data (PENDIENTES.md)
     default:
@@ -181,6 +190,8 @@ const server = createServer(async (req, res) => {
   if (req.method === "GET" && path === "/brands") return send(res, 200, { data: filter(brands) });
 
   const modelsMatch = path.match(/^\/models\/(\d+)\/type\/(\d+)$/);
+  // KIA (MOD-503 only, never answered with a list so no cached response hides it): La Positiva is down.
+  if (req.method === "GET" && modelsMatch?.[1] === "3001") return send(res, 503, { error: "La Positiva no responde" });
   if (req.method === "GET" && modelsMatch) return send(res, 200, { data: filter(models[modelsMatch[1]] ?? []) });
 
   const versionsMatch = path.match(/^\/versions\/(\d+)$/);

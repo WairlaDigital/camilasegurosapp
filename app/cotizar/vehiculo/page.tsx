@@ -24,11 +24,14 @@ export default async function VehiclePage() {
     useId: session.request.useId,
   };
 
-  // Lists for the prefilled brand/model, fetched in parallel with the types.
+  const locked = lockedVehicleFields(session.vehicleLookup);
+  // Lists only for what the person can still choose: a locked model or version needs
+  // none. They come from La Positiva: if it does not answer, the form says so (null)
+  // instead of the whole step failing.
   const [allTypes, models, versions] = await Promise.all([
     getVehicleTypes(),
-    vehicle.brand ? getModels(vehicle.brand.id, vehicle.typeId) : [],
-    vehicle.model ? getVersions(vehicle.model.id) : [],
+    vehicle.brand && !locked.modelId ? getModels(vehicle.brand.id, vehicle.typeId).catch(() => null) : [],
+    vehicle.model && !locked.versionId ? getVersions(vehicle.model.id).catch(() => null) : [],
   ]);
   // Spec 4.1: the category comes from the plate and cannot change here.
   const types = typesForCategory(allTypes, detectCategory(session.input.plate) ?? "auto");
@@ -47,7 +50,7 @@ export default async function VehiclePage() {
           types={types}
           documentType={session.input.documentType}
           initial={vehicle}
-          locked={lockedVehicleFields(session.vehicleLookup)}
+          locked={locked}
           initialModels={models}
           initialVersions={versions}
         />

@@ -71,6 +71,17 @@ test("an incomplete vehicle locks what the lookup returned and asks for the rest
   await expect(page.getByRole("heading", { name: "HYUNDAI H1 2016" })).toBeVisible();
 });
 
+test("when La Positiva's model list is down the step still opens and says so", async ({ page }) => {
+  await openVehicleForm(page, "MOD-503"); // brand from the lookup, no model; the model list answers 503
+
+  await expect(page.getByLabel("Marca")).toHaveValue("KIA");
+  const f = vehicleForm(page);
+  await expect(f.model).toBeDisabled();
+  await expect(f.model.locator("option")).toHaveText(["No pudimos cargar la lista"]);
+  await expect(page.getByText("El catálogo no respondió. Inténtalo de nuevo en unos minutos.")).toBeVisible();
+  await expect(f.submit).toBeDisabled();
+});
+
 test("choosing another brand loads its models and clears model and version", async ({ page }) => {
   await openVehicleForm(page, "ZZZ-999"); // no lookup data: nothing is locked
   const f = vehicleForm(page);
