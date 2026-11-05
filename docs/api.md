@@ -2,7 +2,7 @@
 
 Backend Laravel que expone vehículos, cotización de planes SOAT (incluida La Positiva) y emisión de pólizas. Código fuente local: `~/sites/app-soat-taxi` (`routes/api.php`, `app/Http/Controllers/Api/`).
 
-- **Base URL (local):** `http://app-soat-taxi.test/api`, en `LAPOSITIVA_API_URL`.
+- **Base URL (local):** `http://app-soat-taxi.test/api`, en `BACKEND_API_URL`.
 - **Autenticación:** Laravel Sanctum. Header `Authorization: Bearer <token>` (`BACKEND_API_TOKEN`). Sin token o con uno inválido: `401 {"message":"Unauthenticated."}`.
 - **Siempre enviar** `Accept: application/json`; si no, Laravel responde errores en HTML.
 - En local `APP_DEBUG` está activo: los errores incluyen trazas y rutas del servidor. `services/http.ts` nunca reenvía el cuerpo del error a la UI.

@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 
 const envSchema = z.object({
-  LAPOSITIVA_API_URL: z.url(),
+  BACKEND_API_URL: z.url(),
   BACKEND_API_TOKEN: z.string().min(1),
   // Encrypts the quote session cookie (AES-256-GCM). Generate with:
   // node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"

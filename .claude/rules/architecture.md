@@ -73,7 +73,7 @@ ESLint aplica estas reglas (`no-restricted-imports` en `eslint.config.mjs`). No 
 
 ## Configuración y secretos
 
-- Variables en `lib/env.ts`, validadas con Zod al arrancar. `LAPOSITIVA_API_URL` y tokens **sin** prefijo `NEXT_PUBLIC_`.
+- Variables en `lib/env.ts`, validadas con Zod al arrancar. `BACKEND_API_URL` y tokens **sin** prefijo `NEXT_PUBLIC_`.
 - `.env.local` nunca se commitea; mantener `.env.example` actualizado.
 
 ## Límites de uso

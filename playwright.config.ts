@@ -40,7 +40,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
       env: {
-        LAPOSITIVA_API_URL: `http://localhost:${MOCK_API_PORT}/api`,
+        BACKEND_API_URL: `http://localhost:${MOCK_API_PORT}/api`,
         BACKEND_API_TOKEN: "test-token",
         SESSION_SECRET: "e2e-only-session-secret-0123456789abcdef",
         // Culqi Checkout is replaced by a fake script in the tests (e2e/fake-culqi.ts).

@@ -22,7 +22,7 @@ const validationErrorSchema = z.object({
 });
 
 function buildUrl(path: string, searchParams?: RequestOptions["searchParams"]) {
-  const url = new URL(`${env.LAPOSITIVA_API_URL.replace(/\/$/, "")}${path}`);
+  const url = new URL(`${env.BACKEND_API_URL.replace(/\/$/, "")}${path}`);
   for (const [key, value] of Object.entries(searchParams ?? {})) {
     if (value !== undefined) url.searchParams.set(key, String(value));
   }

@@ -29,7 +29,7 @@ Completa `.env.local` (nunca se sube al repo):
 
 | Variable | Qué es |
 |---|---|
-| `LAPOSITIVA_API_URL` | URL de la API, con `/api` al final |
+| `BACKEND_API_URL` | URL de la API, con `/api` al final |
 | `BACKEND_API_TOKEN` | Token de Sanctum. Solo servidor: nunca con prefijo `NEXT_PUBLIC_` |
 | `SESSION_SECRET` | Clave para cifrar la cookie de la cotización (mínimo 32 caracteres). Genérala con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
 | `NEXT_PUBLIC_CULQI_PUBLIC_KEY` | Llave pública de Culqi Checkout (`pk_test_…` en desarrollo, `pk_live_…` en producción). Es la única variable pública: va al navegador. La llave secreta vive solo en la API |
