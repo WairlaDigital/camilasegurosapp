@@ -12,7 +12,7 @@ Con La Positiva **simulada** en el backend local (QA se apaga después de las 8 
 
 1. **⚠ Webhook de Culqi en pruebas.** Revisado el 2026-09-30: apunta a una URL de pruebas. En el CulqiPanel, entorno de integración → Desarrollo → Webhooks, revisa a qué URL apunta. Tras un pago, Culqi llama a esa URL con el id de la póliza (`metadata.order`). La base local parece una copia de producción, así que los ids coinciden con pólizas reales: **si el webhook de pruebas apunta al backend de producción, no hagas la prueba** hasta cambiarlo. Una URL local no es un problema: Culqi no llega a `app-soat-taxi.test` y la emisión se simula a mano (ver abajo).
 2. **Tus datos.** Tu DNI y tu correo: el backend valida que el dominio del correo exista y te llegarán correos reales. Celular que empiece con 9. Placa: una que exista en el ambiente QA de La Positiva.
-3. **Llave pública.** `NEXT_PUBLIC_CULQI_PUBLIC_KEY` (en `.env.local`) debe ser de la **misma cuenta de Culqi** que la `sk_test_` del backend. Si no lo es, el modal de Culqi no reconoce la orden (caso 1 falla al abrir el modal).
+3. **Llave pública.** `NEXT_PUBLIC_CULQI_PUBLIC_KEY` (en `.env.local`) debe ser de la **misma cuenta de Culqi** que la llave secreta con la que cobra el sitio en el backend: la del registro del sitio (admin → Sitios) si el front usa un token de sitio, o la `sk_test_` global (`CULQI_SECRET_TOKEN`) si usa un token de usuario. Si no lo es, el modal de Culqi no reconoce la orden (caso 1 falla al abrir el modal).
 4. **Arrancar el front** contra la API local: `npx next dev --port 3101` (o la configuración `checkout-real-api` del panel de vista previa) y abrir http://localhost:3101. El `.env.local` real debe estar en la carpeta donde corres el comando.
 
 Cada intento de pago cuenta dos veces en el límite por persona (20 cada 10 min): si lo alcanzas, espera o reinicia el servidor.
@@ -46,11 +46,15 @@ Tras un pago exitoso la póliza sigue `pending`: la emisión la dispara el webho
 
 ## Simular el webhook (emisión y correo)
 
-Solo con una póliza **creada en esta prueba** (su id sale del comando anterior). Dispara la emisión en La Positiva QA y el correo al titular:
+Solo con una póliza **creada en esta prueba** (su id sale del comando anterior). Dispara la emisión en La Positiva QA y el correo al titular.
+
+Desde el 2026-11-05 el backend no confía en el webhook: vuelve a consultar el cargo en Culqi con la llave del sitio y solo emite si es una venta exitosa de esa póliza. Por eso el evento lleva el id real del cargo (`chr_test_…`, en CulqiPanel → Ventas) y va a la URL del sitio: `/api/culqi-service` para el sitio por defecto o `/api/culqi-service/{código}` para otro sitio (la muestra admin → Sitios).
 
 ```bash
-curl -k -X POST https://app-soat-taxi.test/api/culqi-service -H "Content-Type: application/json" -H "Accept: application/json" -d '{"object":"event","type":"charge.creation.succeeded","data":{"metadata":{"order":ID_DE_LA_POLIZA}}}'
+curl -k -X POST https://app-soat-taxi.test/api/culqi-service -H "Content-Type: application/json" -H "Accept: application/json" -d '{"object":"event","type":"charge.creation.succeeded","creation_date":1762300000000,"data":{"id":"ID_DEL_CARGO","metadata":{"order":ID_DE_LA_POLIZA}}}'
 ```
+
+Si responde 503, el backend no pudo confirmar el cargo en Culqi (id equivocado, otra cuenta o Culqi caído); el motivo queda en `storage/logs/laravel.log`.
 
 Luego vuelve a consultar las pólizas: debería pasar a `issued` (o `failed`, con el motivo en `storage/logs/laravel.log`), y el PDF debería llegar a tu correo.
 
