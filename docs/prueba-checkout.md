@@ -6,7 +6,7 @@ Qué hay detrás (revisado el 2026-09-29): el backend local cotiza y emite contr
 
 ## Resultados (2026-10-02/03)
 
-Con La Positiva **simulada** en el backend local (QA se apaga después de las 8 p. m.): placa M5G-340 con 5 asientos, stock disponible y tarifa de S/ 85.00 con token `BYPASS-…`, en un cambio temporal sin commit en `app-soat-taxi` (`PositivaApiClient`, marcado `TEMP BYPASS`). El cobro con Culqi sí es real (modo de pruebas). Detalle por caso en la tabla.
+Con La Positiva **simulada** en el backend local (QA se apaga después de las 8 p. m.): placa M5G-340 con 5 asientos, stock disponible y tarifa de S/ 85.00 con token `BYPASS-…`, en un cambio temporal sin commit en `app-soat-taxi` (`PositivaApiClient`, marcado `TEMP BYPASS`, descartado el 2026-11-05). El cobro con Culqi sí es real (modo de pruebas). Detalle por caso en la tabla.
 
 ## Antes de empezar
 

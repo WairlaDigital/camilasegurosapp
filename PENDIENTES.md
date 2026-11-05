@@ -5,7 +5,7 @@ Detalle técnico de cada brecha: [docs/flujo.md](docs/flujo.md#brechas-spec-vs-b
 
 ## Estado actual y siguiente paso
 
-_Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
+_Actualizado: 2026-11-05. Actualiza esta sección al cerrar cada tarea._
 
 **Hecho (en `main`):**
 - Reglas del proyecto, sistema de diseño desde Figma ([DESIGN.md](DESIGN.md)) y pruebas (Vitest + Playwright con servidor falso de la API).
@@ -23,7 +23,9 @@ _Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 **Siguiente:**
 1. **Probar a mano el flujo nuevo con La Positiva QA encendida** (de día; se apaga después de las 8 p. m.): titular → vehículo bloqueado → cotización con cambio de fecha (la cotización real tarda 5-10 s) → pago con Culqi de pruebas. El checkout ya pasó la prueba manual del 2026-10-03 con el flujo anterior (casos 1, 2, 3, 4, 6, 7 y 8; el 5, pago diferido, solo en producción).
 2. **Probar la emisión tras el pago:** pagar y simular el webhook con el `curl` de [docs/prueba-checkout.md](docs/prueba-checkout.md).
-3. **Antes de esas pruebas, restaurar el backend local.** `~/sites/app-soat-taxi/app/Services/PositivaApiClient.php` tiene un cambio temporal **sin commit** (marcado `TEMP BYPASS`) que simula La Positiva: consulta de placa (siempre el Nissan Versa M5G-340, con 5 asientos), stock disponible y tarifa de S/ 85.00 con token `BYPASS-…`. Esos tokens no sirven para emitir. Restaurar con `git -C ~/sites/app-soat-taxi checkout app/Services/PositivaApiClient.php`, cuidando de no perder otros cambios de ese archivo, y nunca hacer commit del bypass.
+3. **Sitios en el backend** (antes de salir a producción): registrar cada front como sitio, asignar planes por sitio, cobrar con la cuenta de Culqi de cada sitio y verificar el webhook de Culqi. Ver "Sitios" en Decisiones y la sección Backend.
+
+El backend local ya no simula La Positiva: el `TEMP BYPASS` de `PositivaApiClient.php` se descartó el 2026-11-05, así que las pruebas 1 y 2 necesitan La Positiva QA encendida.
 4. Confirmar con diseño las diferencias con Figma (sección Diseño) y con La Positiva la vigencia del token de cotización y el IdUso de "Comercial".
 5. Configurar las reglas del WAF de Vercel cuando exista el proyecto.
 
@@ -37,7 +39,7 @@ _Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 - [x] **Recursos del home** exportados de Figma (2026-09-27): foto del hero, ícono de categoría auto, 4 íconos de beneficios y 5 de coberturas. Integrados y revisados contra Figma.
 - [ ] **Recursos que aún faltan:** ícono de menú mobile ([559:71](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=559-71), hoy es un ícono CSS provisional) y manchas decorativas del fondo ([197:296](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-296), [197:297](https://www.figma.com/design/W6qepstKDMOGnvOxh51wRq/Camila-Seguros?node-id=197-297)).
 - [ ] **Respuestas de la FAQ.** Figma solo trae la primera; las otras 5 son textos provisionales en `features/home/content.ts`. Validarlas.
-- [x] **Llave pública de Culqi** de pruebas (`pk_test_…`) en el `.env.local` de la carpeta principal como `NEXT_PUBLIC_CULQI_PUBLIC_KEY` (2026-09-29). Es pública por diseño (va al navegador); la llave secreta vive solo en la API. Falta la de producción (`pk_live_…`) al desplegar, y debe corresponder a la misma cuenta de Culqi que la llave secreta de la API.
+- [x] **Llave pública de Culqi** de pruebas (`pk_test_…`) en el `.env.local` de la carpeta principal como `NEXT_PUBLIC_CULQI_PUBLIC_KEY` (2026-09-29). Es pública por diseño (va al navegador); la llave secreta vive solo en la API. Falta la de producción (`pk_live_…`) al desplegar. **Camila Seguros tendrá su propia cuenta de Culqi** (decidido 2026-11-05): su llave pública va aquí y su llave secreta en el registro del sitio en la API, y ambas deben ser de esa cuenta. Hasta que la API cobre por sitio, las pruebas usan la cuenta de pruebas de la API.
 - [x] **Logo, tipografía y colores**. Tomados de Figma (Red Hat Display, violeta `#4740de`).
 - [ ] **URLs del sitio**: menú (Seguros, Beneficios, Testimonios, Blog), Contáctanos, Términos y Condiciones, Facebook. Hoy son `#` en `lib/site.ts`.
 - [ ] **Textos legales**: URL de la Política de Privacidad y del Consentimiento de datos para usos adicionales.
@@ -50,6 +52,8 @@ _Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 - [ ] **Mecanismo de invalidación del token** de cotización al usar "Editar" (en coordinación con la solución del bug de tokens duplicados). Hoy "Editar" → "Guardar y continuar" crea una cotización nueva que reemplaza a la anterior en la sesión (y borra el plan elegido); la anterior sigue válida en el backend.
 
 ## Decisiones de producto
+
+- [x] **Sitios** (2026-11-05). La API registrará cada front (soat-para-taxi, Camila Seguros) como sitio y le asignará planes. Decidido: cada sitio cobra con **su propia cuenta de Culqi**; las credenciales de La Positiva son **globales** (todos los sitios usan la integración actual); el correo y el PDF de marca por sitio quedan para después. Diseño propuesto: tabla `sites`, un token de Sanctum por sitio (el token define el sitio; un token de `User` cae en el sitio por defecto para que soat-para-taxi no cambie), `site_id` en `plan_plan_group` (con orden y destacado), `quotes` y `policies`. Los fronts no cambian código, solo usan su propio token. Tareas en la sección Backend.
 
 - [x] **Datos personales para la orden.** `POST /data` exige nombres, apellidos, dirección, departamento y distrito. Con **DNI o CE**, `/query-info` trae nombres y apellidos (juntos); con **RUC**, razón social, dirección, departamento y distrito, pero no nombres ni apellidos. **Decidido (2026-10-05):** pantalla "Completa los datos del titular" como paso 1/3 (Figma): nombres y apellidos tal como los manda el backend, bloqueados si llegaron; departamento solo Lima o Callao, provincia según el departamento y distrito de una lista (como soatparataxi.pe); referencia y provincia se agregan al texto de la dirección (`/data` no tiene campos para ellas); correo y celular se piden aquí; sin "¿Comprobante a nombre del contratante?".
 - [x] **Orden de pasos.** Figma usa "PASO x/3" (titular → vehículo → cotización); la spec usa "PASO 1" en vehículo y "PASO 2/2" en "Antes de pagar". **Decidido (2026-10-05, reemplaza la decisión del 2026-09-29):** titular (1/3) → vehículo (2/3, siempre, con lo que trajo la placa bloqueado) → cotización (3/3) → antes de pagar (3/3). Se quitó la pantalla "Datos incompletos".
@@ -82,6 +86,11 @@ _Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 - [ ] Cada `POST /query-info` crea un registro `Driver` nuevo.
 - [ ] **Exponer la clase de La Positiva (`positiva_id`) en `GET /data`.** Hoy el front traduce clase → tipo con una tabla fija (`catalogTypeForClass`) copiada de la base del backend; si cambian los tipos, hay que actualizarla a mano.
 - [ ] **Caché de la consulta de placa.** `getPlate` no guarda caché: al iniciar, la placa se consulta dos veces (`/query-plate` y dentro de `/query-info`).
+- [ ] **🔴 Webhook de Culqi sin verificar.** `POST /api/culqi-service` (`DataWebhookController`) acepta cualquier petición: un `order.status.changed` con `state: paid` dispara `PolicyPaid` y emite la póliza sin cobro. Confirmar el pago consultando a Culqi con la llave secreta del sitio antes de emitir.
+- [ ] **Sitios: modelo y planes.** Tabla `sites` (`code`, `name`, `is_active`, `is_default`) con `HasApiTokens`; middleware que resuelve el sitio desde el token (token de `User` → sitio por defecto); `site_id`, `order` e `is_featured` en `plan_plan_group` con backfill al sitio soat-para-taxi **antes** del código que filtra. Filtrar por sitio `/query-info` y `GET /data` (caché `groups` por sitio, hoy es global). Admin: CRUD de sitios con emisión de token y selector de sitio en la asignación de planes (el `sync` actual borraría las filas de otros sitios).
+- [ ] **Sitios: compras.** `site_id` en `quotes` y `policies` (del token, nunca del body). `GET /data`, `POST /data` y `/charge` detrás de `auth:sanctum` (hoy son públicas; los dos fronts ya envían el Bearer). `POST /data` valida que el plan esté habilitado y asignado al sitio para el tipo y uso, y que la cotización sea del mismo sitio, plan y placa; `order_id` y `/charge` solo sobre pólizas del mismo sitio. Límite de uso con clave `site:{id}`. El webhook a Make envía el sitio.
+- [ ] **Sitios: Culqi por sitio.** Llave secreta (cifrada) y prefijo de orden (`ORDER_KEY`) en el sitio; `PaymentService` los recibe del sitio en lugar de `config('app.culqi_secret_token')`. Webhook por sitio (`/culqi-service/{site}`) registrado en el panel de cada cuenta. Los ids de cliente y tarjeta de Culqi en `drivers` y `plans.culqi` son de una cuenta: revisar al activar renovaciones (hoy `is_renewable` es `false` en ambos fronts).
+- [ ] **Planes deshabilitados.** `/query-info` no aplica `is_enabled`: un plan deshabilitado pero asignado se sigue ofreciendo.
 
 ## Front (este repo)
 
@@ -99,7 +108,7 @@ _Actualizado: 2026-10-05. Actualiza esta sección al cerrar cada tarea._
 - [x] Los errores por campo que devuelve una Server Action (p. ej. 422 de la API en placa o documento) quedaban ocultos al enviar un formulario válido. Corregido en los tres formularios.
 - [x] Checkout con **Culqi Checkout** (`https://js.culqi.com/checkout-js`, `features/checkout/`): `POST /data` → modal con `settings` y `client.email` → `token` a `POST /charge` (Server Action) → confirmación; `order` → confirmación en modo "código de pago". La orden se reutiliza mientras los datos no cambien (huella en la sesión) y un pedido ya pagado no vuelve a cobrarse. Errores con textos propios (ver "Mensajes de pago rechazado"). Probado a mano con el Culqi real en modo de pruebas (2026-10-03, [docs/prueba-checkout.md](docs/prueba-checkout.md)), salvo el pago diferido.
 - [x] Pantalla de confirmación de compra y de orden generada (`/cotizar/confirmacion`). Revisada en 1440 px y en mobile.
-- [ ] **Llave pública de producción** (`pk_live_…`) en el entorno de despliegue. Sin `NEXT_PUBLIC_CULQI_PUBLIC_KEY` la app no arranca.
+- [ ] **Llave pública de producción** (`pk_live_…`, de la cuenta de Culqi de Camila Seguros) en el entorno de despliegue. Sin `NEXT_PUBLIC_CULQI_PUBLIC_KEY` la app no arranca.
 - [x] Services de catálogo (`/data`, `/brands`, `/models`, `/versions`) y cotización (`/query-info`) con Zod y precio en céntimos.
 - [x] Estado del flujo en cookie httpOnly cifrada (sobrevive recargas). Guarda la fecha cotizada, los datos manuales del vehículo (para volver a cotizar) los datos del titular, si el paso del vehículo se confirmó, el plan elegido y la orden (`order_id`, huella de los datos y estado: creada, código de pago o pagada).
 - [x] **Rate limiting.** `/api/vehicles/*` exigen sesión de cotización (401) y tienen 60 consultas por minuto por persona (429 con `Retry-After`). El inicio: 20 envíos cada 10 min por IP (margen amplio por CGNAT de los operadores móviles). Guardar vehículo y recotizar por fecha: 10 cada 10 min por persona. Valores configurables (`RATE_LIMIT_*`, ver `.env.example`).
