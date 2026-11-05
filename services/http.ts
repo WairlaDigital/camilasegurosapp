@@ -51,7 +51,7 @@ export async function apiRequest<T>(
       method,
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${env.LAPOSITIVA_API_TOKEN}`,
+        Authorization: `Bearer ${env.BACKEND_API_TOKEN}`,
         ...(body !== undefined && { "Content-Type": "application/json" }),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
