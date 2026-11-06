@@ -7,14 +7,15 @@
  * Use only these tokens in components: no hex values or arbitrary sizes.
  */
 @theme {
-  /* Brand (violet) */
-  --color-brand-50: #eff3fe; /* soft surfaces, open accordion, page top */
-  --color-brand-100: #e1e8fe; /* secondary button, icons on dark */
+  /* Brand (blue since the 2026-11 redesign, Figma 891:58). The logo symbol stays violet. */
+  --color-brand-50: #ebf5ff; /* soft surfaces, FAQ panel, text on brand-700 */
+  --color-brand-100: #e1e8fe; /* secondary button, quote notices */
   --color-brand-200: #c9d4fc; /* secondary button end, text on brand */
-  --color-brand-400: #686cec; /* decorative */
-  --color-brand-500: #4740de; /* primary: CTAs, links, brand cards */
-  --color-brand-700: #39349f; /* primary gradient end */
-  --color-brand-900: #33317e; /* footer, eyebrow pills, tags on brand */
+  --color-brand-300: #379dff; /* sky: footer logo symbol and divider */
+  --color-brand-400: #105bf9; /* plan card glow, skeletons */
+  --color-brand-500: #0054d0; /* primary accent: links, labels, pills, coverage cards */
+  --color-brand-700: #0139af; /* footer, plan card */
+  --color-brand-900: #072264; /* navy: CTA buttons, tags on brand */
 
   /* Neutrals */
   --color-ink: #2f2f2f; /* body text, labels */
@@ -25,8 +26,6 @@
   --color-line: #cacaca; /* control borders */
   --color-line-soft: #d7d7d7; /* card borders */
   --color-field-disabled: #e9e9e9; /* prefilled, read-only fields (titular form) */
-  --color-sand: #f4f1ea; /* page base under the gradient */
-  --color-on-brand: #f1f1f1; /* text on brand-900 */
 
   /* Semantic */
   --color-success: #46cc15;
@@ -76,15 +75,7 @@
   --shadow-cta: 0 8px 10px rgb(54 52 97 / 0.3);
 }
 
-/* Gradients from Figma, exposed as utilities (bg-gradient-*) */
-@utility bg-gradient-primary {
-  background-image: linear-gradient(
-    to bottom,
-    var(--color-brand-500) 11.667%,
-    var(--color-brand-700) 175%
-  );
-}
-
+/* Gradients from Figma, exposed as utilities (bg-gradient-*). The primary button is solid brand-900. */
 @utility bg-gradient-secondary {
   background-image: linear-gradient(
     to bottom,
@@ -93,12 +84,12 @@
   );
 }
 
-/* Plan card (Figma 240:117): lighter glow at the top center over brand-500. */
+/* Plan card (Figma 901:1622): brand-400 glow at the top center over brand-700. */
 @utility bg-gradient-plan {
   background-image: radial-gradient(
     ellipse 90% 45% at 50% 0,
     var(--color-brand-400) 0,
-    var(--color-brand-500) 100%
+    var(--color-brand-700) 100%
   );
 }
 
@@ -108,29 +99,14 @@
   -webkit-text-stroke: 1.5px color-mix(in srgb, var(--color-brand-200) 25%, transparent);
 }
 
-/* One gradient for the whole page (Figma "gradiente" 197:294: 2812px tall on a 3389px
-   frame, solid until 57.4% of it) ⇒ solid until ~48% of the page, sand from ~83%.
-   Apply it to <body> with no-repeat; <html> keeps the solid sand (see app/layout.tsx). */
-@utility bg-gradient-page {
-  background-image: linear-gradient(
-    to bottom,
-    var(--color-brand-50) 0,
-    var(--color-brand-50) 48%,
-    var(--color-sand) 83%
-  );
-  background-repeat: no-repeat;
-}
-
 @layer base {
   html {
     color-scheme: light;
-    /* A background on <html> stops the browser from moving the body's background
-       to the viewport, where it would be sized to the window and repeat. */
-    @apply bg-sand;
+    @apply bg-white;
   }
 
   body {
-    @apply bg-sand font-sans text-body text-ink antialiased;
+    @apply bg-white font-sans text-body text-ink antialiased;
   }
 
   :focus-visible {

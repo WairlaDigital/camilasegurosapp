@@ -22,6 +22,7 @@ const colors = [
   { name: "brand-50", className: "bg-brand-50" },
   { name: "brand-100", className: "bg-brand-100" },
   { name: "brand-200", className: "bg-brand-200" },
+  { name: "brand-300", className: "bg-brand-300" },
   { name: "brand-400", className: "bg-brand-400" },
   { name: "brand-500", className: "bg-brand-500" },
   { name: "brand-700", className: "bg-brand-700" },
@@ -33,7 +34,6 @@ const colors = [
   { name: "line", className: "bg-line" },
   { name: "line-soft", className: "bg-line-soft" },
   { name: "field-disabled", className: "bg-field-disabled" },
-  { name: "sand", className: "bg-sand" },
   { name: "success", className: "bg-success" },
   { name: "info", className: "bg-info" },
   { name: "danger", className: "bg-danger" },
@@ -77,9 +77,8 @@ export default function DesignSystemPage() {
           ))}
         </ul>
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="h-16 rounded-control bg-gradient-primary" />
           <div className="h-16 rounded-control bg-gradient-secondary" />
-          <div className="h-16 rounded-control border border-line-soft bg-gradient-page" />
+          <div className="h-16 rounded-control bg-gradient-plan" />
         </div>
       </Section>
 
@@ -207,7 +206,7 @@ export default function DesignSystemPage() {
       </Section>
 
       <Section title="Acordeón">
-        <div className="rounded-panel bg-brand-100 px-5 py-10 md:px-10">
+        <div className="rounded-panel bg-brand-50 px-5 py-10 md:px-10">
           <Accordion className="max-w-136">
             <AccordionItem name="faq" title="¿Recibo mi SOAT al instante?" open>
               Sí, apenas se confirma tu pago, tu SOAT llega automáticamente a tu correo o WhatsApp, listo para usar.
@@ -225,7 +224,7 @@ export default function DesignSystemPage() {
       <Section title="Logo">
         <div className="flex flex-wrap items-center gap-8">
           <Logo />
-          <span className="rounded-card bg-brand-900 p-6">
+          <span className="rounded-card bg-brand-700 p-6">
             <Logo tone="light" />
           </span>
         </div>

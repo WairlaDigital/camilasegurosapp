@@ -69,10 +69,10 @@ export function FieldShell({
       <div className={cn("flex flex-col gap-1.5", className)}>
         {/* Gray only when the control itself is disabled: a plain `has-disabled` also
             matches the disabled placeholder <option> of a select. */}
-        <div className="group relative rounded-control border border-line bg-white focus-within:border-brand-500 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-500 has-aria-invalid:border-danger has-[input:disabled,select:disabled]:bg-field-disabled">
+        <div className="relative rounded-control border border-line bg-white focus-within:border-brand-500 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-500 has-aria-invalid:border-danger has-[input:disabled,select:disabled]:bg-field-disabled">
           <label
             htmlFor={id}
-            className="pointer-events-none absolute top-2 left-5 text-small font-bold text-brand-500 group-has-[input:disabled,select:disabled]:text-brand-400"
+            className="pointer-events-none absolute top-2 left-5 text-small font-bold text-brand-500"
           >
             {label}
           </label>

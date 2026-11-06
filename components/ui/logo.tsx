@@ -2,7 +2,7 @@ import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 type LogoProps = {
-  /** `dark` on light backgrounds (header), `light` on brand backgrounds (footer). */
+  /** `dark` on light backgrounds (header), `light` on brand backgrounds (footer): sky symbol and white wordmark. */
   tone?: "dark" | "light";
   className?: string;
 };
@@ -17,7 +17,12 @@ export function Logo({ tone = "dark", className }: LogoProps) {
   return (
     <span role="img" aria-label="Camila Seguros" className={cn("relative inline-block aspect-160/53 w-40", className)}>
       <span className="absolute" style={SYMBOL_BOX}>
-        <Image src="/brand/logo-symbol.svg" alt="" fill preload={preload} />
+        <Image
+          src={tone === "dark" ? "/brand/logo-symbol.svg" : "/brand/logo-symbol-light.svg"}
+          alt=""
+          fill
+          preload={preload}
+        />
       </span>
       <span className="absolute" style={WORDMARK_BOX}>
         <Image

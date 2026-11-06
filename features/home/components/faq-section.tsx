@@ -3,11 +3,11 @@ import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { faqs } from "../content";
 
-// Figma "¿Quieres saber más?": brand-100 wide panel, 542px accordion, first item open.
+// Figma "¿Quieres saber más?": brand-50 wide panel, 542px accordion, first item open.
 export function FaqSection() {
   return (
     <Container width="wide">
-      <section aria-labelledby="faq-title" className="rounded-panel bg-brand-100 py-12.5 pb-20 lg:pb-31">
+      <section aria-labelledby="faq-title" className="rounded-panel bg-brand-50 py-12.5 pb-20 lg:pb-31">
         <Container className="flex flex-col gap-15">
           <SectionHeading eyebrow="Preguntas frecuentes" id="faq-title">
             ¿Quieres saber más?

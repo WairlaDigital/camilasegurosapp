@@ -9,8 +9,8 @@ export const pillVariants = cva(
     variants: {
       tone: {
         // line-height goes after the text size: tailwind-merge drops an earlier `leading-*`.
-        brand: "gap-2 border-brand-900 px-5 py-2.5 text-body leading-none text-brand-900",
-        light: "gap-5 border-white px-5 py-2.5 text-caption leading-none text-white uppercase",
+        brand: "gap-2 border-brand-500 px-5 py-2.5 text-body leading-none text-brand-500",
+        light: "gap-5 border-brand-500 bg-brand-500 px-5 py-2.5 text-caption leading-none text-white uppercase",
         step: "gap-2 border-brand-500 px-3.5 py-2 text-caption leading-none text-brand-500 uppercase",
       },
     },

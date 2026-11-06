@@ -53,13 +53,7 @@ function ContactItem({ icon, href, external = false, className, children }: Cont
 export function SiteFooter() {
   return (
     <Container width="wide" className="pb-5 md:pb-8">
-      <footer className="relative isolate overflow-hidden rounded-panel bg-brand-900 text-body text-on-brand">
-        <Image
-          src="/brand/footer-pattern.svg"
-          alt=""
-          fill
-          className="-z-10 object-cover object-right"
-        />
+      <footer className="rounded-panel bg-brand-700 text-body text-brand-50">
         <div className="mx-auto max-w-content px-5 pt-12.5 pb-7.5 md:px-10 lg:pt-15 xl:px-0">
           {/* Mobile (Figma "Group 86"): centered logo, company data, contact, complaints book and copyright. */}
           <div className="flex justify-center lg:justify-start">
@@ -103,7 +97,7 @@ export function SiteFooter() {
             </div>
           </div>
 
-          <p className="mt-7.5 border-t border-on-brand/30 pt-6 text-center lg:mt-12">
+          <p className="mt-7.5 border-t border-brand-300 pt-6 text-center lg:mt-12">
             Copyright © {new Date().getFullYear()} {site.name}. Todos los derechos reservados.
           </p>
         </div>

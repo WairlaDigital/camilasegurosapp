@@ -32,13 +32,14 @@ Lineamientos de diseño del cotizador SOAT de seguroscamila.pe. Aplican a cualqu
 ### Color
 | Token | Valor | Uso |
 |---|---|---|
-| `brand-50` | `#eff3fe` | Superficies suaves, FAQ abierta, inicio del fondo |
-| `brand-100` | `#e1e8fe` | Panel de FAQ, íconos sobre fondo oscuro, botón secundario |
-| `brand-200` | `#c9d4fc` | Fin del botón secundario, texto sobre `brand-900` ("Pago Anual") |
-| `brand-400` | `#686cec` | Etiqueta de campo prellenado, decorativo |
-| `brand-500` | `#4740de` | **Primario**: CTAs, links, etiquetas de campo, cards de marca |
-| `brand-700` | `#39349f` | Fin del degradado primario |
-| `brand-900` | `#33317e` | Footer, pills, tag "Pago Anual" |
+| `brand-50` | `#ebf5ff` | Superficies suaves, panel de FAQ, texto del footer |
+| `brand-100` | `#e1e8fe` | Botón secundario, avisos de la cotización |
+| `brand-200` | `#c9d4fc` | Fin del botón secundario, títulos del footer, texto sobre `brand-900` ("Pago Anual") |
+| `brand-300` | `#379dff` | Celeste: símbolo del logo y divisor del footer (decorativo; no llega a AA como texto sobre `brand-700`) |
+| `brand-400` | `#105bf9` | Brillo de la tarjeta de plan, skeletons |
+| `brand-500` | `#0054d0` | **Acento primario**: links, etiquetas de campo, pills, cards de cobertura |
+| `brand-700` | `#0139af` | Footer, tarjeta de plan |
+| `brand-900` | `#072264` | Azul marino: botones principales, tag "Pago Anual" |
 | `ink` | `#2f2f2f` | Texto base, labels |
 | `ink-strong` | `#000000` | Títulos, valores destacados |
 | `ink-soft` | `#404040` | Navegación |
@@ -47,15 +48,15 @@ Lineamientos de diseño del cotizador SOAT de seguroscamila.pe. Aplican a cualqu
 | `line` | `#cacaca` | Bordes de controles y FAQ cerrada |
 | `line-soft` | `#d7d7d7` | Bordes de cards |
 | `field-disabled` | `#e9e9e9` | Campos prellenados de solo lectura |
-| `sand` | `#f4f1ea` | Base de la página bajo el degradado |
-| `on-brand` | `#f1f1f1` | Texto sobre `brand-900` |
 | `success` | `#46cc15` | Checks de coberturas |
 | `info` | `#0052a1` | Azul complementario (reservado) |
 | `danger` | `#d92d20` | Errores de formulario. **No está en Figma** |
 | `danger-soft` | `#fce4e4` | Fondo del aviso de pago rechazado |
 | `danger-strong` | `#b42318` | Texto sobre `danger-soft` (5.4:1; `danger` no llega a AA sobre ese fondo) |
 
-Degradados: `bg-gradient-primary` (botón principal), `bg-gradient-secondary` ("LO QUIERO"), `bg-gradient-plan` (brillo `brand-400` arriba al centro de la tarjeta de plan), `bg-gradient-page` (fondo de página: `brand-50` → `sand`, un solo degradado para toda la página; va en `<body>` con `<html>` en `bg-sand`; ponerlo en `<html>` o quitarle el fondo a `<html>` hace que se repita cada alto de ventana).
+Línea gráfica azul desde noviembre de 2026 (Figma 891:58 y siguientes); el símbolo del logo sigue violeta (`#4740de`) sobre fondos claros y pasa a `brand-300` sobre el footer. Fondo de página blanco.
+
+Degradados: `bg-gradient-secondary` ("LO QUIERO") y `bg-gradient-plan` (brillo `brand-400` arriba al centro sobre `brand-700` en la tarjeta de plan). El botón principal es `brand-900` sólido.
 
 Contraste mínimo WCAG AA (4.5:1) en texto. `placeholder` no se usa para información necesaria.
 
@@ -99,7 +100,7 @@ Toda pieza visual reutilizable vive en `components/ui/`. **Antes de crear algo, 
 | `Card` | `surface`: panel del formulario · `outlined`: resumen del vehículo · `brand`: plan · `brand-panel`: cobertura | Cotización, home |
 | `Accordion`, `AccordionItem` | Preguntas frecuentes y letra chica. Mismo `name` = solo uno abierto | "¿Quieres saber más?" |
 | `SectionHeading` | Encabezado de sección: pill + título con `<strong>` en la palabra clave | "Coberturas", "Preguntas frecuentes" |
-| `Logo` | `dark` en fondos claros, `light` sobre `brand-900` | Header, footer |
+| `Logo` | `dark` en fondos claros, `light` sobre `brand-700` (símbolo `brand-300`) | Header, footer |
 | `SiteHeader`, `SiteFooter`, `Container` | Ya están en el layout raíz; no repetirlos en páginas | Todas |
 
 Nunca usar `<input>`, `<select>` o `<button>` sueltos con estilos propios en pantallas.
@@ -114,8 +115,8 @@ Nunca usar `<input>`, `<select>` o `<button>` sueltos con estilos propios en pan
 - **Listas dependientes** (tipo → modelos, marca → modelos → versiones): al cambiar el padre se vacían los hijos; mientras cargan dicen "Cargando…" y quedan deshabilitadas; si fallan, "No pudimos cargar la lista".
 - **Botón de formulario de paso:** deshabilitado hasta que todos los campos obligatorios tengan valor (spec); los errores de formato se muestran al salir del campo o al enviar.
 - **Sección de contenido:** `Pill` (eyebrow) → título con palabra clave en bold → contenido.
-- **Hero:** panel `rounded-panel` con foto y velo violeta, breadcrumb `Pill tone="light"`, título `display`, beneficios con ícono, y el panel del formulario blanco superpuesto a la derecha (debajo en mobile). Desktop: grilla de 12 columnas sobre 1120px; formulario en 5 columnas (448px). Mobile: texto del hero con margen de 40px, formulario y coberturas de borde a borde con 20px.
-- **Footer:** desktop con 4 columnas (empresa y contacto, mapa de sitio, seguros, atención al cliente con el botón "Libro de reclamaciones"); títulos en `brand-200`. Mobile: logo centrado, empresa, contacto (WhatsApp, correo, dirección), Libro de reclamaciones y copyright; sin columnas de enlaces.
+- **Hero:** panel `rounded-panel` con foto y velo azul marino, breadcrumb `Pill tone="light"`, título `display`, beneficios con ícono, y el panel del formulario blanco superpuesto a la derecha (debajo en mobile). Desktop: grilla de 12 columnas sobre 1120px; formulario en 5 columnas (448px). Mobile: texto del hero con margen de 40px, formulario y coberturas de borde a borde con 20px.
+- **Footer:** desktop con 4 columnas (empresa y contacto, mapa de sitio, seguros, atención al cliente con el botón "Libro de reclamaciones"); fondo `brand-700`, títulos en `brand-200` (el celeste `brand-300` del diseño no llega a AA) y botón `secondary` (el diseño lo pone celeste con texto blanco, 2.8:1). Mobile: logo centrado, empresa, contacto (WhatsApp, correo, dirección), Libro de reclamaciones y copyright; sin columnas de enlaces.
 - **Tarjeta de plan** (`features/plans/components/plan-card.tsx`): `Card tone="brand"` con `bg-gradient-plan`, 352px de ancho (`md:w-88`), marca de agua "SOAT" (`text-watermark text-outline`), producto y aseguradora en `subtitle`, precio en `title`, tag "Pago Anual" (`bg-brand-900 text-brand-200`), botón `secondary` a ancho completo ("LO QUIERO" → "Elegido" con `aria-pressed` y anillo `brand-200`) y lista de coberturas con check `success`. Varios planes se centran en una fila que se envuelve; el destacado va primero.
 - **Resumen del vehículo** (`features/quote/components/vehicle-summary.tsx`): `Card tone="outlined"` con tile `brand-500` e ícono de auto, título en `brand-500`, datos "Etiqueta: valor" (`<dl>`; etiqueta `brand-500`, valor `ink-strong`) separados por líneas verticales en desktop y uno por línea en mobile, y link "Editar".
 - **Antes de pagar:** pill de paso arriba a la izquierda y, más abajo, un bloque de 5 columnas desde la columna 5 (448px): título `title` (máx. 400px para que corte en "obtener / tu SOAT!"), subtítulo `subtitle`, lista con check `success` alineado a la primera línea y botón primario (ancho completo en mobile).
@@ -175,14 +176,14 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 - Antes de pagar (Figma "SOAT al instante 5", solo desktop): el indicador dice "PASO 3/3", aunque la spec muestra "PASO 2/2". En mobile se apila centrado con el botón a todo el ancho. Los avisos de error que no son un rechazo (sesión vencida, fecha pasada, correo rechazado, sin conexión) van bajo el botón con un enlace a donde se corrigen; Figma no los define.
 - Pago rechazado (Figma "SOAT al instante 6", solo desktop): es un estado de "Antes de pagar", no una ruta (al recargar vuelve a "Antes de pagar"). Solo se muestra cuando Culqi rechaza el cargo; si la conexión falla durante el cobro no se sabe si se cobró y se mantiene el aviso "No pudimos confirmar tu pago…". Diferencias: un solo botón, "Intentar nuevamente" (Figma tiene además "Cambiar método de pago", que abriría el mismo modal de Culqi); el aviso dice "El pago fue rechazado." en vez de "…rechazado por tu entiedad financiera." (errata y no siempre es el banco: también el antifraude de Culqi o la falta de 3DS); el texto del aviso usa `danger-strong` para cumplir AA. Los íconos de los consejos traen `#3E3EDB` (no es exactamente `brand-500`).
 - Datos del vehículo: "Tipo de uso" y "Tipo de vehículo" son campos deshabilitados con los valores de la cotización (Figma los dibuja como selectores), con la ayuda "Para cambiar el uso o el tipo de vehículo, vuelve a cotizar desde el inicio."; cambiarlos exigiría otra cotización. Si el uso cotizado no aplica (RUC + moto lineal sin registro, spec 4.2), la ayuda lo explica y "Guardar y continuar" queda deshabilitado.
-- Hero: el velo violeta se reproduce con degradados medidos sobre las capturas (desktop desde la izquierda, mobile desde abajo-izquierda); en mobile los beneficios se ocultan, como en Figma.
+- Hero: el diseño azul ya no tiene velo; se mantiene uno azul marino (`brand-900`, desktop desde la izquierda, mobile desde abajo-izquierda) para que el texto blanco cumpla AA sobre la foto; en mobile los beneficios se ocultan, como en Figma.
 
 ## 8. Recursos
 
 - `public/brand/`: símbolo, wordmark (oscuro y blanco), patrón del footer.
 - `public/icons/`: chevrons, check, calendario, editar, auto (tarjeta de resumen), paso atrás, teléfono, Facebook, categorías (`category-auto`, `moto-part-a/b`), beneficios (`benefit-*`) y coberturas (`coverage-*`). Se usan con `next/image` en su tamaño natural, sin alterar el SVG. El ancho y alto del `<Image>` deben ser enteros o coincidir con el tamaño renderizado (si no, Next avisa en consola).
 - `public/illustrations/`: ilustraciones de pantallas de estado (`hand-shield` en "Antes de pagar", `card-error` en pago rechazado). Igual que los íconos: `next/image` en su tamaño natural. Los íconos de los consejos de pago rechazado están en `public/icons/payment-*`.
-- `public/images/hero-banner.jpg`: foto del hero a 2x (2840×1200). Se sirve optimizada con `next/image` y `preload`; el velo violeta se aplica con CSS (no está en la foto).
+- `public/images/hero-banner.jpg`: foto del hero a 2x (2840×1200). Se sirve optimizada con `next/image` y `preload`; el velo se aplica con CSS (no está en la foto).
 - `preload` solo en imágenes visibles al cargar (logo del header, foto del hero). En Next 16 `priority` está deprecado.
 - Pendientes de exportar: ícono de menú mobile y manchas decorativas del fondo. Ver [PENDIENTES.md](PENDIENTES.md).
 

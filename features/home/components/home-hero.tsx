@@ -36,7 +36,7 @@ export function HomeHero() {
 // the driver in view, as in the Figma mobile frame.
 const PHOTO_POSITION = { objectPosition: "62% 50%" };
 
-/** Rounded wide panel with the hero photo and the violet veil behind the copy. */
+/** Rounded wide panel with the hero photo and the navy veil behind the copy. */
 export function HomeHeroBackdrop() {
   return (
     <div aria-hidden className="absolute inset-x-5 top-0 h-112.5 overflow-hidden rounded-panel bg-brand-900 lg:h-150">
@@ -49,8 +49,8 @@ export function HomeHeroBackdrop() {
         className="object-cover"
         style={PHOTO_POSITION}
       />
-      {/* Veil measured on the Figma exports: violet on the copy side, fading into the photo. */}
-      <div className="absolute inset-0 bg-linear-to-tr from-brand-500/85 via-brand-500/45 via-45% to-brand-900/20 lg:bg-linear-to-r lg:from-brand-500/85 lg:via-brand-500/45 lg:via-35% lg:to-transparent lg:to-60%" />
+      {/* The blue redesign drops the violet veil; a navy one keeps the white copy readable (AA) over the photo. */}
+      <div className="absolute inset-0 bg-linear-to-tr from-brand-900/80 via-brand-900/40 via-45% to-transparent lg:bg-linear-to-r lg:from-brand-900/70 lg:via-brand-900/30 lg:via-35% lg:to-transparent lg:to-60%" />
     </div>
   );
 }
