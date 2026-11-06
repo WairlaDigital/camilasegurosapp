@@ -66,7 +66,8 @@ export function SiteFooter() {
             <Logo tone="light" className="w-46 lg:w-40" />
           </div>
 
-          <div className="mt-20 grid gap-8 lg:mt-10 lg:grid-cols-4">
+          {/* Desktop: each column takes its content width (the email and the button do not wrap) and the free space goes between them. */}
+          <div className="mt-20 grid gap-8 lg:mt-10 lg:flex lg:justify-between">
             <div className="flex flex-col gap-4">
               <p>
                 <span className="font-bold">{site.legalName}</span>
@@ -94,7 +95,7 @@ export function SiteFooter() {
               <FooterColumn title="Atención al cliente" links={footerNav.support} />
               <Link
                 href={site.complaintsBook}
-                className={cn(buttonVariants({ variant: "secondary", size: "md" }), "text-body font-bold normal-case")}
+                className={cn(buttonVariants({ variant: "secondary", size: "md" }), "px-6 text-body font-bold whitespace-nowrap normal-case")}
               >
                 <Image src="/icons/book.svg" alt="" width={24} height={24} />
                 Libro de reclamaciones
