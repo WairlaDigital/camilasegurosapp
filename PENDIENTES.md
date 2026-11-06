@@ -41,7 +41,7 @@ El backend local ya no simula La Positiva: el `TEMP BYPASS` de `PositivaApiClien
 - [ ] **Respuestas de la FAQ.** Figma solo trae la primera; las otras 5 son textos provisionales en `features/home/content.ts`. Validarlas.
 - [x] **Llave pública de Culqi** de pruebas (`pk_test_…`) en el `.env.local` de la carpeta principal como `NEXT_PUBLIC_CULQI_PUBLIC_KEY` (2026-09-29). Es pública por diseño (va al navegador); la llave secreta vive solo en la API. Falta la de producción (`pk_live_…`) al desplegar. **Camila Seguros tendrá su propia cuenta de Culqi** (decidido 2026-11-05): su llave pública va aquí y su llave secreta en el registro del sitio en la API, y ambas deben ser de esa cuenta. Hasta que la API cobre por sitio, las pruebas usan la cuenta de pruebas de la API.
 - [x] **Logo, tipografía y colores**. Tomados de Figma (Red Hat Display, violeta `#4740de`).
-- [ ] **URLs del sitio**: menú (Seguros, Beneficios, Testimonios, Blog), Contáctanos, Términos y Condiciones, Facebook. Hoy son `#` en `lib/site.ts`.
+- [ ] **URLs del sitio**: menú (Seguros, Beneficios, Testimonios, Blog), Contáctanos, seguros del footer, Términos y Condiciones, Política de Privacidad, Anulaciones y Devoluciones y **Libro de reclamaciones** (obligatorio por Indecopi). Hoy son `#` en `lib/site.ts`.
 - [ ] **Textos legales**: URL de la Política de Privacidad y del Consentimiento de datos para usos adicionales.
 
 ## Pendiente con La Positiva (Fidel)
@@ -127,7 +127,7 @@ El backend local ya no simula La Positiva: el `TEMP BYPASS` de `PositivaApiClien
 
 - [ ] Verificar contra Figma el estado marcado del checkbox de consentimiento (no aparece en las capturas).
 - [ ] Confirmar si la etiqueta azul (`info`) del campo de fecha es intencional; hoy se unificó en `brand-500` (ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones)).
-- [ ] Footer mobile: Figma oculta el mapa de sitio, seguros y redes sociales (incluido "Términos y Condiciones"). Confirmar que es intencional.
+- [ ] **Footer** (diseño nuevo, 2026-11-05: contacto y "Atención al cliente"; sin redes sociales). A confirmar: razón social "Corporación **Camilla** S.A.C." (doble L, tal como el diseño), el 908 855 202 enlaza a WhatsApp y la dirección a Google Maps, títulos en `brand-200` y botón `secondary` en lugar del celeste del diseño (no es token y no llega a AA sobre `brand-900`), íconos dibujados a mano (cambiarlos por los de Figma si los exportan). En mobile se ocultan las columnas de enlaces (incluidos Términos y Privacidad) pero se muestran el contacto y el Libro de reclamaciones.
 - [ ] Selector de uso del home: antes de ingresar la placa queda deshabilitado ("Primero ingresa tu placa"); Figma no define ese estado.
 - [ ] Datos del vehículo, diferencias con Figma a confirmar: campo **Versión** agregado (el backend lo exige), **serie y VIN separados** (el backend exige ambos), la ayuda lateral no se muestra en mobile (como en Figma) y el título usa "tu" en vez de "su".
 - [ ] Cotización, diferencias con Figma a confirmar: "Editar" visible en mobile, ayuda bajo la fecha, estado "Elegido" de "LO QUIERO", sin campo de celular (se pide en el titular) y estado vacío sin plan (ver [DESIGN.md](DESIGN.md#7-diferencias-con-figma-decisiones)).
