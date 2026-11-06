@@ -96,7 +96,7 @@ El backend local ya no simula La Positiva: el `TEMP BYPASS` de `PositivaApiClien
 
 ## Front (este repo)
 
-- [ ] **La cookie de sesión queda al límite con el token de producción.** Guarda `quoteToken` de cada plan; con un token de ~680 caracteres se estima en ~3,8 KB de los 4 KB que acepta el navegador (con el token corto de QA, ~3 KB). Con más planes o datos largos el navegador descartaría la cookie y el flujo se rompería sin error visible. Opciones: guardar solo el token del plan elegido, o que el backend exponga un id corto de su `Quote` en lugar del token de La Positiva. Agregar una prueba con un token de producción.
+- [x] **La cookie de sesión no cabía con el token de producción** (2026-11-06). Guarda el `quoteToken` de cada plan; con el token de producción (~680 caracteres) y datos largos pesaba ~4,5 KB y el navegador la descarta sin aviso (límite 4 KB). Ahora se comprime antes de cifrarla (`features/quote/lib/sealed-cookie.ts`): ~2 KB. Una prueba con un token de producción falla si pasa del 60 % del límite, y `writeQuoteSession` registra un error si lo excede. Las cookies anteriores no se pueden abrir (hay que volver a cotizar). Si algún día sigue creciendo: que el backend exponga un id corto de su `Quote` en lugar del token.
 - [x] Design system desde Figma: tokens en `app/globals.css`, primitivas en `components/ui/`, header y footer en `components/layout/`.
 - [x] Pantalla de inicio: hero, formulario con detección de categoría por placa, filtro de usos por categoría, validación de documento (cliente y servidor); coberturas y FAQ. Verificada contra Figma en 430, 1100 y 1640 px.
 - [x] Envío del formulario de inicio conectado a `POST /query-info`; resultado en sesión cifrada; siempre sigue al titular (1/3).

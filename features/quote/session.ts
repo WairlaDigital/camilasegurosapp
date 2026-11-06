@@ -1,12 +1,12 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { env } from "@/lib/env";
+import { MAX_COOKIE_BYTES, openCookie, sealCookie } from "./lib/sealed-cookie";
 import { DOCUMENT_TYPE_KEYS, VEHICLE_USE_KEYS } from "./lib/vehicle-rules";
 
 // Quote state shared by the flow screens. It holds personal data (document,
-// email), so it is encrypted (AES-256-GCM), httpOnly and short-lived. Keeping it
+// email), so it is compressed and encrypted (AES-256-GCM), httpOnly and short-lived. Keeping it
 // avoids repeating POST /query-info, which creates a new quote on every call.
 
 const COOKIE_NAME = "cs_quote";
@@ -117,29 +117,9 @@ const sessionSchema = z.object({
 
 export type QuoteSession = z.infer<typeof sessionSchema>;
 
-const key = createHash("sha256").update(env.SESSION_SECRET).digest();
-
-function encrypt(value: string): string {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", key, iv);
-  const data = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
-  return Buffer.concat([iv, cipher.getAuthTag(), data]).toString("base64url");
-}
-
-function decrypt(token: string): string | null {
-  try {
-    const raw = Buffer.from(token, "base64url");
-    const decipher = createDecipheriv("aes-256-gcm", key, raw.subarray(0, 12));
-    decipher.setAuthTag(raw.subarray(12, 28));
-    return Buffer.concat([decipher.update(raw.subarray(28)), decipher.final()]).toString("utf8");
-  } catch {
-    return null; // tampered, expired secret or corrupted cookie
-  }
-}
-
 export async function readQuoteSession(): Promise<QuoteSession | null> {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
-  const json = token ? decrypt(token) : null;
+  const json = token ? openCookie(token, env.SESSION_SECRET) : null;
   if (!json) return null;
   try {
     const result = sessionSchema.safeParse(JSON.parse(json));
@@ -151,7 +131,12 @@ export async function readQuoteSession(): Promise<QuoteSession | null> {
 
 /** Only callable from Server Actions or Route Handlers (cookies are read-only while rendering). */
 export async function writeQuoteSession(session: QuoteSession): Promise<void> {
-  (await cookies()).set(COOKIE_NAME, encrypt(JSON.stringify(session)), {
+  const value = sealCookie(JSON.stringify(session), env.SESSION_SECRET);
+  if (COOKIE_NAME.length + 1 + value.length > MAX_COOKIE_BYTES) {
+    // The browser would drop it and the flow would lose its state without an error.
+    console.error(`writeQuoteSession: cookie of ${value.length} bytes exceeds ${MAX_COOKIE_BYTES}`);
+  }
+  (await cookies()).set(COOKIE_NAME, value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
