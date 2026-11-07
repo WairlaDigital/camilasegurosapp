@@ -54,7 +54,7 @@ Lineamientos de diseño del cotizador SOAT de seguroscamila.pe. Aplican a cualqu
 | `danger-soft` | `#fce4e4` | Fondo del aviso de pago rechazado |
 | `danger-strong` | `#b42318` | Texto sobre `danger-soft` (5.4:1; `danger` no llega a AA sobre ese fondo) |
 
-Línea gráfica azul desde noviembre de 2026 (Figma 891:58 y siguientes); el símbolo del logo sigue violeta (`#4740de`) sobre fondos claros y pasa a `brand-300` sobre el footer. Fondo de página blanco.
+Línea gráfica azul desde noviembre de 2026 (Figma 891:58 y siguientes); logo nuevo desde 2026-11-07 (Figma 1014:158): símbolo con degradado `brand-700`→`brand-500` y texto `brand-700`; en el footer, símbolo `brand-300` y texto blanco. El favicon sale del símbolo. Fondo de página blanco.
 
 Degradados: `bg-gradient-secondary` ("LO QUIERO") y `bg-gradient-plan` (brillo `brand-400` arriba al centro sobre `brand-700` en la tarjeta de plan). El botón principal es `brand-900` sólido.
 

@@ -7,31 +7,17 @@ type LogoProps = {
   className?: string;
 };
 
-// Figma "Layer_1" (160×53): symbol and wordmark are separate SVGs placed with these insets.
-const SYMBOL_BOX = { top: 0, right: "64.69%", bottom: "0.41%", left: 0 };
-const WORDMARK_BOX = { top: "9.33%", right: 0, bottom: "0.31%", left: "40.53%" };
-
+// Figma "Layer_1" (1014:158 header, 1014:934 footer), 169×62.
 export function Logo({ tone = "dark", className }: LogoProps) {
-  // Only the header logo (dark) is above the fold; the footer one loads lazily.
-  const preload = tone === "dark";
   return (
-    <span role="img" aria-label="Camila Seguros" className={cn("relative inline-block aspect-160/53 w-40", className)}>
-      <span className="absolute" style={SYMBOL_BOX}>
-        <Image
-          src={tone === "dark" ? "/brand/logo-symbol.svg" : "/brand/logo-symbol-light.svg"}
-          alt=""
-          fill
-          preload={preload}
-        />
-      </span>
-      <span className="absolute" style={WORDMARK_BOX}>
-        <Image
-          src={tone === "dark" ? "/brand/logo-wordmark.svg" : "/brand/logo-wordmark-white.svg"}
-          alt=""
-          fill
-          preload={preload}
-        />
-      </span>
-    </span>
+    <Image
+      src={tone === "dark" ? "/brand/logo.svg" : "/brand/logo-light.svg"}
+      alt="Camila Seguros"
+      width={169}
+      height={62}
+      // Only the header logo (dark) is above the fold; the footer one loads lazily.
+      preload={tone === "dark"}
+      className={cn("h-auto w-42.25", className)}
+    />
   );
 }

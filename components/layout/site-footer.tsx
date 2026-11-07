@@ -57,7 +57,7 @@ export function SiteFooter() {
         <div className="mx-auto max-w-content px-5 pt-12.5 pb-7.5 md:px-10 lg:pt-15 xl:px-0">
           {/* Mobile (Figma "Group 86"): centered logo, company data, contact, complaints book and copyright. */}
           <div className="flex justify-center lg:justify-start">
-            <Logo tone="light" className="w-46 lg:w-40" />
+            <Logo tone="light" className="w-46 lg:w-42.25" />
           </div>
 
           {/* Desktop: each column takes its content width (the email and the button do not wrap) and the free space goes between them. */}

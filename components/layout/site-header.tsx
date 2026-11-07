@@ -11,7 +11,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md">
       <Container className="flex h-18 items-center justify-between gap-6 lg:h-27.5">
         <Link href="/" className="shrink-0">
-          <Logo className="w-30 lg:w-40" />
+          <Logo className="w-32 lg:w-42.25" />
         </Link>
 
         <nav aria-label="Principal" className="hidden items-center gap-8 lg:flex">
