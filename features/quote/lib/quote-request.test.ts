@@ -14,6 +14,8 @@ const types: VehicleTypeOption[] = [
   { id: 25, name: "Camioneta hasta 7 asientos", uses: [PARTICULAR, TAXI] },
   { id: 27, name: "Camioneta de 8 asientos", uses: [PARTICULAR, TAXI] },
   { id: 8, name: "Minivan (9 a 16 asientos)", uses: [PARTICULAR] },
+  { id: 34, name: "Cmta. Pick Up/Doble Cabina", uses: [CARGA, PARTICULAR] },
+  { id: 35, name: "Cmta. Pick Up/Cabina Simple", uses: [CARGA, PARTICULAR] },
 ];
 
 const registration = (classId: number, extra: Partial<PlateRegistration> = {}): PlateRegistration => ({
@@ -29,6 +31,8 @@ describe("catalogTypeForClass", () => {
     expect(catalogTypeForClass(33, 5)).toBe(25);
     expect(catalogTypeForClass(33, 8)).toBe(27);
     expect(catalogTypeForClass(33)).toBe(25); // seats unknown: the vehicle form shows it
+    expect(catalogTypeForClass(3)).toBe(35); // Pick Up/Cabina Simple
+    expect(catalogTypeForClass(16)).toBe(34); // Pick Up/Doble Cabina (not the catalog's type 16, Motocarga)
     expect(catalogTypeForClass(20)).toBe(3); // Microbús
     expect(catalogTypeForClass(34)).toBe(8); // Camioneta rural mayor de 9 asientos → Minivan
     expect(catalogTypeForClass(99)).toBeNull();
@@ -40,6 +44,12 @@ describe("quoteRequestFor", () => {
     expect(quoteRequestFor({ ...base, registration: registration(25) })).toEqual({ ok: true, typeId: 2, useId: 5 });
     // A registered mototaxi stays a Mototaxi whatever the use (Particular used to fall back to Motocicleta).
     expect(quoteRequestFor({ ...base, use: "taxi", registration: registration(25) })).toEqual({ ok: true, typeId: 2, useId: 1 });
+    // Production BKD-931 (TOYOTA HILUX): class 16 is a double-cab pickup, not the default Automóvil.
+    expect(quoteRequestFor({ ...base, category: "auto", registration: registration(16, { seats: 3 }) })).toEqual({
+      ok: true,
+      typeId: 34,
+      useId: 5,
+    });
     // Production AVL-443 (BAIC GRAND PLUS): class 34 is a minivan, not a microbús nor the default Automóvil.
     expect(quoteRequestFor({ ...base, category: "auto", registration: registration(34, { seats: 0 }) })).toEqual({
       ok: true,

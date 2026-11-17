@@ -77,8 +77,12 @@ export function catalogTypeForClass(classId: number, seats?: number): number | n
       return 1; // Automóvil
     case 2:
       return 9; // Station wagon
+    case 3:
+      return 35; // Cmta. Pick Up/Cabina Simple (by name; no plate checked yet)
     case 10:
       return 10; // Motocicleta
+    case 16:
+      return 34; // Cmta. Pick Up/Doble Cabina (checked with BKD-931)
     case 25:
       return 2; // Mototaxi
     case 33:
