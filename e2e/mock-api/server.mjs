@@ -72,7 +72,8 @@ const REGISTRY = {
   MOD503: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: null },
   MOT123: { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, seats: 2 },
   CAM777: { category: CAR, class: { id: 33, name: "CAMIONETA" }, seats: 5 },
-  "4321AB": { category: { id: 5, name: "L5" }, class: { id: 25, name: "MOTOTAXI" }, seats: 3 },
+  // Production shape (mototaxi 7845-IA): class without a name and no category.
+  "4321AB": { category: { id: null, name: "-" }, class: { id: 25, name: null }, seats: 3 },
   "5555AB": { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, seats: 2 },
 };
 const COMPLETE = ["ABC123", "AFO123", "MOT123", "CAM777", "4321AB", "5555AB"];

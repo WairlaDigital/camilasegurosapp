@@ -83,8 +83,10 @@ export function catalogTypeForClass(classId: number, seats?: number): number | n
       return 2; // Mototaxi
     case 33:
       return seats === 8 ? 27 : 25; // Camioneta de 8 asientos / hasta 7 asientos
+    case 20:
+      return 3; // Microbús (19 a 35 asientos)
     case 34:
-      return 3; // Microbús
+      return 8; // Minivan (9 a 16 asientos): La Positiva's "Camioneta rural mayor de 9 asientos"
     default:
       return null;
   }

@@ -13,10 +13,11 @@ const types: VehicleTypeOption[] = [
   { id: 16, name: "Motocarga", uses: [CARGA] },
   { id: 25, name: "Camioneta hasta 7 asientos", uses: [PARTICULAR, TAXI] },
   { id: 27, name: "Camioneta de 8 asientos", uses: [PARTICULAR, TAXI] },
+  { id: 8, name: "Minivan (9 a 16 asientos)", uses: [PARTICULAR] },
 ];
 
 const registration = (classId: number, extra: Partial<PlateRegistration> = {}): PlateRegistration => ({
-  vehicleClass: { id: classId, name: `Clase ${classId}` },
+  vehicleClassId: classId,
   ...extra,
 });
 const base = { category: "moto", use: "particular", documentType: "DNI", registration: null, types } as const;
@@ -28,6 +29,8 @@ describe("catalogTypeForClass", () => {
     expect(catalogTypeForClass(33, 5)).toBe(25);
     expect(catalogTypeForClass(33, 8)).toBe(27);
     expect(catalogTypeForClass(33)).toBe(25); // seats unknown: the vehicle form shows it
+    expect(catalogTypeForClass(20)).toBe(3); // Microbús
+    expect(catalogTypeForClass(34)).toBe(8); // Camioneta rural mayor de 9 asientos → Minivan
     expect(catalogTypeForClass(99)).toBeNull();
   });
 });
@@ -35,6 +38,20 @@ describe("catalogTypeForClass", () => {
 describe("quoteRequestFor", () => {
   it("quotes with the registered type instead of the category's default", () => {
     expect(quoteRequestFor({ ...base, registration: registration(25) })).toEqual({ ok: true, typeId: 2, useId: 5 });
+    // A registered mototaxi stays a Mototaxi whatever the use (Particular used to fall back to Motocicleta).
+    expect(quoteRequestFor({ ...base, use: "taxi", registration: registration(25) })).toEqual({ ok: true, typeId: 2, useId: 1 });
+    // Production AVL-443 (BAIC GRAND PLUS): class 34 is a minivan, not a microbús nor the default Automóvil.
+    expect(quoteRequestFor({ ...base, category: "auto", registration: registration(34, { seats: 0 }) })).toEqual({
+      ok: true,
+      typeId: 8,
+      useId: 5,
+    });
+    // Production camioneta rural F3U-390: class 33 with seats 0 (unknown) is a camioneta, not the default Automóvil.
+    expect(quoteRequestFor({ ...base, category: "auto", registration: registration(33, { seats: 0 }) })).toEqual({
+      ok: true,
+      typeId: 25,
+      useId: 5,
+    });
     expect(quoteRequestFor({ ...base, category: "auto", registration: registration(33, { seats: 8 }) })).toEqual({
       ok: true,
       typeId: 27,

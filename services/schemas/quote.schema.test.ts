@@ -159,13 +159,31 @@ describe("toPlateRegistration (POST /query-plate)", () => {
     });
     expect(toPlateRegistration(data)).toEqual({
       category: "moto",
-      vehicleClass: { id: 25, name: "MOTOTAXI" },
+      vehicleClassId: 25,
       seats: 3,
     });
   });
 
   it("leaves out a class the lookup did not return", () => {
     const data = plateLookupResponseSchema.parse({ data: { plate: "ABC-123", type: { positiva: { id: 0, name: null } } } });
-    expect(toPlateRegistration(data)).toEqual({ category: undefined, vehicleClass: undefined, seats: undefined });
+    expect(toPlateRegistration(data)).toEqual({ category: undefined, vehicleClassId: undefined, seats: undefined });
+  });
+
+  // Real production response for the mototaxi 7845-IA: class without a name, no category.
+  it("keeps a class that comes without a name, as production sends it", () => {
+    const data = plateLookupResponseSchema.parse({
+      data: {
+        plate: "7845-IA",
+        year: 2019,
+        seats: 0,
+        category: { positiva: { id: null, name: "-" } },
+        type: { positiva: { id: 25, name: null } },
+        use: { positiva: { id: 1, name: "Particular" } },
+        brand: { id: 163, name: "BAJAJ", positiva: { id: 6091, name: "BAJAJ" } },
+        model: { positiva: { id: 1019106, name: "AUTORIKSHA" } },
+        version: { positiva: { id: 10023678, name: "SIN VERSION" } },
+      },
+    });
+    expect(toPlateRegistration(data)).toEqual({ category: undefined, vehicleClassId: 25, seats: 0 });
   });
 });

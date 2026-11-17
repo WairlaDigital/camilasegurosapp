@@ -26,8 +26,8 @@ export type VehicleData = {
 /** What the vehicle registration says (plate lookup, POST /query-plate). */
 export type PlateRegistration = {
   category?: VehicleCategory;
-  /** La Positiva vehicle class (IdClase), e.g. 10 = Motocicleta. */
-  vehicleClass?: Option;
+  /** La Positiva vehicle class (IdClase), e.g. 25 = Mototaxi. Production sends it without a name. */
+  vehicleClassId?: number;
   seats?: number;
 };
 

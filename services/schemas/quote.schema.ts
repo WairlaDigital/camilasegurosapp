@@ -163,11 +163,11 @@ export function isVehicleComplete(vehicle: VehicleData | null): boolean {
 /** Registration data used to pick the catalog type before quoting. */
 export function toPlateRegistration(data: z.infer<typeof plateLookupResponseSchema>): PlateRegistration {
   const vehicle = data.data;
+  // Only the id matters: production returns the class with `name: null`.
   const classId = Number(vehicle.type?.positiva?.id);
-  const className = vehicle.type?.positiva?.name;
   return {
     category: registeredCategory(vehicle.category),
-    vehicleClass: classId > 0 && className ? { id: classId, name: className } : undefined,
+    vehicleClassId: Number.isInteger(classId) && classId > 0 ? classId : undefined,
     seats: optional(vehicle.seats),
   };
 }

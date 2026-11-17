@@ -39,8 +39,8 @@ export function quoteRequestFor({ category, use, documentType, registration, typ
     return { ok: false, message: CATEGORY_MISMATCH[category] };
   }
 
-  const typeId = registration?.vehicleClass
-    ? catalogTypeForClass(registration.vehicleClass.id, registration.seats)
+  const typeId = registration?.vehicleClassId
+    ? catalogTypeForClass(registration.vehicleClassId, registration.seats)
     : null;
   const type = types.find((option) => option.id === typeId);
 
