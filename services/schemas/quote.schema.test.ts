@@ -148,42 +148,38 @@ describe("isVehicleComplete", () => {
 });
 
 describe("toPlateRegistration (POST /query-plate)", () => {
-  it("reads the registration category, the La Positiva class and the seats", () => {
+  it("reads the registration category and the catalog type the backend matched", () => {
     const data = plateLookupResponseSchema.parse({
       data: {
         plate: "4321-AB",
         seats: 3,
         category: { positiva: { id: 5, name: "L5" } },
-        type: { positiva: { id: 25, name: "MOTOTAXI" } },
+        type: { id: 2, order: 2, name: "Mototaxi", positiva: { id: 25, name: "MOTOTAXI" } },
       },
     });
-    expect(toPlateRegistration(data)).toEqual({
-      category: "moto",
-      vehicleClassId: 25,
-      seats: 3,
-    });
+    expect(toPlateRegistration(data)).toEqual({ category: "moto", typeId: 2 });
   });
 
-  it("leaves out a class the lookup did not return", () => {
-    const data = plateLookupResponseSchema.parse({ data: { plate: "ABC-123", type: { positiva: { id: 0, name: null } } } });
-    expect(toPlateRegistration(data)).toEqual({ category: undefined, vehicleClassId: undefined, seats: undefined });
+  it("has no type when the class has none in the catalog (only `type.positiva`)", () => {
+    const data = plateLookupResponseSchema.parse({ data: { plate: "ABC-123", type: { positiva: { id: 7, name: null } } } });
+    expect(toPlateRegistration(data)).toEqual({ category: undefined, typeId: undefined });
   });
 
-  // Real production response for the mototaxi 7845-IA: class without a name, no category.
-  it("keeps a class that comes without a name, as production sends it", () => {
+  // Production shape for the mototaxi 7845-IA: class without a name, no category.
+  it("reads the type when production sends the class and category without names", () => {
     const data = plateLookupResponseSchema.parse({
       data: {
         plate: "7845-IA",
         year: 2019,
         seats: 0,
         category: { positiva: { id: null, name: "-" } },
-        type: { positiva: { id: 25, name: null } },
+        type: { id: 2, order: 2, name: "Mototaxi", positiva: { id: 25, name: "Mototaxi" } },
         use: { positiva: { id: 1, name: "Particular" } },
         brand: { id: 163, name: "BAJAJ", positiva: { id: 6091, name: "BAJAJ" } },
         model: { positiva: { id: 1019106, name: "AUTORIKSHA" } },
         version: { positiva: { id: 10023678, name: "SIN VERSION" } },
       },
     });
-    expect(toPlateRegistration(data)).toEqual({ category: undefined, vehicleClassId: 25, seats: 0 });
+    expect(toPlateRegistration(data)).toEqual({ category: undefined, typeId: 2 });
   });
 });

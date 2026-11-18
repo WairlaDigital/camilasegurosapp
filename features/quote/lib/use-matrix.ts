@@ -64,34 +64,3 @@ export function allowedUses(type: VehicleTypeOption, documentType: DocumentType)
   const ids = keys.map((key) => VEHICLE_USES[key].apiId).filter((id) => id !== null);
   return type.uses.filter((use) => ids.some((id) => id === use.id));
 }
-
-/**
- * Catalog type for a La Positiva vehicle class from the plate lookup (the
- * `positiva_id` of each GET /data type, which the endpoint does not expose).
- * Class 33 covers both camionetas: the seats decide. Null for classes with no
- * catalog type (the quote then uses the default type of the category).
- */
-export function catalogTypeForClass(classId: number, seats?: number): number | null {
-  switch (classId) {
-    case 1:
-      return 1; // Automóvil
-    case 2:
-      return 9; // Station wagon
-    case 3:
-      return 35; // Cmta. Pick Up/Cabina Simple (by name; no plate checked yet)
-    case 10:
-      return 10; // Motocicleta
-    case 16:
-      return 34; // Cmta. Pick Up/Doble Cabina (checked with BKD-931)
-    case 25:
-      return 2; // Mototaxi
-    case 33:
-      return seats === 8 ? 27 : 25; // Camioneta de 8 asientos / hasta 7 asientos
-    case 20:
-      return 3; // Microbús (19 a 35 asientos)
-    case 34:
-      return 8; // Minivan (9 a 16 asientos): La Positiva's "Camioneta rural mayor de 9 asientos"
-    default:
-      return null;
-  }
-}

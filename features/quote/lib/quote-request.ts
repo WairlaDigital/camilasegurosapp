@@ -1,6 +1,6 @@
 import type { PlateRegistration, VehicleCategory, VehicleTypeOption } from "@/types/quote";
 import { noUseMessage } from "../vehicle-schema";
-import { allowedUses, catalogTypeForClass, typeCategory } from "./use-matrix";
+import { allowedUses, typeCategory } from "./use-matrix";
 import { defaultQuoteRequest, VEHICLE_USES, type DocumentType, type VehicleUse } from "./vehicle-rules";
 
 export const NOT_ONLINE = "Por ahora no podemos cotizar en línea este tipo de uso. Escríbenos y te ayudamos.";
@@ -26,8 +26,8 @@ type QuoteRequestInput = {
 };
 
 /**
- * Type and use to quote the home form with. The registration's class gives the
- * real catalog type (a mototaxi is not quoted as a Motocicleta); the use must be
+ * Type and use to quote the home form with. The backend matches the registered
+ * class to the real catalog type (a mototaxi is not quoted as a Motocicleta); the use must be
  * allowed for it (spec section 2 and 4.2). Without registration data, the
  * category's default type is used and the vehicle form lets the person fix it.
  */
@@ -39,10 +39,7 @@ export function quoteRequestFor({ category, use, documentType, registration, typ
     return { ok: false, message: CATEGORY_MISMATCH[category] };
   }
 
-  const typeId = registration?.vehicleClassId
-    ? catalogTypeForClass(registration.vehicleClassId, registration.seats)
-    : null;
-  const type = types.find((option) => option.id === typeId);
+  const type = types.find((option) => option.id === registration?.typeId);
 
   if (type) {
     if (typeCategory(type.id) !== category) return { ok: false, message: CATEGORY_MISMATCH[category] };

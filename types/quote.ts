@@ -26,9 +26,11 @@ export type VehicleData = {
 /** What the vehicle registration says (plate lookup, POST /query-plate). */
 export type PlateRegistration = {
   category?: VehicleCategory;
-  /** La Positiva vehicle class (IdClase), e.g. 25 = Mototaxi. Production sends it without a name. */
-  vehicleClassId?: number;
-  seats?: number;
+  /**
+   * Catalog type (GET /data id) the backend matched to the registered La Positiva
+   * class, using the seats when a class has several types (e.g. 25 → Mototaxi).
+   */
+  typeId?: number;
 };
 
 /** The document holder as the API returns it (RENIEC for DNI/CE, SUNAT for RUC). */

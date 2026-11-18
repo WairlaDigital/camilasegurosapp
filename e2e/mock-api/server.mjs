@@ -65,20 +65,29 @@ const plate = (value) => String(value ?? "").toUpperCase().replace(/-/g, "");
 // What the vehicle registration says (La Positiva's plate lookup): MTC category
 // (L* motos, M* cars) and vehicle class (IdClase). Used by /query-plate and /query-info.
 const CAR = { id: 6, name: "M1" };
+// `typeId` is the catalog type the backend matches to the class (by seats when a
+// class has several types); /query-plate returns it as `type.id`.
 const REGISTRY = {
-  ABC123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: 5 },
-  AFO123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: 5 },
-  AEF710: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: null },
-  MOD503: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, seats: null },
-  MOT123: { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, seats: 2 },
-  CAM777: { category: CAR, class: { id: 33, name: "CAMIONETA" }, seats: 5 },
+  ABC123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, typeId: 1, seats: 5 },
+  AFO123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, typeId: 1, seats: 5 },
+  AEF710: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, typeId: 1, seats: null },
+  MOD503: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, typeId: 1, seats: null },
+  MOT123: { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, typeId: 10, seats: 2 },
+  CAM777: { category: CAR, class: { id: 33, name: "CAMIONETA" }, typeId: 25, seats: 5 },
   // Production shape (mototaxi 7845-IA): class without a name and no category.
-  "4321AB": { category: { id: null, name: "-" }, class: { id: 25, name: null }, seats: 3 },
-  "5555AB": { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, seats: 2 },
+  "4321AB": { category: { id: null, name: "-" }, class: { id: 25, name: null }, typeId: 2, seats: 3 },
+  "5555AB": { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, typeId: 10, seats: 2 },
 };
 const COMPLETE = ["ABC123", "AFO123", "MOT123", "CAM777", "4321AB", "5555AB"];
 // The backend merges our local type/category with the lookup's (positiva) values.
 const categoryOf = (key) => merged(CAR, REGISTRY[key]?.category ?? CAR);
+// The backend sends the matched local type (without its uses) and the class name
+// falls back to the type's when La Positiva sends none.
+function typeOf(registry) {
+  const type = types.find((option) => option.id === registry.typeId);
+  if (!type) return { positiva: registry.class };
+  return { id: type.id, order: type.order, name: type.name, positiva: { id: registry.class.id, name: registry.class.name ?? type.name } };
+}
 
 function vehicleFor(body) {
   const manual = body.brand_id != null;
@@ -233,7 +242,7 @@ const server = createServer(async (req, res) => {
         plate: String(body.plate).toUpperCase(),
         seats: registry.seats,
         category: { positiva: registry.category },
-        type: { positiva: registry.class },
+        type: typeOf(registry),
       },
     });
   }
