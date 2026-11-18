@@ -143,6 +143,16 @@ test("a complete camioneta is quoted as a camioneta, not as the default Automóv
   await expect(page.getByText("Camioneta hasta 7 asientos")).toBeVisible();
 });
 
+test("a registered pickup can be quoted with Carga (auto + Carga has no default type)", async ({ page }) => {
+  await openQuote(page, "PIK-123", { use: "carga" });
+  await expect(page.getByText("Cmta. Pick Up/Doble Cabina")).toBeVisible();
+});
+
+test("auto + Carga without a registered type still cannot be quoted online", async ({ page }) => {
+  await submitHome(page, "ZZZ-999", { use: "carga" });
+  await expect(page.getByText("Por ahora no podemos cotizar en línea este tipo de uso.", { exact: false })).toBeVisible();
+});
+
 test("a complete mototaxi is quoted as a mototaxi, not as the default Motocicleta", async ({ page }) => {
   await openQuote(page, "4321-AB");
   await expect(page.getByText("Mototaxi", { exact: true })).toBeVisible();

@@ -31,7 +31,15 @@ export type PlateRegistration = {
    * class, using the seats when a class has several types (e.g. 25 → Mototaxi).
    */
   typeId?: number;
+  /**
+   * When the class has several types by seats (e.g. camioneta hasta 7 / de 8
+   * asientos): all of them, by order, so the seats entered later pick the type.
+   */
+  typesBySeats?: SeatTypeOption[];
 };
+
+/** A catalog type and the seats it covers (no bound = no limit). */
+export type SeatTypeOption = { id: number; name: string; minSeats?: number; maxSeats?: number };
 
 /** The document holder as the API returns it (RENIEC for DNI/CE, SUNAT for RUC). */
 export type Holder = {

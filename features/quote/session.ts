@@ -59,6 +59,15 @@ const sessionSchema = z.object({
    * locked on the vehicle step; `result.vehicle` may later hold what the person completed.
    */
   vehicleLookup: vehicleSchema.nullable(),
+  /**
+   * Types of the registered class by seats, when it has several and the quote
+   * uses one of them: the seats entered on the vehicle step pick the type.
+   */
+  typesBySeats: z
+    .array(
+      z.object({ id: z.number(), name: z.string(), minSeats: z.number().optional(), maxSeats: z.number().optional() }),
+    )
+    .optional(),
   result: z.object({
     vehicle: vehicleSchema.nullable(),
     holder: z

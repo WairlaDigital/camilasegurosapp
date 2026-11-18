@@ -1,5 +1,6 @@
 import { z } from "zod";
-import type { VehicleData, VehicleTypeOption } from "@/types/quote";
+import type { SeatTypeOption, VehicleData, VehicleTypeOption } from "@/types/quote";
+import { typeIdForSeats } from "./lib/seat-types";
 import { allowedUses, isRucMotoLineal } from "./lib/use-matrix";
 import type { DocumentType } from "./lib/vehicle-rules";
 
@@ -74,6 +75,21 @@ export function lockedVehicleFields(
   if (lookup.serial) locked.serial = lookup.serial;
   if (lookup.vin) locked.vin = lookup.vin;
   return locked;
+}
+
+/**
+ * When the plate lookup had no seats and the class has several types by seats
+ * (camioneta hasta 7 / de 8 asientos), the seats the person enters pick the type.
+ * Otherwise the quoted type stays.
+ */
+export function lockedForSeats(
+  locked: LockedVehicleFields,
+  typesBySeats: readonly SeatTypeOption[] | undefined,
+  seats: unknown,
+): LockedVehicleFields {
+  if (locked.seats || !typesBySeats?.length || typeof seats !== "string") return locked;
+  const typeId = typeIdForSeats(typesBySeats, Number(seats));
+  return typeId === null ? locked : { ...locked, typeId: String(typeId) };
 }
 
 type VehicleRules = {

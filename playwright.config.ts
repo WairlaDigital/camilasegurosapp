@@ -35,7 +35,9 @@ export default defineConfig({
       env: { MOCK_API_PORT: String(MOCK_API_PORT), MOCK_API_TOKEN: "test-token" },
     },
     {
-      command: `npm run build && npm run start -- --port ${PORT}`,
+      // The fetch cache survives builds (GET /data is cached for a day): clear it so
+      // the app sees the fake API as it is now, not as it was on an earlier run.
+      command: `node -e "require('fs').rmSync('.next/cache/fetch-cache',{recursive:true,force:true})" && npm run build && npm run start -- --port ${PORT}`,
       url: baseURL,
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,

@@ -71,6 +71,28 @@ test("an incomplete vehicle locks what the lookup returned and asks for the rest
   await expect(page.getByRole("heading", { name: "HYUNDAI H1 2016" })).toBeVisible();
 });
 
+test("without seats in the lookup, the seats entered pick the camioneta type", async ({ page }) => {
+  await openVehicleForm(page, "CAM-000");
+  const f = vehicleForm(page);
+
+  // The backend picked the first type of class 33; the seats decide it here.
+  await expect(f.type).toHaveValue("CAMIONETA HASTA 7 ASIENTOS");
+  await expect(page.getByText("Depende del número de asientos.")).toBeVisible();
+  await f.seats.fill("8");
+  await expect(f.type).toHaveValue("CAMIONETA DE 8 ASIENTOS");
+  await f.seats.fill("5");
+  await expect(f.type).toHaveValue("CAMIONETA HASTA 7 ASIENTOS");
+
+  await f.version.selectOption("10009000");
+  await f.seats.fill("8");
+  await f.serial.fill("kmhnrc87kdj");
+  await f.vin.fill("kmhnrc87kdjhhsi87");
+  await f.submit.click();
+
+  await expect(page).toHaveURL(/\/cotizar\/cotizacion$/);
+  await expect(page.getByText("Camioneta de 8 asientos")).toBeVisible();
+});
+
 test("when La Positiva's model list is down the step still opens and says so", async ({ page }) => {
   await openVehicleForm(page, "MOD-503"); // brand from the lookup, no model; the model list answers 503
 

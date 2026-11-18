@@ -44,8 +44,24 @@ const planSchema = z.object({
   features: z.array(z.object({ name: z.string(), status: z.boolean() })).nullish(),
 });
 
+// /query-plate adds the types of the registered class with their seat ranges.
+const seatTypeSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  min_seats: z.number().nullish(),
+  max_seats: z.number().nullish(),
+});
+const plateTypeSchema = z
+  .object({
+    id: idSchema.nullish(),
+    name: z.string().nullish(),
+    positiva: positivaSchema.nullish(),
+    options: z.array(seatTypeSchema).nullish(),
+  })
+  .nullish();
+
 /** POST /query-plate: the plate lookup alone (no quote), wrapped by Laravel in `data`. */
-export const plateLookupResponseSchema = z.object({ data: vehicleSchema });
+export const plateLookupResponseSchema = z.object({ data: vehicleSchema.extend({ type: plateTypeSchema }) });
 
 export const queryInfoResponseSchema = z.object({
   document: documentSchema.optional(),
@@ -166,8 +182,18 @@ export function toPlateRegistration(data: z.infer<typeof plateLookupResponseSche
   // `type.id` is the backend's own type for the registered class; `type.positiva`
   // alone (no id) means the class has no type in the catalog.
   const typeId = Number(vehicle.type?.id);
+  const options = vehicle.type?.options ?? [];
   return {
     category: registeredCategory(vehicle.category),
     typeId: Number.isInteger(typeId) && typeId > 0 ? typeId : undefined,
+    typesBySeats:
+      options.length > 1
+        ? options.map((option) => ({
+            id: option.id,
+            name: option.name,
+            minSeats: optional(option.min_seats),
+            maxSeats: optional(option.max_seats),
+          }))
+        : undefined,
   };
 }

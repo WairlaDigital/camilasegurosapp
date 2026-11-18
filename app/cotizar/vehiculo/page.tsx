@@ -51,6 +51,7 @@ export default async function VehiclePage() {
           documentType={session.input.documentType}
           initial={vehicle}
           locked={locked}
+          typesBySeats={locked.seats ? undefined : session.typesBySeats}
           initialModels={models}
           initialVersions={versions}
         />

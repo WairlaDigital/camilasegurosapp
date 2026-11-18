@@ -157,12 +157,39 @@ describe("toPlateRegistration (POST /query-plate)", () => {
         type: { id: 2, order: 2, name: "Mototaxi", positiva: { id: 25, name: "MOTOTAXI" } },
       },
     });
-    expect(toPlateRegistration(data)).toEqual({ category: "moto", typeId: 2 });
+    expect(toPlateRegistration(data)).toEqual({ category: "moto", typeId: 2, typesBySeats: undefined });
+  });
+
+  it("lists the types by seats when the class has several", () => {
+    const data = plateLookupResponseSchema.parse({
+      data: {
+        plate: "F3U-390",
+        seats: 0,
+        type: {
+          id: 25,
+          order: 3,
+          name: "Camioneta hasta 7 asientos",
+          positiva: { id: 33, name: "Camioneta hasta 7 asientos" },
+          options: [
+            { id: 25, name: "Camioneta hasta 7 asientos", min_seats: null, max_seats: 7 },
+            { id: 27, name: "Camioneta de 8 asientos", min_seats: 8, max_seats: null },
+          ],
+        },
+      },
+    });
+    expect(toPlateRegistration(data)).toEqual({
+      category: undefined,
+      typeId: 25,
+      typesBySeats: [
+        { id: 25, name: "Camioneta hasta 7 asientos", minSeats: undefined, maxSeats: 7 },
+        { id: 27, name: "Camioneta de 8 asientos", minSeats: 8, maxSeats: undefined },
+      ],
+    });
   });
 
   it("has no type when the class has none in the catalog (only `type.positiva`)", () => {
     const data = plateLookupResponseSchema.parse({ data: { plate: "ABC-123", type: { positiva: { id: 7, name: null } } } });
-    expect(toPlateRegistration(data)).toEqual({ category: undefined, typeId: undefined });
+    expect(toPlateRegistration(data)).toEqual({ category: undefined, typeId: undefined, typesBySeats: undefined });
   });
 
   // Production shape for the mototaxi 7845-IA: class without a name, no category.
@@ -180,6 +207,6 @@ describe("toPlateRegistration (POST /query-plate)", () => {
         version: { positiva: { id: 10023678, name: "SIN VERSION" } },
       },
     });
-    expect(toPlateRegistration(data)).toEqual({ category: undefined, typeId: 2 });
+    expect(toPlateRegistration(data)).toEqual({ category: undefined, typeId: 2, typesBySeats: undefined });
   });
 });

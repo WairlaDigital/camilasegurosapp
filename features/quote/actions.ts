@@ -10,7 +10,7 @@ import { todayInLima } from "./lib/dates";
 import { limitStartQuote, TOO_MANY_REQUESTS } from "./lib/limits";
 import { detectCategory } from "./lib/plate";
 import { CATEGORY_MISMATCH, NOT_ONLINE, quoteRequestFor } from "./lib/quote-request";
-import { DEFAULT_UBIGEO_ID, DOCUMENT_TYPES, defaultQuoteRequest } from "./lib/vehicle-rules";
+import { DEFAULT_UBIGEO_ID, DOCUMENT_TYPES, VEHICLE_USES } from "./lib/vehicle-rules";
 import { parseStartQuote, type FieldErrors } from "./schema";
 import { writeQuoteSession } from "./session";
 
@@ -31,8 +31,11 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
   if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
   const input = parsed.data;
 
+  // A use without an API id (Comercial) cannot be quoted whatever the vehicle. Any
+  // other use waits for the plate lookup: auto + Carga has no default type, but a
+  // registered pickup or truck brings its own (quoteRequestFor).
   const category = detectCategory(input.plate);
-  if (!category || !defaultQuoteRequest(category, input.use)) return { status: "failed", message: NOT_ONLINE };
+  if (!category || VEHICLE_USES[input.use].apiId === null) return { status: "failed", message: NOT_ONLINE };
 
   if (!limitStartQuote(clientIp(await headers())).ok) return { status: "failed", message: TOO_MANY_REQUESTS };
 
@@ -91,10 +94,12 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
     return { status: "failed", message: CATEGORY_MISMATCH[category] };
   }
 
+  const typesBySeats = registration?.typesBySeats;
   await writeQuoteSession({
     input,
     request: { ...request, ubigeoId: DEFAULT_UBIGEO_ID, startDate },
     vehicleLookup: result.vehicle,
+    typesBySeats: typesBySeats?.some((type) => type.id === request.typeId) ? typesBySeats : undefined,
     result,
   });
 

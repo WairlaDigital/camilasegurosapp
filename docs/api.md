@@ -44,7 +44,7 @@ Respuesta: `{ data: [{ id, name }] }`. `503 { error }` si La Positiva no respond
 ### `POST /query-plate`
 Datos del vehículo por placa. Body: `{ plate }`.
 Respuesta: `{ data: VehicleInfo }` · `404 { error }` si no hay información.
-`type` trae el tipo del catálogo que corresponde a la clase registrada (`{ id, order, name, positiva: { id: IdClase, name } }`): el backend busca los tipos con ese `positiva_id` y, si hay varios (clase 33: hasta 7 y de 8 asientos), elige el que tiene en su rango (`min_seats`/`max_seats`) los asientos de la placa; con asientos desconocidos (0) o sin rango que coincida, el primero por orden. Sin tipo para la clase, `type` solo trae `positiva`. Solo en este endpoint: `/query-info` responde con el `type_id` que se le envía.
+`type` trae el tipo del catálogo que corresponde a la clase registrada (`{ id, order, name, positiva: { id: IdClase, name } }`): el backend busca los tipos con ese `positiva_id` y, si hay varios (clase 33: hasta 7 y de 8 asientos), elige el que tiene en su rango (`min_seats`/`max_seats`) los asientos de la placa; con asientos desconocidos (0) o sin rango que coincida, el primero por orden. Si la clase tiene varios tipos, `type.options` los lista por orden (`{ id, name, min_seats, max_seats }`) para que el paso 2/3 elija según los asientos que escriba la persona. Sin tipo para la clase, `type` solo trae `positiva`. Solo en este endpoint: `/query-info` responde con el `type_id` que se le envía.
 
 ### `POST /query-info` — cotización
 Devuelve titular, vehículo y planes con precio.

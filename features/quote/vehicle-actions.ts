@@ -10,7 +10,7 @@ import { detectCategory } from "./lib/plate";
 import { typesForCategory } from "./lib/use-matrix";
 import { DOCUMENT_TYPES } from "./lib/vehicle-rules";
 import { readQuoteSession, writeQuoteSession, type QuoteSession } from "./session";
-import { lockedVehicleFields, parseVehicleForm, type VehicleFieldErrors, type VehicleFormValues } from "./vehicle-schema";
+import { lockedForSeats, lockedVehicleFields, parseVehicleForm, type VehicleFieldErrors, type VehicleFormValues } from "./vehicle-schema";
 
 export type SaveVehicleState =
   | { status: "idle" }
@@ -35,7 +35,8 @@ function sameAsQuoted(vehicle: VehicleFormValues, session: QuoteSession): boolea
 }
 
 /**
- * Vehicle data form submit (step 2/3). Type and use stay those of the quote. When
+ * Vehicle data form submit (step 2/3). Type and use stay those of the quote (except
+ * a type picked by the seats the person entered, see `lockedForSeats`). When
  * the person completed data the plate lookup lacked, it quotes again with the
  * manual data (POST /query-info), since La Positiva cannot quote without it;
  * otherwise the current quote stays. Then it moves to the quote screen.
@@ -59,7 +60,11 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
   const parsed = parseVehicleForm(Object.fromEntries(formData), {
     types: typesForCategory(types, category),
     documentType: session.input.documentType,
-    locked: lockedVehicleFields(session.vehicleLookup, session.request),
+    locked: lockedForSeats(
+      lockedVehicleFields(session.vehicleLookup, session.request),
+      session.typesBySeats,
+      formData.get("seats"),
+    ),
   });
   if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
   const vehicle = parsed.data;

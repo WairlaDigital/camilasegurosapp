@@ -11,6 +11,8 @@
 //   MOT-123  auto-format plate registered as a moto (category L3) → mismatch message (spec 4.1)
 //   CAM-777  complete camioneta (class 33, 5 seats) → quoted as "Camioneta hasta 7 asientos"
 //   4321-AB  complete mototaxi (class 25) → quoted as Mototaxi, not the default Motocicleta
+//   CAM-000  incomplete camioneta (class 33) without seats → the seats entered on step 2/3 pick "hasta 7" or "de 8"
+//   PIK-123  complete pickup (class 16 → type 34) → can be quoted with Carga (auto + Carga has no default type)
 //   5555-AB  complete motocicleta (class 10) → Taxi does not apply; with RUC nothing applies (spec 4.2)
 //   MOD-503  incomplete vehicle with a brand but no model, and La Positiva's model list is down (503)
 //   ERR-500  upstream error (503)
@@ -30,9 +32,11 @@ const types = [
   { id: 1, order: 0, name: "Automóvil", uses: [{ id: 1, name: "Taxi" }, { id: 5, name: "Particular" }] },
   { id: 2, order: 1, name: "Mototaxi", uses: [{ id: 5, name: "Particular" }, { id: 1, name: "Taxi" }] },
   { id: 25, order: 3, name: "Camioneta hasta 7 asientos", uses: [{ id: 5, name: "Particular" }, { id: 1, name: "Taxi" }] },
+  { id: 27, order: 4, name: "Camioneta de 8 asientos", uses: [{ id: 5, name: "Particular" }, { id: 1, name: "Taxi" }] },
   { id: 8, order: 5, name: "Minivan (9 a 16 asientos)", uses: [{ id: 5, name: "Particular" }] },
   { id: 10, order: 8, name: "Motocicleta", uses: [{ id: 5, name: "Particular" }] },
   { id: 16, order: 9, name: "Motocarga", uses: [{ id: 7, name: "Carga" }] },
+  { id: 34, order: 13, name: "Cmta. Pick Up/Doble Cabina", uses: [{ id: 7, name: "Carga" }, { id: 5, name: "Particular" }] },
   { id: 5, order: 100, name: "Camioneta rural hasta 7 asientos", uses: [] },
 ];
 
@@ -77,8 +81,21 @@ const REGISTRY = {
   // Production shape (mototaxi 7845-IA): class without a name and no category.
   "4321AB": { category: { id: null, name: "-" }, class: { id: 25, name: null }, typeId: 2, seats: 3 },
   "5555AB": { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, typeId: 10, seats: 2 },
+  // Production shape (pickup BKD-931): class 16, the backend matches its own type 34.
+  PIK123: { category: { id: null, name: "-" }, class: { id: 16, name: null }, typeId: 34, seats: 3 },
+  // Class 33 has two types by seats; without seats the backend picks the first by order.
+  CAM000: {
+    category: CAR,
+    class: { id: 33, name: null },
+    typeId: 25,
+    seats: null,
+    options: [
+      { id: 25, name: "Camioneta hasta 7 asientos", min_seats: null, max_seats: 7 },
+      { id: 27, name: "Camioneta de 8 asientos", min_seats: 8, max_seats: null },
+    ],
+  },
 };
-const COMPLETE = ["ABC123", "AFO123", "MOT123", "CAM777", "4321AB", "5555AB"];
+const COMPLETE = ["ABC123", "AFO123", "MOT123", "CAM777", "4321AB", "5555AB", "PIK123"];
 // The backend merges our local type/category with the lookup's (positiva) values.
 const categoryOf = (key) => merged(CAR, REGISTRY[key]?.category ?? CAR);
 // The backend sends the matched local type (without its uses) and the class name
@@ -86,7 +103,13 @@ const categoryOf = (key) => merged(CAR, REGISTRY[key]?.category ?? CAR);
 function typeOf(registry) {
   const type = types.find((option) => option.id === registry.typeId);
   if (!type) return { positiva: registry.class };
-  return { id: type.id, order: type.order, name: type.name, positiva: { id: registry.class.id, name: registry.class.name ?? type.name } };
+  return {
+    id: type.id,
+    order: type.order,
+    name: type.name,
+    positiva: { id: registry.class.id, name: registry.class.name ?? type.name },
+    ...(registry.options && { options: registry.options }),
+  };
 }
 
 function vehicleFor(body) {
@@ -112,6 +135,20 @@ function vehicleFor(body) {
         : {
             plate: "AEF-710",
             category: categoryOf("AEF710"),
+            year: 2016,
+            seats: null,
+            serial: null,
+            vin: null,
+            brand: merged({ id: 1035, name: "HYUNDAI" }, { id: 5, name: "HYUNDAI" }),
+            model: merged(null, { id: 1003280, name: "H1" }),
+            version: null,
+          };
+    case "CAM000":
+      return manual
+        ? { plate: "CAM-000", year: body.year, seats: body.seats, serial: body.serial, vin: body.vin, brand: merged(brands.find((b) => b.id === body.brand_id), null) }
+        : {
+            plate: "CAM-000",
+            category: categoryOf("CAM000"),
             year: 2016,
             seats: null,
             serial: null,

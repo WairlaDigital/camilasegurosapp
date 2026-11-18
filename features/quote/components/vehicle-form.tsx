@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import type { Option, VehicleData, VehicleTypeOption } from "@/types/quote";
+import type { Option, SeatTypeOption, VehicleData, VehicleTypeOption } from "@/types/quote";
 import { allowedUses } from "../lib/use-matrix";
 import type { DocumentType } from "../lib/vehicle-rules";
 import { saveVehicle, type SaveVehicleState } from "../vehicle-actions";
 import {
+  lockedForSeats,
   noUseMessage,
   parseVehicleForm,
   type LockedVehicleFields,
@@ -24,6 +25,8 @@ type VehicleFormProps = {
   initial: VehicleData;
   /** What the plate lookup gave: shown locked; the person completes the rest. */
   locked: LockedVehicleFields;
+  /** The class has several types by seats and the lookup had none: the seats entered pick it. */
+  typesBySeats?: SeatTypeOption[];
   /** Null when the list could not be loaded (La Positiva did not answer). */
   initialModels: Option<string>[] | null;
   initialVersions: Option<string>[] | null;
@@ -47,7 +50,15 @@ const FIELDS: VehicleField[] = ["useId", "typeId", "brandId", "modelId", "versio
  * Figma "Ingresa los datos de su vehículo" (267:24), step 2/3, always shown: what
  * the plate lookup gave is locked and the person completes what is missing.
  */
-export function VehicleForm({ types, documentType, initial, locked, initialModels, initialVersions }: VehicleFormProps) {
+export function VehicleForm({
+  types,
+  documentType,
+  initial,
+  locked: lookupLocked,
+  typesBySeats,
+  initialModels,
+  initialVersions,
+}: VehicleFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState<SaveVehicleState, FormData>(saveVehicle, { status: "idle" });
 
@@ -63,6 +74,8 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
   const [serial, setSerial] = useState(initial.serial ?? "");
   const [vin, setVin] = useState(initial.vin ?? "");
   const [clientErrors, setClientErrors] = useState<Partial<Record<VehicleField, string | null>>>({});
+  // A camioneta hasta 7 / de 8 asientos without seats in the lookup: the type follows the seats typed.
+  const locked = lockedForSeats(lookupLocked, typesBySeats, seats);
 
   // Type and use are those of the quote: changing them would need another quote.
   const typeId = locked.typeId ?? String(initial.typeId);
@@ -172,7 +185,13 @@ export function VehicleForm({ types, documentType, initial, locked, initialModel
             ? noUseMessage(type.id, documentType)
             : "Para cambiar el uso o el tipo de vehículo, vuelve a cotizar desde el inicio.",
         )}
-        {fixedField("typeIdFixed", "Tipo de vehículo", type?.name.toUpperCase() ?? "")}
+        {fixedField(
+          "typeIdFixed",
+          "Tipo de vehículo",
+          type?.name.toUpperCase() ?? "",
+          undefined,
+          typesBySeats?.length ? "Depende del número de asientos." : undefined,
+        )}
 
         {locked.brandName ? (
           fixedField("brandIdFixed", "Marca", locked.brandName)

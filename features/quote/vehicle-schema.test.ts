@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { VehicleTypeOption } from "@/types/quote";
 import { defaultQuoteRequest } from "./lib/vehicle-rules";
-import { lockedVehicleFields, parseVehicleForm } from "./vehicle-schema";
+import { lockedForSeats, lockedVehicleFields, parseVehicleForm } from "./vehicle-schema";
 
 const types: VehicleTypeOption[] = [
   { id: 1, name: "Automóvil", uses: [{ id: 1, name: "Taxi" }, { id: 5, name: "Particular" }] },
@@ -147,5 +147,25 @@ describe("locked fields from the plate lookup", () => {
       { ...rules, locked: lockedVehicleFields(lookup, quoted) },
     );
     expect(result.ok && result.data).toMatchObject({ typeId: 1, useId: 5, brandId: 1738, brandName: "NISSAN", year: 2020 });
+  });
+});
+
+describe("lockedForSeats", () => {
+  const camionetas = [
+    { id: 25, name: "Camioneta hasta 7 asientos", maxSeats: 7 },
+    { id: 27, name: "Camioneta de 8 asientos", minSeats: 8 },
+  ];
+  const quoted = { typeId: "25", useId: "5" };
+
+  it("lets the seats entered pick the type when the lookup had none", () => {
+    expect(lockedForSeats(quoted, camionetas, "8")).toEqual({ typeId: "27", useId: "5" });
+    expect(lockedForSeats(quoted, camionetas, "4")).toEqual({ typeId: "25", useId: "5" });
+  });
+
+  it("keeps the quoted type without seats, with seats from the lookup or without types by seats", () => {
+    expect(lockedForSeats(quoted, camionetas, "")).toEqual(quoted);
+    expect(lockedForSeats(quoted, camionetas, null)).toEqual(quoted);
+    expect(lockedForSeats({ ...quoted, seats: "5" }, camionetas, "8")).toEqual({ ...quoted, seats: "5" });
+    expect(lockedForSeats(quoted, undefined, "8")).toEqual(quoted);
   });
 });
