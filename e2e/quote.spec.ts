@@ -187,8 +187,12 @@ test("a plate with a SOAT in force shows its expiry instead of a quote", async (
   await expect(page.getByText("05/10/2027")).toBeVisible();
 
   await page.getByRole("link", { name: "Cotizar otra placa" }).click();
-  await page.waitForURL(/\/#plate$/);
-  await expect(page.getByLabel("Ingresa tu placa:")).toBeVisible();
+  await page.waitForURL(/\/#cotizar$/);
+  // The form starts below the sticky header, not hidden under it.
+  const header = await page.getByRole("banner").boundingBox();
+  const plate = await page.getByLabel("Ingresa tu placa:").boundingBox();
+  expect(header && plate && plate.y >= header.y + header.height).toBe(true);
+  await expect(page.getByLabel("Ingresa tu placa:")).toBeInViewport();
 });
 
 test("the active policy screen ignores an invalid expiry date", async ({ page }) => {

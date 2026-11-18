@@ -20,7 +20,12 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           <div className="lg:col-span-7">
             <HomeHero />
           </div>
-          <div className="lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 lg:pt-31.5">
+          {/* `#cotizar` ("Cotizar otra placa"): clears the sticky header (h-18 / lg:h-27.5). On
+              desktop the column's top padding keeps the hero in view above the form. */}
+          <div
+            id="cotizar"
+            className="scroll-mt-23 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 lg:scroll-mt-27.5 lg:pt-31.5"
+          >
             {/* `key`: a new ?plate= on client navigation remounts the form with it. */}
             <QuoteStartForm key={plate} initialPlate={plate} />
           </div>

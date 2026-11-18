@@ -40,7 +40,7 @@ export default async function ActivePolicyPage({ searchParams }: PageProps<"/cot
       )}
 
       <div className="mt-2 flex w-full max-w-130 flex-col gap-4 sm:flex-row">
-        <Link href="/#plate" className={cn(buttonVariants({ fullWidth: true }), "sm:flex-1")}>
+        <Link href="/#cotizar" className={cn(buttonVariants({ fullWidth: true }), "sm:flex-1")}>
           Cotizar otra placa
         </Link>
         <Link href="/" className={cn(buttonVariants({ variant: "secondary", fullWidth: true }), "sm:flex-1")}>
