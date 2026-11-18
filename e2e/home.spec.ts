@@ -59,6 +59,19 @@ test("the plate detects the category and filters the uses", async ({ page }) => 
   await expect(f.use.locator("option")).toHaveText(["Selecciona el uso", "Particular", "Taxi", "Carga"]);
 });
 
+test("?plate= in the URL prefills the plate and its category", async ({ page }) => {
+  const f = form(page);
+  await page.goto("/?plate=7845-ia");
+  await expect(f.plate).toHaveValue("7845-IA");
+  await expect(f.motoTile).toBeChecked();
+  await expect(f.use).toBeEnabled();
+
+  // An invalid plate is ignored.
+  await page.goto("/?plate=ABC-1234");
+  await expect(f.plate).toHaveValue("");
+  await expect(f.use).toBeDisabled();
+});
+
 test("category tiles are read-only: clicking one sends the user to the plate", async ({ page }) => {
   const f = form(page);
   await expect(page.getByText("Se marca sola al ingresar tu placa.")).toBeVisible();

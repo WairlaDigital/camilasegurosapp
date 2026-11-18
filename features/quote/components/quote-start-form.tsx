@@ -19,12 +19,17 @@ const CONSENT_HREF = "#"; // TODO: URL pending (PENDIENTES.md)
 // `null` marks a field the user fixed after a server error, so the stale message hides.
 type ClientErrors = Partial<Record<StartQuoteField, string | null>>;
 
+type QuoteStartFormProps = {
+  /** Plate from the URL (`/?plate=`), already validated. */
+  initialPlate?: string;
+};
+
 /** Home form (Figma "Group 9"): plate, document, use, email and consent. */
-export function QuoteStartForm() {
+export function QuoteStartForm({ initialPlate }: QuoteStartFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const plateRef = useRef<HTMLInputElement>(null);
   const [state, formAction, pending] = useActionState<StartQuoteState, FormData>(startQuote, { status: "idle" });
-  const [plate, setPlate] = useState("");
+  const [plate, setPlate] = useState(initialPlate ?? "");
   const [documentType, setDocumentType] = useState<DocumentType>("DNI");
   const [use, setUse] = useState("");
   const [clientErrors, setClientErrors] = useState<ClientErrors>({});

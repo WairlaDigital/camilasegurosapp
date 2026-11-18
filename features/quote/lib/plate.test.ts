@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectCategory, isValidPlate, normalizePlate } from "./plate";
+import { detectCategory, isValidPlate, normalizePlate, plateFromQuery } from "./plate";
 
 describe("normalizePlate", () => {
   it("uppercases and drops anything but letters, digits and the hyphen", () => {
@@ -48,5 +48,21 @@ describe("detectCategory", () => {
     expect(detectCategory("")).toBeNull();
     expect(detectCategory("ABC-12")).toBeNull();
     expect(detectCategory("ABCD-1234")).toBeNull();
+  });
+});
+
+describe("plateFromQuery", () => {
+  it("takes a valid plate, normalized", () => {
+    expect(plateFromQuery("abc-123")).toBe("ABC-123");
+    expect(plateFromQuery(" abc123 ")).toBe("ABC123");
+    expect(plateFromQuery(["7845-ia", "ABC-123"])).toBe("7845-IA");
+  });
+
+  it("ignores a missing or invalid plate", () => {
+    expect(plateFromQuery(undefined)).toBeUndefined();
+    expect(plateFromQuery("")).toBeUndefined();
+    expect(plateFromQuery("ABC")).toBeUndefined();
+    expect(plateFromQuery("ABC-1234")).toBeUndefined();
+    expect(plateFromQuery("ABC_12345")).toBeUndefined();
   });
 });

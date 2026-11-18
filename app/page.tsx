@@ -3,12 +3,15 @@ import { CoverageSection } from "@/features/home/components/coverage-section";
 import { FaqSection } from "@/features/home/components/faq-section";
 import { HomeHero, HomeHeroBackdrop } from "@/features/home/components/home-hero";
 import { QuoteStartForm } from "@/features/quote/components/quote-start-form";
+import { plateFromQuery } from "@/features/quote/lib/plate";
 
 // Figma "SOAT al instante" (197:293) / "Home Mobile" (559:46).
 // Desktop: 12-column grid on the 1120px content width; the form (5 columns = 448px)
 // overlaps the hero panel and runs alongside the coverages. Mobile (Figma 559:46):
 // hero copy inset 40px, form and coverages edge to edge at 20px.
-export default function HomePage() {
+// `?plate=ABC-123` prefills the plate (links from other sites or campaigns).
+export default async function HomePage({ searchParams }: PageProps<"/">) {
+  const plate = plateFromQuery((await searchParams).plate);
   return (
     <div className="flex flex-col gap-12.5 pt-5 pb-12.5 lg:gap-20 lg:pt-20">
       <Container width="wide" className="relative">
@@ -18,7 +21,8 @@ export default function HomePage() {
             <HomeHero />
           </div>
           <div className="lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 lg:pt-31.5">
-            <QuoteStartForm />
+            {/* `key`: a new ?plate= on client navigation remounts the form with it. */}
+            <QuoteStartForm key={plate} initialPlate={plate} />
           </div>
           <div className="pt-15 lg:col-span-7 lg:pt-27.5">
             <CoverageSection />

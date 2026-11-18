@@ -37,3 +37,14 @@ export function detectCategory(raw: string): VehicleCategory | null {
   const patterns = plate.includes("-") ? MOTO_WITH_HYPHEN : MOTO_COMPACT;
   return patterns.some((pattern) => pattern.test(plate)) ? "moto" : "auto";
 }
+
+/**
+ * Plate from the home URL (`/?plate=ABC-123`, e.g. a link from another site or a
+ * campaign) to prefill the form. Only a valid plate is taken; anything else is ignored.
+ */
+export function plateFromQuery(value: string | string[] | undefined): string | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw) return undefined;
+  const plate = normalizePlate(raw);
+  return isValidPlate(plate) ? plate : undefined;
+}
