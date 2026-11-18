@@ -15,6 +15,7 @@
 //   PIK-123  complete pickup (class 16 → type 34) → can be quoted with Carga (auto + Carga has no default type)
 //   5555-AB  complete motocicleta (class 10) → Taxi does not apply; with RUC nothing applies (spec 4.2)
 //   MOD-503  incomplete vehicle with a brand but no model, and La Positiva's model list is down (503)
+//   VIG-123  complete vehicle that already has a SOAT in force (La Positiva 20003) → active policy screen
 //   ERR-500  upstream error (503)
 // Plans: La Positiva at S/ 210 for today (Lima) and S/ 215 for any other start date
 // (to test the re-quote), plus an AFOCAT plan that the front must hide. More than
@@ -82,6 +83,7 @@ const REGISTRY = {
   "4321AB": { category: { id: null, name: "-" }, class: { id: 25, name: null }, typeId: 2, seats: 3 },
   "5555AB": { category: { id: 3, name: "L3" }, class: { id: 10, name: "MOTOCICLETA" }, typeId: 10, seats: 2 },
   // Production shape (pickup BKD-931): class 16, the backend matches its own type 34.
+  VIG123: { category: CAR, class: { id: 1, name: "AUTOMOVIL" }, typeId: 1, seats: 5 },
   PIK123: { category: { id: null, name: "-" }, class: { id: 16, name: null }, typeId: 34, seats: 3 },
   // Class 33 has two types by seats; without seats the backend picks the first by order.
   CAM000: {
@@ -95,7 +97,7 @@ const REGISTRY = {
     ],
   },
 };
-const COMPLETE = ["ABC123", "AFO123", "MOT123", "CAM777", "4321AB", "5555AB", "PIK123"];
+const COMPLETE = ["ABC123", "AFO123", "MOT123", "CAM777", "4321AB", "5555AB", "PIK123", "VIG123"];
 // The backend merges our local type/category with the lookup's (positiva) values.
 const categoryOf = (key) => merged(CAR, REGISTRY[key]?.category ?? CAR);
 // The backend sends the matched local type (without its uses) and the class name
@@ -295,6 +297,10 @@ const server = createServer(async (req, res) => {
     if (body.start_date && body.start_date > addDays(todayInLima(), 300)) await new Promise((r) => setTimeout(r, 2000));
 
     const vehicle = vehicleFor(body);
+    // La Positiva refuses to quote a plate with a SOAT in force: no dynamic plan, and the
+    // backend passes the expiry date it read from the message.
+    const activePolicy = plate(body.plate) === "VIG123" && (!body.start_date || body.start_date <= "2027-10-05");
+    if (vehicle && activePolicy) vehicle.active_policy = { expires_at: "2027-10-05" };
     const response = {
       // Like the backend: a person (DNI/CE) comes with names only; a company (RUC) with
       // its name and address but no first/last name.

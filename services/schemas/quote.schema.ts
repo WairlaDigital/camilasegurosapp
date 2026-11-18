@@ -22,6 +22,8 @@ const vehicleSchema = z.object({
   brand: mergedSchema,
   model: mergedSchema,
   version: mergedSchema,
+  // Only /query-info: the plate already has an active SOAT (La Positiva code 20003).
+  active_policy: z.object({ expires_at: z.string().nullish() }).nullish(),
 });
 
 const documentSchema = z.object({
@@ -166,7 +168,15 @@ export function toQuoteResult(
       : null,
     plans,
     featuredPlanId: plans.some((plan) => plan.id === featured) ? featured : null,
+    ...(data.vehicle?.active_policy && { activePolicy: activePolicyOf(data.vehicle.active_policy.expires_at) }),
   };
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** An unreadable expiry date is dropped: the screen still says the SOAT is active. */
+function activePolicyOf(expiresAt: string | null | undefined): { expiresAt?: string } {
+  return expiresAt && ISO_DATE.test(expiresAt) ? { expiresAt } : {};
 }
 
 /** Same rule as the current front: every vehicle field is needed to quote La Positiva. */

@@ -6,6 +6,7 @@ import { clientIp } from "@/lib/rate-limit";
 import { ApiError } from "@/services/errors";
 import { getVehicleTypes } from "@/services/catalog";
 import { lookupPlate, queryInfo } from "@/services/quotes";
+import { activePolicyHref } from "./lib/active-policy";
 import { todayInLima } from "./lib/dates";
 import { limitStartQuote, TOO_MANY_REQUESTS } from "./lib/limits";
 import { detectCategory } from "./lib/plate";
@@ -24,7 +25,8 @@ const UNAVAILABLE = "No pudimos consultar tu placa en este momento. Inténtalo d
 /**
  * Home form submit: validates, looks up the vehicle registration (POST
  * /query-plate, no quote) to quote with the real vehicle type, quotes once
- * (POST /query-info), keeps the result in the quote session and moves on.
+ * (POST /query-info), keeps the result in the quote session and moves on. A plate
+ * with a SOAT in force goes to its own screen instead.
  */
 export async function startQuote(_prev: StartQuoteState, formData: FormData): Promise<StartQuoteState> {
   const parsed = parseStartQuote(Object.fromEntries(formData));
@@ -93,6 +95,9 @@ export async function startQuote(_prev: StartQuoteState, formData: FormData): Pr
   if (registered && registered !== category) {
     return { status: "failed", message: CATEGORY_MISMATCH[category] };
   }
+
+  // Nothing to sell: the plate already has a SOAT in force.
+  if (result.activePolicy) redirect(activePolicyHref(result.activePolicy.expiresAt));
 
   const typesBySeats = registration?.typesBySeats;
   await writeQuoteSession({

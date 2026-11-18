@@ -96,6 +96,19 @@ describe("toQuoteResult", () => {
     expect(toQuoteResult(queryInfoResponseSchema.parse(rest), request).vehicle).toBeNull();
   });
 
+  it("reads an active policy (La Positiva did not quote: the plate has a SOAT in force)", () => {
+    expect(result.activePolicy).toBeUndefined();
+    const withPolicy = (expires_at: string | null) =>
+      toQuoteResult(
+        queryInfoResponseSchema.parse({ ...response, vehicle: { ...response.vehicle, active_policy: { expires_at } } }),
+        request,
+      ).activePolicy;
+    expect(withPolicy("2027-10-05")).toEqual({ expiresAt: "2027-10-05" });
+    // The backend could not read the date from La Positiva's message.
+    expect(withPolicy(null)).toEqual({});
+    expect(withPolicy("05/10/2027")).toEqual({});
+  });
+
   it("rejects a response that breaks the contract", () => {
     expect(queryInfoResponseSchema.safeParse({ plans: { plans: [{ id: "x" }] } }).success).toBe(false);
   });

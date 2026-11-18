@@ -177,3 +177,23 @@ test("the quote screen needs a quote session", async ({ page }) => {
   await page.goto("/cotizar/cotizacion");
   await expect(page).toHaveURL(/\/$/);
 });
+
+test("a plate with a SOAT in force shows its expiry instead of a quote", async ({ page }) => {
+  await submitHome(page, "VIG-123");
+  await page.waitForURL(/\/cotizar\/soat-vigente\?vence=2027-10-05$/);
+
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("¡Buenas noticias, ya estás protegido!");
+  await expect(page.getByText("Vence el:")).toBeVisible();
+  await expect(page.getByText("05/10/2027")).toBeVisible();
+
+  await page.getByRole("link", { name: "Cotizar otra placa" }).click();
+  await page.waitForURL(/\/#plate$/);
+  await expect(page.getByLabel("Ingresa tu placa:")).toBeVisible();
+});
+
+test("the active policy screen ignores an invalid expiry date", async ({ page }) => {
+  await page.goto("/cotizar/soat-vigente?vence=05-10-2027");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("¡Buenas noticias, ya estás protegido!");
+  await expect(page.getByText("Vence el:")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Volver al inicio" })).toHaveAttribute("href", "/");
+});

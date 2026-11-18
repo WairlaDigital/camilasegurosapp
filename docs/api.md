@@ -68,7 +68,8 @@ Respuesta (las claves nulas se omiten):
                 "document_number", "doc_type", "person_type", "document_type_label", "person_type_label" },
   "vehicle":  { "plate", "color", "steering_wheel", "circulation_zone", "commercial_value", "year",
                 "seats", "tons", "vin", "serial", "engine",
-                "category", "type", "use", "brand", "model", "version", "origin" },
+                "category", "type", "use", "brand", "model", "version", "origin",
+                "active_policy": { "expires_at" } },   // solo si la placa ya tiene SOAT vigente
   "plans":    { "id", "featured", "plans": [{ "id", "name", "price", "quote_token", "features" }] }
 }
 ```
@@ -77,6 +78,7 @@ Notas de negocio:
 - `price` es un **decimal en soles** (float). El mapper lo convierte a céntimos enteros: `Math.round(price * 100)`.
 - Si no hay stock de La Positiva o la cotización dinámica falla, el backend **quita** los planes dinámicos y los de La Positiva. La UI debe soportar que la lista cambie o venga vacía.
 - `quote_token` identifica la cotización del plan dinámico.
+- **SOAT vigente.** Si La Positiva no cotiza porque la placa ya tiene póliza (código `20003`, "La placa tiene póliza vigente hasta 05/10/2027."), `vehicle.active_policy.expires_at` trae la fecha de vencimiento en `YYYY-MM-DD`, leída del mensaje (`null` si no se pudo leer); los planes de La Positiva no vienen. El front lleva a `/cotizar/soat-vigente?vence=…` (desde el inicio o el paso 2/3) y, si pasa al recotizar por fecha, pide una fecha posterior.
 
 ### `POST /generar-poliza`
 Body: `{ policy_id, certificate_id }` (ids internos de La Positiva). Devuelve el PDF de la póliza en base64 (`data.Pdf_Data`). Sin validación de request; solo lo usa el panel de administración.

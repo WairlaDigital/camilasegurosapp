@@ -71,4 +71,9 @@ export type QuoteResult = {
   holder: Holder | null;
   plans: Plan[];
   featuredPlanId: number | null;
+  /**
+   * La Positiva did not quote because the plate already has an active SOAT
+   * (`vehicle.active_policy` of /query-info). `expiresAt` is YYYY-MM-DD when known.
+   */
+  activePolicy?: { expiresAt?: string };
 };

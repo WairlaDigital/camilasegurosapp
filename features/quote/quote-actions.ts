@@ -33,6 +33,13 @@ async function requote(session: QuoteSession, startDate: string) {
   });
 }
 
+/** The start date falls while the plate's current SOAT is still in force. */
+function activePolicyMessage(expiresAt: string | undefined): string {
+  return expiresAt
+    ? `Tu SOAT actual vence el ${formatDate(expiresAt)}. Elige una fecha de inicio posterior.`
+    : "Tu vehículo ya tiene un SOAT vigente para esa fecha. Elige una fecha posterior.";
+}
+
 export type RequoteResult =
   | { ok: true; startDate: string; plans: PlanSummary[]; message: string }
   | { ok: false; error: string };
@@ -64,6 +71,7 @@ export async function requoteForDate(startDate: string): Promise<RequoteResult> 
     console.error("requoteForDate: /query-info failed", error);
     return { ok: false, error: "No pudimos cotizar para esa fecha. Inténtalo de nuevo en unos minutos." };
   }
+  if (requoted.activePolicy) return { ok: false, error: activePolicyMessage(requoted.activePolicy.expiresAt) };
   const after = chosen(requoted.plans);
   if (!requoted.vehicle || !after) {
     return { ok: false, error: "No tenemos un SOAT disponible para esa fecha. Prueba con otra fecha." };
@@ -115,6 +123,9 @@ export async function confirmQuote(_prev: ConfirmQuoteState, formData: FormData)
       return { status: "failed", message: "No pudimos cotizar para esa fecha. Inténtalo de nuevo en unos minutos." };
     }
 
+    if (requoted.activePolicy) {
+      return { status: "failed", message: activePolicyMessage(requoted.activePolicy.expiresAt) };
+    }
     const before = result.plans.find((plan) => plan.id === planId);
     const after = requoted.plans.find((plan) => plan.id === planId);
     if (!requoted.vehicle || !before || !after) {

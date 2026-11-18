@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getVehicleTypes } from "@/services/catalog";
 import { ApiError } from "@/services/errors";
 import { queryInfo } from "@/services/quotes";
+import { activePolicyHref } from "./lib/active-policy";
 import { todayInLima } from "./lib/dates";
 import { limitRequote, sessionKey, TOO_MANY_REQUESTS } from "./lib/limits";
 import { detectCategory } from "./lib/plate";
@@ -110,6 +111,9 @@ export async function saveVehicle(_prev: SaveVehicleState, formData: FormData): 
     }
     return { status: "failed", message: "No pudimos cotizar con estos datos. Revísalos e inténtalo de nuevo." };
   }
+
+  // Only La Positiva knows: the plate may turn out to have a SOAT in force once fully described.
+  if (result.activePolicy) redirect(activePolicyHref(result.activePolicy.expiresAt));
 
   if (!result.vehicle) {
     // The backend drops manual data when the plate lookup fails (PENDIENTES.md, backend 🔴).
