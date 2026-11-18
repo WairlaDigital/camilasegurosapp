@@ -65,9 +65,11 @@ Una sola familia: **Red Hat Display** (`next/font/google`).
 
 | Token | Tamaño | Peso habitual | Uso |
 |---|---|---|---|
-| `text-display` | 42px, lh 1, -0.02em | medium + bold en la palabra clave | Hero. En mobile: `text-title md:text-display` |
+| `text-display` | 42px, lh 1, -0.02em | medium + bold en la palabra clave | Hero en desktop. En mobile: `text-headline lg:text-display` |
+| `text-headline` | 24px, lh 1, -0.02em | medium + bold en la palabra clave | Hero en mobile (Figma "Home Mobile v2") |
 | `text-title` | 32px, -0.02em | medium (+ bold) | Títulos de pantalla y sección, precio |
 | `text-subtitle` | 20px | bold / medium | Títulos de card, "PLACA: …", subtítulos de bloque |
+| `text-lead` | 18px | bold | Título del formulario del inicio en mobile ("¿Qué vehículo deseas asegurar?"; desktop: `text-subtitle`) |
 | `text-body` | 16px | regular / medium | Texto |
 | `text-label` | 16px | bold | Labels sobre el campo |
 | `text-small` | 14px | bold | Labels inset, legales |
@@ -190,7 +192,7 @@ Las pruebas automáticas no detectan problemas de apariencia (un anillo de foco 
 ### Pantallas en Figma
 | Pantalla | Nodo desktop | Nodo mobile |
 |---|---|---|
-| Home | `197:293` | `559:46` |
+| Home | `197:293` | `1076:142` ("Home Mobile v2", hero de 228px) |
 | Completa los datos del titular | `433:174` | `563:546` |
 | Ingresa los datos de su vehículo | `267:24` | `564:818` |
 | Cotización | `240:117` | `565:921` |

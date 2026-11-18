@@ -42,7 +42,9 @@ const colors = [
 const typeScale = [
   { name: "display · 42", className: "text-display font-medium", sample: "SOAT al Instante" },
   { name: "title · 32", className: "text-title font-medium", sample: "Conoce las coberturas" },
+  { name: "headline · 24", className: "text-headline font-medium", sample: "SOAT al Instante" },
   { name: "subtitle · 20", className: "text-subtitle font-bold", sample: "SOAT La Positiva" },
+  { name: "lead · 18", className: "text-lead font-bold", sample: "¿Qué vehículo deseas asegurar?" },
   { name: "body · 16", className: "text-body", sample: "Recíbelo al momento en tu email." },
   { name: "label · 16", className: "text-label font-bold", sample: "Ingresa tu placa:" },
   { name: "small · 14", className: "text-small font-bold", sample: "Al continuar aceptas la Política de Privacidad" },

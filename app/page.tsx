@@ -5,9 +5,9 @@ import { HomeHero, HomeHeroBackdrop } from "@/features/home/components/home-hero
 import { QuoteStartForm } from "@/features/quote/components/quote-start-form";
 import { plateFromQuery } from "@/features/quote/lib/plate";
 
-// Figma "SOAT al instante" (197:293) / "Home Mobile" (559:46).
+// Figma "SOAT al instante" (197:293) / "Home Mobile v2" (1076:142).
 // Desktop: 12-column grid on the 1120px content width; the form (5 columns = 448px)
-// overlaps the hero panel and runs alongside the coverages. Mobile (Figma 559:46):
+// overlaps the hero panel and runs alongside the coverages. Mobile (Figma 1076:142):
 // hero copy inset 40px, form and coverages edge to edge at 20px.
 // `?plate=ABC-123` prefills the plate (links from other sites or campaigns).
 export default async function HomePage({ searchParams }: PageProps<"/">) {

@@ -43,8 +43,13 @@
   --text-title: 2rem; /* 32px section titles, prices */
   --text-title--line-height: 1.1;
   --text-title--letter-spacing: -0.02em;
+  --text-headline: 1.5rem; /* 24px hero on mobile (Figma "Home Mobile v2") */
+  --text-headline--line-height: 1;
+  --text-headline--letter-spacing: -0.02em;
   --text-subtitle: 1.25rem; /* 20px card titles */
   --text-subtitle--line-height: 1.2;
+  --text-lead: 1.125rem; /* 18px form heading on mobile */
+  --text-lead--line-height: 1.2;
   --text-body: 1rem; /* 16px */
   --text-body--line-height: 1.5;
   --text-label: 1rem; /* 16px bold field labels */

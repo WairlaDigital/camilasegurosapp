@@ -77,8 +77,10 @@ export function QuoteStartForm({ initialPlate }: QuoteStartFormProps) {
   }
 
   return (
-    <Card tone="surface" className="px-5 pt-7.5 pb-7 md:px-10">
+    <Card tone="surface" className="px-5 pt-5 pb-7 md:px-10 lg:pt-7.5">
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+        {/* Figma 1076:141 (desktop, 20px) and 1076:373 (mobile v2, 18px). */}
+        <h2 className="text-lead font-bold text-ink lg:text-subtitle">¿Qué vehículo deseas asegurar?</h2>
         <CategoryTiles detected={category} onTileClick={() => plateRef.current?.focus()} />
 
         <Input

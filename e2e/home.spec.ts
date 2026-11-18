@@ -23,6 +23,7 @@ test.beforeEach(async ({ page }) => {
 test("shows the hero, the form, coverages and FAQ without horizontal scroll", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: /SOAT al Instante/ })).toBeVisible();
   await expect(form(page).submit).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "¿Qué vehículo deseas asegurar?" })).toBeVisible();
   await expect(page.getByRole("heading", { name: /coberturas de tu SOAT/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "¿Quieres saber más?" })).toBeVisible();
 
