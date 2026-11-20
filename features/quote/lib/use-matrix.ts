@@ -54,13 +54,12 @@ export function isRucMotoLineal(typeId: number, documentType: DocumentType): boo
 
 /**
  * Uses offered for a catalog type: the table's uses (or only "Comercial" for
- * RUC + moto lineal) that the catalog also allows. A use without an API id
- * ("Comercial", pending with La Positiva) cannot be quoted yet, so it is left out.
+ * RUC + moto lineal) that the catalog also allows.
  */
 export function allowedUses(type: VehicleTypeOption, documentType: DocumentType): Option[] {
   const row = matrixRow(type.id);
   if (!row) return type.uses;
   const keys: readonly VehicleUse[] = isRucMotoLineal(type.id, documentType) ? ["comercial"] : USE_MATRIX[row].uses;
-  const ids = keys.map((key) => VEHICLE_USES[key].apiId).filter((id) => id !== null);
+  const ids = keys.map((key) => VEHICLE_USES[key].apiId);
   return type.uses.filter((use) => ids.some((id) => id === use.id));
 }

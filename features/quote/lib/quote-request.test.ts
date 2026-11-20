@@ -1,14 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { PlateRegistration, VehicleTypeOption } from "@/types/quote";
+import { RUC_MOTO_LINEAL } from "../vehicle-schema";
 import { CATEGORY_MISMATCH, NOT_ONLINE, quoteRequestFor } from "./quote-request";
 
 const PARTICULAR = { id: 5, name: "Particular" };
 const TAXI = { id: 1, name: "Taxi" };
 const CARGA = { id: 7, name: "Carga" };
+const COMERCIAL = { id: 6, name: "Comercial" };
 const types: VehicleTypeOption[] = [
   { id: 1, name: "Automóvil", uses: [TAXI, PARTICULAR] },
   { id: 2, name: "Mototaxi", uses: [PARTICULAR, TAXI] },
-  { id: 10, name: "Motocicleta", uses: [PARTICULAR] },
+  { id: 10, name: "Motocicleta", uses: [PARTICULAR, COMERCIAL] },
   { id: 16, name: "Motocarga", uses: [CARGA] },
   { id: 25, name: "Camioneta hasta 7 asientos", uses: [PARTICULAR, TAXI] },
   { id: 27, name: "Camioneta de 8 asientos", uses: [PARTICULAR, TAXI] },
@@ -59,20 +61,27 @@ describe("quoteRequestFor", () => {
     expect(quoteRequestFor({ ...base, use: "taxi", registration: registration(10) })).toEqual({
       ok: false,
       field: "use",
-      message: "Según el registro vehicular, tu vehículo es de tipo Motocicleta: el uso Taxi no aplica. Elige Particular.",
+      message: "Según el registro vehicular, tu vehículo es de tipo Motocicleta: el uso Taxi no aplica. Elige Particular o Comercial.",
     });
   });
 
   it("applies RUC + moto lineal (spec 4.2) when the registration says it is a Motocicleta", () => {
     const result = quoteRequestFor({ ...base, documentType: "RUC", registration: registration(10) });
-    expect(result).toMatchObject({ ok: false, field: "use", message: expect.stringMatching(/Con RUC, una moto lineal/) });
-    // A RUC mototaxi is fine.
+    expect(result).toEqual({ ok: false, field: "use", message: RUC_MOTO_LINEAL });
+    // Production 5881-MB with RUC: Comercial (id 6) is quoted.
+    expect(quoteRequestFor({ ...base, use: "comercial", documentType: "RUC", registration: registration(10) })).toEqual({
+      ok: true,
+      typeId: 10,
+      useId: 6,
+    });
+    // A RUC mototaxi is fine, but not as Comercial (moto lineal only).
+    expect(quoteRequestFor({ ...base, use: "comercial", registration: registration(2) })).toMatchObject({ ok: false, field: "use" });
     expect(quoteRequestFor({ ...base, documentType: "RUC", registration: registration(2) })).toMatchObject({ ok: true });
   });
 
   it("applies RUC + moto lineal to the default type when the plate lookup brought nothing", () => {
-    const result = quoteRequestFor({ ...base, documentType: "RUC" });
-    expect(result).toMatchObject({ ok: false, field: "use", message: expect.stringMatching(/Con RUC, una moto lineal/) });
+    expect(quoteRequestFor({ ...base, documentType: "RUC" })).toEqual({ ok: false, field: "use", message: RUC_MOTO_LINEAL });
+    expect(quoteRequestFor({ ...base, use: "comercial", documentType: "RUC" })).toEqual({ ok: true, typeId: 10, useId: 6 });
     // Taxi defaults to Mototaxi, which RUC can quote.
     expect(quoteRequestFor({ ...base, use: "taxi", documentType: "RUC" })).toEqual({ ok: true, typeId: 2, useId: 1 });
   });
@@ -88,8 +97,8 @@ describe("quoteRequestFor", () => {
     });
   });
 
-  it("cannot quote a use without an API id (Comercial) nor auto + Carga (no Camión type)", () => {
-    expect(quoteRequestFor({ ...base, use: "comercial" })).toEqual({ ok: false, message: NOT_ONLINE });
+  it("quotes Comercial as a Motocicleta by default; auto + Carga cannot be quoted (no Camión type)", () => {
+    expect(quoteRequestFor({ ...base, use: "comercial" })).toEqual({ ok: true, typeId: 10, useId: 6 });
     expect(quoteRequestFor({ ...base, category: "auto", use: "carga" })).toEqual({ ok: false, message: NOT_ONLINE });
   });
 });

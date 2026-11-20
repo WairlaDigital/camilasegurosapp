@@ -1,13 +1,14 @@
 import type { VehicleCategory } from "./plate";
 
-// Vehicle uses (spec section 2). The API ids come from GET /data; "comercial"
-// has no id yet (pending with La Positiva), so the UI works with keys and the
-// id is resolved when the quote is sent.
+// Vehicle uses (spec section 2). The API ids are the backend's local ids from
+// GET /data (each one maps to La Positiva's IdUso in the admin; Comercial = 6,
+// IdUso 17, since 2026-11-20). The UI works with keys and the id is resolved
+// when the quote is sent.
 export const VEHICLE_USES = {
   particular: { label: "Particular", apiId: 5 },
   taxi: { label: "Taxi", apiId: 1 },
   carga: { label: "Carga", apiId: 7 },
-  comercial: { label: "Comercial", apiId: null },
+  comercial: { label: "Comercial", apiId: 6 },
 } as const;
 
 export type VehicleUse = keyof typeof VEHICLE_USES;
@@ -63,7 +64,7 @@ export function sanitizeDocumentNumber(type: DocumentType, raw: string): string 
 /** Default vehicle type id (GET /data) per category and use. Missing ⇒ not quotable online yet. */
 const DEFAULT_TYPE_ID: Record<VehicleCategory, Partial<Record<VehicleUse, number>>> = {
   auto: { particular: 1, taxi: 1 }, // Automóvil. No "Camión/Furgón" type in the catalog for carga.
-  moto: { particular: 10, taxi: 2, carga: 16 }, // Motocicleta, Mototaxi, Motocarga. "Comercial" has no use id.
+  moto: { particular: 10, taxi: 2, carga: 16, comercial: 10 }, // Motocicleta, Mototaxi, Motocarga; Comercial is moto lineal only.
 };
 
 /** Lima. PROVISIONAL until the zone question is decided. */
@@ -71,6 +72,5 @@ export const DEFAULT_UBIGEO_ID = "150101";
 
 export function defaultQuoteRequest(category: VehicleCategory, use: VehicleUse): { typeId: number; useId: number } | null {
   const typeId = DEFAULT_TYPE_ID[category][use];
-  const useId = VEHICLE_USES[use].apiId;
-  return typeId !== undefined && useId !== null ? { typeId, useId } : null;
+  return typeId !== undefined ? { typeId, useId: VEHICLE_USES[use].apiId } : null;
 }

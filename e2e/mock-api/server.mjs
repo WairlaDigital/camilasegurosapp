@@ -35,7 +35,7 @@ const types = [
   { id: 25, order: 3, name: "Camioneta hasta 7 asientos", uses: [{ id: 5, name: "Particular" }, { id: 1, name: "Taxi" }] },
   { id: 27, order: 4, name: "Camioneta de 8 asientos", uses: [{ id: 5, name: "Particular" }, { id: 1, name: "Taxi" }] },
   { id: 8, order: 5, name: "Minivan (9 a 16 asientos)", uses: [{ id: 5, name: "Particular" }] },
-  { id: 10, order: 8, name: "Motocicleta", uses: [{ id: 5, name: "Particular" }] },
+  { id: 10, order: 8, name: "Motocicleta", uses: [{ id: 5, name: "Particular" }, { id: 6, name: "Comercial" }] },
   { id: 16, order: 9, name: "Motocarga", uses: [{ id: 7, name: "Carga" }] },
   { id: 34, order: 13, name: "Cmta. Pick Up/Doble Cabina", uses: [{ id: 7, name: "Carga" }, { id: 5, name: "Particular" }] },
   { id: 5, order: 100, name: "Camioneta rural hasta 7 asientos", uses: [] },

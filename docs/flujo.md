@@ -46,7 +46,7 @@ Si la consulta de placa devuelve un tipo que contradice la categoría detectada,
 |---|---|---|
 | Auto / Camioneta | Particular, Taxi | Automóvil (1), Camioneta hasta 7 (25), Camioneta 8 (27), Station wagon (9) → Taxi (1), Particular (5) ✅ |
 | Mototaxi | Particular, Taxi | Mototaxi (2) → Particular, Taxi ✅ |
-| Moto lineal | Particular, **Comercial** | Motocicleta (10) → solo Particular ❌ falta Comercial |
+| Moto lineal | Particular, **Comercial** | Motocicleta (10) → Particular y Comercial (id 6, IdUso 17 de La Positiva, desde 2026-11-20) |
 | Camión / Furgón | Carga | **No existe** en el catálogo ❌ |
 | Trimoto | Carga | ¿Motocarga (16) → Carga? Por confirmar |
 | Otros | Lo que diga la API | Microbús, Ómnibus, Combi, Minivan (Servicio público - Urbano), Camioneta rural (sin usos) |
@@ -57,7 +57,7 @@ Si la consulta de placa devuelve un tipo que contradice la categoría detectada,
 
 **Tipo real del vehículo:** el inicio solo sabe auto/moto, pero `/query-info` cotiza con el `type_id` que enviamos. Por eso, antes de cotizar, `POST /query-plate` devuelve en `type.id` el tipo del catálogo que el backend liga a la clase del registro (La Positiva `IdClase`, el `positiva_id` de cada tipo; si una clase tiene varios tipos, decide el rango de asientos de cada uno). El front no traduce clases: usa ese id (`features/quote/lib/quote-request.ts`). Ej.: la mototaxi 7845-IA (clase 25) → Mototaxi; la camioneta F3U-390 (clase 33, asientos 0) → Camioneta hasta 7 asientos (el primero por orden). Si la clase tiene varios tipos, `type.options` los trae con su rango; si la placa no trae asientos, en el paso 2/3 el tipo cambia según los asientos que se escriben ("Depende del número de asientos.") y se cotiza con ese tipo. Si el uso elegido no aplica al tipo real, el inicio lo marca en el campo "Uso". Sin `type.id` (clase sin tipo en el catálogo, 404 o error) se usa el tipo por defecto de la categoría. El entorno de pruebas suele responder 404 para placas reales.
 
-**Implementación:** la tabla está en `features/quote/lib/use-matrix.ts` (tipos del catálogo asignados a cada fila; Trimoto = Motocarga es provisional). Un uso se ofrece si lo permiten la tabla **y** el catálogo; los tipos fuera de la tabla siguen el catálogo. "Comercial" no tiene IdUso, así que no se ofrece: con RUC, una moto lineal queda sin uso cotizable y el formulario lo explica. La regla RUC + moto lineal aplica en "Datos del vehículo" y, con el tipo real del registro, también en el inicio.
+**Implementación:** la tabla está en `features/quote/lib/use-matrix.ts` (tipos del catálogo asignados a cada fila; Trimoto = Motocarga es provisional). Un uso se ofrece si lo permiten la tabla **y** el catálogo; los tipos fuera de la tabla siguen el catálogo. Comercial es el id 6 del catálogo (IdUso 17 en La Positiva, configurado en el admin el 2026-11-20). La regla RUC + moto lineal aplica en "Datos del vehículo" y en el inicio, con el tipo real del registro o, si la consulta de placa no trae nada, con el tipo por defecto (Motocicleta): con RUC, Particular pide elegir Comercial.
 
 ### Documento
 DNI, Carné de Extranjería y RUC (el backend también acepta Pasaporte; la spec no lo incluye). El nombre del saludo viene de `document.names` (RENIEC) o `document.company_name` (SUNAT) en `/query-info`.
@@ -83,7 +83,7 @@ Cómo encaja con el backend:
 2. **Zona de circulación (`ubigeo_id`).** El backend la exige y el front actual pregunta Lima/Callao. La spec no tiene ese campo.
 3. **Formulario manual sin placa encontrada.** Si la consulta de placa no devuelve nada, el backend descarta los datos manuales (`QueryVehicleInfo::execute` devuelve `null`). Sin vehículo no hay cotización de La Positiva, solo planes estáticos. Solo funciona cuando la consulta trae datos parciales.
 4. **Placa LN-NNNN.** El backend reescribe `A1-1234` como `A11-234` (formato de auto), porque quita el guion antes de formatear. Además, sin guion `A11234` es ambiguo entre moto y auto.
-5. **Catálogo.** Falta el uso Comercial para moto lineal (IdUso pendiente con Fidel), falta Camión/Furgón, y hay que confirmar si Trimoto = Motocarga.
+5. **Catálogo.** Falta Camión/Furgón y hay que confirmar si Trimoto = Motocarga. (El uso Comercial para moto lineal ya existe: id 6, desde 2026-11-20.)
 6. **Fecha de inicio después del precio.** En la spec la fecha está debajo de la tarjeta de precio, pero cambiarla obliga a cotizar de nuevo (nuevo token y precio). El front actual bloquea la fecha una vez elegido el plan.
 7. **Pago rechazado reportado como éxito.** En `PaymentService::createCharge` la excepción del SDK de Culqi se captura y se devuelve como texto, así que `/charge` responde `success`. Confirmado en el código; falta reproducirlo con una tarjeta de prueba rechazada. Riesgo alto.
 8. **Estado y descarga de la póliza.** No hay endpoint público para saber si la póliza se emitió ni para descargarla (`/file/{policy}/dl` quedó sin uso; `policy_id`/`certificate_id` solo existen dentro del backend). La confirmación solo puede decir "te llegará por correo".

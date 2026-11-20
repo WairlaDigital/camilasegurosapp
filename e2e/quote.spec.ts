@@ -161,7 +161,7 @@ test("a complete mototaxi is quoted as a mototaxi, not as the default Motociclet
 test("a use that the registered type does not allow is flagged on the home form", async ({ page }) => {
   await submitHome(page, "5555-AB", { use: "taxi" });
   await expect(
-    page.getByText("Según el registro vehicular, tu vehículo es de tipo Motocicleta: el uso Taxi no aplica. Elige Particular."),
+    page.getByText("Según el registro vehicular, tu vehículo es de tipo Motocicleta: el uso Taxi no aplica. Elige Particular o Comercial."),
   ).toBeVisible();
   await expect(page.getByLabel("Uso:")).toHaveAttribute("aria-invalid", "true");
   await expect(page).toHaveURL(/\/$/);
@@ -175,6 +175,11 @@ for (const plate of ["5555-AB", "5555AB"]) {
     await expect(page).toHaveURL(/\/$/);
   });
 }
+
+test("with RUC, a registered moto lineal is quoted as Comercial (5881-MB in production)", async ({ page }) => {
+  await submitHome(page, "5555AB", { ruc: true, use: "comercial" });
+  await page.waitForURL(/\/cotizar\/titular$/);
+});
 
 test("the quote screen needs a quote session", async ({ page }) => {
   await page.goto("/cotizar/cotizacion");

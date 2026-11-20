@@ -5,7 +5,7 @@ import { lockedForSeats, lockedVehicleFields, parseVehicleForm } from "./vehicle
 
 const types: VehicleTypeOption[] = [
   { id: 1, name: "Automóvil", uses: [{ id: 1, name: "Taxi" }, { id: 5, name: "Particular" }] },
-  { id: 10, name: "Motocicleta", uses: [{ id: 5, name: "Particular" }] },
+  { id: 10, name: "Motocicleta", uses: [{ id: 5, name: "Particular" }, { id: 6, name: "Comercial" }] },
 ];
 const rules = { types, documentType: "DNI" as const };
 
@@ -104,13 +104,13 @@ describe("defaultQuoteRequest (provisional defaults)", () => {
     ["auto", "taxi", { typeId: 1, useId: 1 }],
     ["moto", "taxi", { typeId: 2, useId: 1 }],
     ["moto", "carga", { typeId: 16, useId: 7 }],
+    ["moto", "comercial", { typeId: 10, useId: 6 }],
   ] as const)("%s + %s", (category, use, expected) => {
     expect(defaultQuoteRequest(category, use)).toEqual(expected);
   });
 
   it("returns null when the combination cannot be quoted online yet", () => {
     expect(defaultQuoteRequest("auto", "carga")).toBeNull(); // no Camión/Furgón type
-    expect(defaultQuoteRequest("moto", "comercial")).toBeNull(); // no use id yet
   });
 });
 

@@ -1,5 +1,5 @@
 import type { PlateRegistration, VehicleCategory, VehicleTypeOption } from "@/types/quote";
-import { noUseMessage } from "../vehicle-schema";
+import { noUseMessage, RUC_MOTO_LINEAL } from "../vehicle-schema";
 import { allowedUses, isRucMotoLineal, typeCategory } from "./use-matrix";
 import { defaultQuoteRequest, VEHICLE_USES, type DocumentType, type VehicleUse } from "./vehicle-rules";
 
@@ -33,7 +33,6 @@ type QuoteRequestInput = {
  */
 export function quoteRequestFor({ category, use, documentType, registration, types }: QuoteRequestInput): QuoteRequestResult {
   const useId = VEHICLE_USES[use].apiId;
-  if (useId === null) return { ok: false, message: NOT_ONLINE };
 
   if (registration?.category && registration.category !== category) {
     return { ok: false, message: CATEGORY_MISMATCH[category] };
@@ -46,6 +45,7 @@ export function quoteRequestFor({ category, use, documentType, registration, typ
     const uses = allowedUses(type, documentType);
     if (uses.length === 0) return { ok: false, field: "use", message: noUseMessage(type.id, documentType) };
     if (!uses.some((option) => option.id === useId)) {
+      if (isRucMotoLineal(type.id, documentType)) return { ok: false, field: "use", message: RUC_MOTO_LINEAL };
       const choices = uses.map((option) => option.name).join(" o ");
       return {
         ok: false,
@@ -61,8 +61,8 @@ export function quoteRequestFor({ category, use, documentType, registration, typ
   // The default type is what gets quoted, so spec 4.2 applies to it too: RUC +
   // Particular would go out as a moto lineal (Motocicleta) and the vehicle step,
   // where that type stays locked, would refuse it after a real quote.
-  if (isRucMotoLineal(fallback.typeId, documentType)) {
-    return { ok: false, field: "use", message: noUseMessage(fallback.typeId, documentType) };
+  if (use !== "comercial" && isRucMotoLineal(fallback.typeId, documentType)) {
+    return { ok: false, field: "use", message: RUC_MOTO_LINEAL };
   }
   return { ok: true, ...fallback };
 }

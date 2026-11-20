@@ -120,7 +120,7 @@ export function parseVehicleForm(
   if (type && allowedUses(type, documentType).length === 0) {
     errors.useId = noUseMessage(type.id, documentType);
   } else if (type && values.useId && !allowedUses(type, documentType).some((use) => use.id === Number(values.useId))) {
-    errors.useId = "Ese uso no aplica para este tipo de vehículo.";
+    errors.useId = isRucMotoLineal(type.id, documentType) ? RUC_MOTO_LINEAL : "Ese uso no aplica para este tipo de vehículo.";
   }
   if (errors.brandName && !errors.brandId) errors.brandId = errors.brandName;
   delete errors.brandName;
@@ -129,9 +129,12 @@ export function parseVehicleForm(
   return { ok: false, errors };
 }
 
+/** Spec 4.2, next to the use selector (home form and vehicle step). */
+export const RUC_MOTO_LINEAL = "Con RUC, una moto lineal solo puede tener uso Comercial. Elige Comercial.";
+
 /** Why a type has no use that can be quoted online. */
 export function noUseMessage(typeId: number, documentType: DocumentType): string {
   return isRucMotoLineal(typeId, documentType)
-    ? "Con RUC, una moto lineal solo puede tener uso Comercial, que aún no podemos cotizar en línea. Escríbenos y te ayudamos."
+    ? "Con RUC, una moto lineal solo puede tener uso Comercial, que por ahora no podemos cotizar en línea. Escríbenos y te ayudamos."
     : "Por ahora no podemos cotizar en línea este tipo de vehículo. Escríbenos y te ayudamos.";
 }

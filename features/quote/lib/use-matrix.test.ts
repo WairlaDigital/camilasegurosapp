@@ -7,11 +7,12 @@ import { defaultQuoteRequest, USES_BY_CATEGORY, VEHICLE_USE_KEYS } from "./vehic
 const PARTICULAR = { id: 5, name: "Particular" };
 const TAXI = { id: 1, name: "Taxi" };
 const CARGA = { id: 7, name: "Carga" };
+const COMERCIAL = { id: 6, name: "Comercial" };
 const types: VehicleTypeOption[] = [
   { id: 1, name: "Automóvil", uses: [TAXI, PARTICULAR] },
   { id: 2, name: "Mototaxi", uses: [PARTICULAR, TAXI] },
   { id: 8, name: "Minivan (9 a 16 asientos)", uses: [PARTICULAR] },
-  { id: 10, name: "Motocicleta", uses: [PARTICULAR] },
+  { id: 10, name: "Motocicleta", uses: [PARTICULAR, COMERCIAL] },
   { id: 16, name: "Motocarga", uses: [CARGA] },
 ];
 const type = (id: number) => types.find((option) => option.id === id)!;
@@ -28,12 +29,15 @@ describe("allowedUses (spec section 2)", () => {
     expect(allowedUses(automovilWithCarga, "DNI")).toEqual([TAXI, PARTICULAR]);
   });
 
-  it("leaves 'Comercial' out of moto lineal until it has an API id", () => {
-    expect(allowedUses(type(10), "DNI")).toEqual([PARTICULAR]);
+  it("offers Particular and Comercial for a moto lineal", () => {
+    expect(allowedUses(type(10), "DNI")).toEqual([PARTICULAR, COMERCIAL]);
+    // A catalog without Comercial for the Motocicleta (as before 2026-11-20).
+    expect(allowedUses({ ...type(10), uses: [PARTICULAR] }, "DNI")).toEqual([PARTICULAR]);
   });
 
-  it("with RUC, a moto lineal can only be Comercial (spec 4.2), so nothing can be quoted yet", () => {
-    expect(allowedUses(type(10), "RUC")).toEqual([]);
+  it("with RUC, a moto lineal can only be Comercial (spec 4.2)", () => {
+    expect(allowedUses(type(10), "RUC")).toEqual([COMERCIAL]);
+    expect(allowedUses({ ...type(10), uses: [PARTICULAR] }, "RUC")).toEqual([]);
     expect(allowedUses(type(2), "RUC")).toEqual([PARTICULAR, TAXI]); // not for mototaxis
     expect(allowedUses(type(1), "RUC")).toEqual([TAXI, PARTICULAR]); // nor for autos
   });
