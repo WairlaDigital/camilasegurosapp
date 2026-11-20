@@ -70,6 +70,13 @@ describe("quoteRequestFor", () => {
     expect(quoteRequestFor({ ...base, documentType: "RUC", registration: registration(2) })).toMatchObject({ ok: true });
   });
 
+  it("applies RUC + moto lineal to the default type when the plate lookup brought nothing", () => {
+    const result = quoteRequestFor({ ...base, documentType: "RUC" });
+    expect(result).toMatchObject({ ok: false, field: "use", message: expect.stringMatching(/Con RUC, una moto lineal/) });
+    // Taxi defaults to Mototaxi, which RUC can quote.
+    expect(quoteRequestFor({ ...base, use: "taxi", documentType: "RUC" })).toEqual({ ok: true, typeId: 2, useId: 1 });
+  });
+
   it("stops when the registration contradicts the plate's category (spec 4.1)", () => {
     expect(quoteRequestFor({ ...base, category: "auto", registration: { category: "moto" } })).toEqual({
       ok: false,

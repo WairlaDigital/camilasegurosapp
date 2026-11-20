@@ -272,6 +272,10 @@ const server = createServer(async (req, res) => {
 
   if (req.method === "POST" && path === "/query-plate") {
     const body = await readJson(req);
+    // Like the backend's PlateValidation: /query-plate (unlike /query-info) needs the hyphen.
+    if (!String(body.plate ?? "").includes("-")) {
+      return send(res, 422, { message: "El formato de la placa no es válido.", errors: { plate: ["El formato de la placa no es válido."] } });
+    }
     const key = plate(body.plate);
     if (key === "ERR500") return send(res, 503, { error: "La Positiva no responde" });
     const registry = REGISTRY[key];

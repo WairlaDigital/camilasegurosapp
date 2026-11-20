@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { detectCategory, normalizePlate } from "./lib/plate";
+import { detectCategory, formatPlate, normalizePlate } from "./lib/plate";
 import {
   DOCUMENT_TYPE_KEYS,
   documentRule,
@@ -20,7 +20,9 @@ const baseSchema = z.object({
     .trim()
     .min(1, "Ingresa tu placa.")
     .transform(normalizePlate)
-    .refine((plate) => detectCategory(plate) !== null, "Ingresa una placa válida de 6 caracteres (ej. ABC-123)."),
+    .refine((plate) => detectCategory(plate) !== null, "Ingresa una placa válida de 6 caracteres (ej. ABC-123).")
+    // The API needs the hyphen (/query-plate rejects "5881MB"); the session keeps this form.
+    .transform(formatPlate),
   documentType: z.enum(DOCUMENT_TYPE_KEYS, { error: "Elige el tipo de documento." }),
   documentNumber: z
     .string({ error: "Ingresa tu número de documento." })

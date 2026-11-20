@@ -167,11 +167,14 @@ test("a use that the registered type does not allow is flagged on the home form"
   await expect(page).toHaveURL(/\/$/);
 });
 
-test("with RUC, a registered moto lineal cannot be quoted as Particular (spec 4.2)", async ({ page }) => {
-  await submitHome(page, "5555-AB", { ruc: true });
-  await expect(page.getByText(/Con RUC, una moto lineal solo puede tener uso Comercial/)).toBeVisible();
-  await expect(page).toHaveURL(/\/$/);
-});
+for (const plate of ["5555-AB", "5555AB"]) {
+  test(`with RUC, a registered moto lineal cannot be quoted as Particular (spec 4.2): ${plate}`, async ({ page }) => {
+    // Without the hyphen the plate lookup used to fail (422) and the default type let it through.
+    await submitHome(page, plate, { ruc: true });
+    await expect(page.getByText(/Con RUC, una moto lineal solo puede tener uso Comercial/)).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+  });
+}
 
 test("the quote screen needs a quote session", async ({ page }) => {
   await page.goto("/cotizar/cotizacion");

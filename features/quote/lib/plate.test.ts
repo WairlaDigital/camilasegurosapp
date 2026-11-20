@@ -1,10 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { detectCategory, isValidPlate, normalizePlate, plateFromQuery } from "./plate";
+import { detectCategory, formatPlate, isValidPlate, normalizePlate, plateFromQuery } from "./plate";
 
 describe("normalizePlate", () => {
   it("uppercases and drops anything but letters, digits and the hyphen", () => {
     expect(normalizePlate(" abc-123 ")).toBe("ABC-123");
     expect(normalizePlate("ab.12 34")).toBe("AB1234");
+  });
+});
+
+describe("formatPlate", () => {
+  it.each([
+    ["5881MB", "5881-MB"], // NNNN-LL (production 5881-MB: /query-plate rejected it without the hyphen)
+    ["ab1234", "AB-1234"], // LL-NNNN
+    ["12341A", "1234-1A"], // NNNN-NL
+    ["A11234", "A1-1234"], // LN-NNNN (see the A11-234 ambiguity in detectCategory)
+    ["abc123", "ABC-123"],
+    ["A1B123", "A1B-123"],
+  ])("adds the hyphen to %s → %s", (raw, expected) => {
+    expect(formatPlate(raw)).toBe(expected);
+  });
+
+  it("keeps a typed hyphen and leaves an invalid plate as given", () => {
+    expect(formatPlate("a11-234")).toBe("A11-234");
+    expect(formatPlate("ABC12")).toBe("ABC12");
   });
 });
 

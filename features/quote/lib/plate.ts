@@ -39,6 +39,20 @@ export function detectCategory(raw: string): VehicleCategory | null {
 }
 
 /**
+ * The plate as the API expects it, with its hyphen ("5881MB" → "5881-MB"): POST
+ * /query-plate rejects a plate without it (422), and the lookup is what applies
+ * the rules of the real vehicle type. A typed hyphen is kept; a moto takes the
+ * hyphen of its pattern and an auto goes 3-3. Invalid plates come back as given.
+ */
+export function formatPlate(raw: string): string {
+  const plate = normalizePlate(raw);
+  if (!isValidPlate(plate) || plate.includes("-")) return plate;
+  if (detectCategory(plate) === "auto") return `${plate.slice(0, 3)}-${plate.slice(3)}`;
+  // Moto: NNNN-LL and NNNN-NL start with 4 digits; LL-NNNN and LN-NNNN with 2 characters.
+  return /^\d{4}/.test(plate) ? `${plate.slice(0, 4)}-${plate.slice(4)}` : `${plate.slice(0, 2)}-${plate.slice(2)}`;
+}
+
+/**
  * Plate from the home URL (`/?plate=ABC-123`, e.g. a link from another site or a
  * campaign) to prefill the form. Only a valid plate is taken; anything else is ignored.
  */

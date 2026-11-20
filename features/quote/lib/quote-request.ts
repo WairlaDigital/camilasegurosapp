@@ -1,6 +1,6 @@
 import type { PlateRegistration, VehicleCategory, VehicleTypeOption } from "@/types/quote";
 import { noUseMessage } from "../vehicle-schema";
-import { allowedUses, typeCategory } from "./use-matrix";
+import { allowedUses, isRucMotoLineal, typeCategory } from "./use-matrix";
 import { defaultQuoteRequest, VEHICLE_USES, type DocumentType, type VehicleUse } from "./vehicle-rules";
 
 export const NOT_ONLINE = "Por ahora no podemos cotizar en línea este tipo de uso. Escríbenos y te ayudamos.";
@@ -57,5 +57,12 @@ export function quoteRequestFor({ category, use, documentType, registration, typ
   }
 
   const fallback = defaultQuoteRequest(category, use);
-  return fallback ? { ok: true, ...fallback } : { ok: false, message: NOT_ONLINE };
+  if (!fallback) return { ok: false, message: NOT_ONLINE };
+  // The default type is what gets quoted, so spec 4.2 applies to it too: RUC +
+  // Particular would go out as a moto lineal (Motocicleta) and the vehicle step,
+  // where that type stays locked, would refuse it after a real quote.
+  if (isRucMotoLineal(fallback.typeId, documentType)) {
+    return { ok: false, field: "use", message: noUseMessage(fallback.typeId, documentType) };
+  }
+  return { ok: true, ...fallback };
 }

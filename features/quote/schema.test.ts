@@ -34,6 +34,11 @@ describe("parseStartQuote", () => {
     });
   });
 
+  it("adds the plate's hyphen for the API (5881MB → 5881-MB)", () => {
+    const result = parseStartQuote({ ...valid, plate: "5881mb" });
+    expect(result.ok && result.data.plate).toBe("5881-MB");
+  });
+
   it("rejects an invalid plate", () => {
     expect(errorsFor({ ...valid, plate: "ABC-12" }).plate).toMatch(/placa válida/);
   });

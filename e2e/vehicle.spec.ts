@@ -151,13 +151,12 @@ test("a moto plate keeps the type and use of its quote (Motocarga is Carga only,
   await expect(f.use).toHaveValue("CARGA");
 });
 
-test("with RUC, a moto lineal cannot be Particular (spec 4.2)", async ({ page }) => {
-  await openVehicleForm(page, "1234-AB", { ruc: true });
-  const f = vehicleForm(page);
-
-  await expect(f.type).toHaveValue("MOTOCICLETA");
+test("with RUC, a moto plate without registration data stops on the home form (default Motocicleta, spec 4.2)", async ({ page }) => {
+  // It used to be quoted as a Motocicleta and then refused on this step, after a real quote.
+  await submitHome(page, "1234-AB", { ruc: true });
   await expect(page.getByText(/Con RUC, una moto lineal solo puede tener uso Comercial/)).toBeVisible();
-  await expect(f.submit).toBeDisabled();
+  await expect(page.getByLabel("Uso:")).toHaveAttribute("aria-invalid", "true");
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test("a registration that contradicts the plate format stops with a clear message (spec 4.1)", async ({ page }) => {
